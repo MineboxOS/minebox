@@ -1,12 +1,12 @@
 * HTML content of demo
 
-| File          | URI         | Description                                             |
-|---------------+-------------+---------------------------------------------------------|
-| main.html     | /           | Initial entry point                                     |
-| snapshot.html | /snapshot   | List of existing snaphots; button to take new snapshots |
-| sia.html      | /sia        | Navigation of Sia-related functionality                 |
-| upload.html   | /sia/upload | Interface selecting and uploading snapshot into Sia     |
-| files.html    | /sia/files  | Display status of Sia network uploads                   |
+| HTML          | Screenshot   | URI         | Description                                             |
+|---------------+--------------+-------------+---------------------------------------------------------|
+| main.html     | main.png     | /           | Initial entry point                                     |
+| snapshot.html | snapshot.png | /snapshot   | List of existing snaphots; button to take new snapshots |
+| sia.html      | sia.png      | /sia        | Navigation of Sia-related functionality                 |
+| upload.html   | upload.png   | /sia/upload | Interface selecting and uploading snapshot into Sia     |
+| files.html    | files.png    | /sia/files  | Display status of Sia network uploads                   |
 
 
 
