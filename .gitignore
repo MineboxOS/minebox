@@ -1,2 +1,3 @@
 var/
 vagrant/debian-jessie64/.vagrant/
+ext/
