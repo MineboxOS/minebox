@@ -6,3 +6,7 @@
 *.x86f
 *~
 .#*
+
+var/
+ext/
+doc/whitepaper/*/*.log
