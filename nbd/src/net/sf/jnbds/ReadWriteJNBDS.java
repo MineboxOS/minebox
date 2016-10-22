@@ -25,7 +25,8 @@ public class ReadWriteJNBDS extends AbstractJNBDS {
 		
 		try {
 			ReadWriteJNBDS jnbds = null;
-		    jnbds = new ReadWriteJNBDS( new ReadWriteRangeHandler( ( new SAXBuilder() ).build( args[ 3 ] ).getRootElement().getChild( "rangehandler" ) ) );
+			final Element rangehandler = (new SAXBuilder()).build(args[3]).getRootElement().getChild("rangehandler");
+			jnbds = new ReadWriteJNBDS( new ReadWriteRangeHandler(rangehandler) );
 			jnbds.listen( Integer.parseInt( args[ 1 ] ) );
 		}
 		catch( JDOMException ex1 ) {}
