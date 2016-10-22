@@ -1,0 +1,378 @@
+<html>
+<head>
+<title>Java Network Block Device Server</title>
+</head>
+
+<body>
+
+
+<h1>jnbds</h1>
+
+<p>
+Last Modified: 2005.05.16
+</p>
+<p>
+This is the home page for the Java Network Block Device Server, jnbds for short. There is also the <a href="http://sourceforge.net/projects/jnbds/">Sourceforge jnbds project page</a>, which has many project related tools and the source code itself.
+</p>
+<p>
+Warning: this code is alphaware. Look at it the wrong way and it will corrupt your data and dump core all over your disk. Still, in my limited tests it can read and write data correctly.
+</p>
+
+
+<h2>Background</h2>
+
+<p>
+The following information was taken from the project registration description:
+</p>
+<dl>
+<dd>
+<p>
+This project will develop a Java Network Block Device server. An NBD server allows a computer to act as a block device to a client (typically Linux) over a network. The client can format the emulated block device as any number of filesystems and use it transparently. The use of Java for an NBD server is appropriate because of Java's cross-platform nature, object-orientedness, threading, network support, and security features.
+</p>
+<p>
+The goal of this project is to create an open source Java NBD server which:
+<ul>
+<li>interoperates with existing NBD protocols.</li>
+<li>provides read and read/write modes.</li>
+<li>provides a "pluggable" backend so that new methods of hosting the block devices can be independently created. For example, File, VMWare disk, FTP, WebDAV, POP mail, Gmail, WORM, Compressed, etc.</li>
+<li>is simple.</li>
+<li>is tested extensively by Junit.</li>
+</li>
+</ul>
+</p>
+<p>
+Anticipated difficulties include understanding the NBD protocol, Java's threading capabilities, and implementing the more exotic backends.
+</p>
+</dd>
+</dl>
+
+
+<h2>Using jnbds</h2>
+
+<p>
+A quick-and-dirty guide:
+<ol>
+<li>Server: create the empty 10MB file: <code>dd if=/dev/zero of=nbd_file bs=1024 count=10240</code></li>
+<li>Server: start jnbds: <code>java ReadWriteJNBDS -p 0 -s structure.xml</code></li>
+<li>Linux client: <code>insmod nbd.ko</code></li>
+<li>Linux client: create the nbd node: <code>mknod /dev/nd0 b 43 0</code></li>
+<li>Linux client: get the nbd-client from the Sourceforge <a href="http://nbd.sourceforge.net">NBD</a> Project and do a <code>configure</code> and <code>make</code></li>
+<li>Linux client: start the nbd-client: <code>nbd-client server-ip port /dev/nd0</code></li>
+<li>Linux client: format the node: <code>mke2fs /dev/nd0</code></li>
+<li>Linux client: mount the node: <code>mount /dev/nd0 /mnt</code></li>
+<li>Enjoy.</li>
+</ol>
+</p>
+
+
+<h2>License</h2>
+
+jnbds is GPL software.
+
+
+<h2>Links</h2>
+
+<p>
+All versions of jnbds can be downloaded from the <a href="http://sourceforge.net/projects/jnbds/">jnbds Project</a> site, under the "[View ALL Project Files]" link.
+</p>
+<p>
+The <a href="http://sourceforge.net/projects/nbd">NBD</a> Project (http://sourceforge.net/projects/nbd) has more information about the NBD protocol, plus Unix client software and Unix/Windows server software.
+</p>
+
+
+<h2>News</h2>
+
+<dl>
+
+<dt>2005.04.16</dt>
+<dd>
+<p>
+It's been almost a month since my last update -- much has been accomplished.
+</p>
+<p>
+Most of that month was spent thinking about fundamental issues: how do I design a system which can support advanced capabilities like versioning and caching and yet still be able to use Backends which support very different semantics, like File, FTP, or Email? After much agonizing/thought, I settled on using an embedded DB in the RangeHandler layer: the DB tracks how blocks are assigned to keys, how blocks are aggregated together into blocks of blocks (BoBs, which can be any size, like 64 KB or 4 MB), and in future versions will track versions of blocks and even optimize access to blocks (LRU). Seems like an easy decision to make (to put the intelligence into the RangeHandler), but the problem is that jnbds is a stack of code, and therefor there isn't really a perfect layer in which to put a piece of code.
+</p>
+<p>
+The rest of my time was spent thinking about the design of jnbds. Beyond simply breaking jnbds into three layers (Server, RangeHandler, and Backend), I wondered what Patterns would be applicable. So I spent quite a bit of time looking through my Design Patterns book. There're many interesting Patterns in that book, and no doubt I could use many of them, but right now I can only positively say the following:
+</p>
+<dl>
+
+<p>
+<dt>Server</dt>
+<dd>
+The ReadJNBDS and ReadWriteJNBDS Classes now have their own main() methods. This is to make it explicit that the server can be in two separate modes, and moreover, gets rid of a switch (for turning on or off readwrite mode). I'm not sure if this is a Design Pattern -- it's probably more of a Refactoring.
+</dd>
+</p>
+
+<p>
+<dt>RangeHandler</dt>
+<dd>
+The intelligence of jnbds is now centered in the RangeHandler: it uses a small embedded DB to track how blocks are being mapped to keys, and in the future will track access patterns. The Strategy Pattern is appropriate, I think.
+</dd>
+</p>
+
+<p>
+<dt>Backend</dt>
+<dd>
+Once I realized how useful it would be to chain Backends together the Patterns fell into place: Pipe and Filter, Composite, and perhaps Decorator. Also extremely helpful is the State pattern, which is used internally to handle Closed, Readable, and ReadWritable states.
+</dd>
+</p>
+
+</dl>
+
+<p>
+While the Design Patterns book is excellent, it doesn't cover server design issues: threading and (a)synchronous modes (although there are the Command and Chain of Command Patterns). Also, its viewpoint is about as far away from the code as one can get; happily, my Refactoring book is the opposite and I hope it will help me clean up the code, especially in regards to its error handling abilities.
+</p>
+<p>
+An irony with my design of jnbds is that there isn't a good reason to code any of the "exotic" Backends (like Email) because the Backends are (supposed to be) indistinguishable from each other. (In other words, the FileBackend works perfectly, so it can be used for all testing. Once jnbds is "perfect", the GmailBackend can be written.) So, the Software Engineer in me keeps nagging about proper design and error handling, whereas the Hacker in me wants to set up a stripe of Gmail accounts. It's annoying. :)
+</p>
+<p>
+About the contents of this release: perhaps the biggest improvement is the use of an xml file to specify the structure of jnbds. In it goes the config data for the different layers and how the Backends are chained together. Thanks to the magic of Java's ClassLoader, I've been able to create a tree of Backends like this, for example: CachingBackend( ZipBackend( RAID0Backend( FTPBackend, FTPBackend ) ), FileBackend, FileBackend ).
+</p>
+<p>
+Unfortunately, given that this software is so immature there are still many things that need to be worked on:
+<ul>
+<li>
+The CachingBackend is single-threaded so write-backs block, and it implements a random replacement algorithm instead of an LRU ("make it right, then make it fast").
+</li>
+<li>
+The RAID0Backend is single-threaded so the stripes do little more than aggregate multiple Backends into one storage space.
+</li>
+<li>
+The contents of the RangeHandler DB are stored locally -- they should be stored in the Backend.
+</li>
+<li>
+There are many error conditions being reported -- unfortunately they are usually ignored.
+</li>
+<li>
+More (or how about some) Junit Tests, more Javadoc, more User Docs, etc.
+</li>
+</ul>
+</p>
+<p>
+It feels like I've rewritten jnbds every two weeks since I started the project. Now, however, I think I've settled on a design that will work well for my limited use cases. A stable design and more software engineering will allow me to produce more robust and usable versions of jnbds.
+</p>
+</dd>
+
+<dt>2005.03.22</dt>
+<dd>
+<p>
+In the last four days I've been hacking up a storm and have ended up with... less functional software. However, my understanding of the semantics of what the software is supposed to do has improved ten-fold. In other words, I ripped the software to pieces and am redesigning it from the ground up. It currently supports the 'file' Backend, but if my new design is correct, 'ftp' and 'sql' should be easy to implement (naively).
+</p>
+<p>
+As I said, my understanding has improved a great deal. For example:
+<ul>
+<li>
+There is a whole stack of software running on the Client that takes care of caching, queuing and "dirty" blocks, disk scheduling, and journalling. jnbds shouldn't need to care about those things!
+</li>
+<li>
+I haven't quite determined the exact requirements for the Backends, but essentially they only need to:
+<ol>
+<li>
+Not lose blocks. (Right?)
+</li>
+<li>
+Return the correct data. (Right?)
+</li>
+<li>
+Return true if and only if a block is correctly written.
+</li>
+</ol>
+On the other hand, could a RAID setup handle missing or corrupt blocks? Probably, but only to a certain extent. Of the three requirements, I think only #3 must be true in all cases.
+</li>
+<li>
+There are three layers to jnbds (today at least):
+<ol>
+<li>
+The Server listening for connections from Clients, parsing their data streams, and issuing requests to the "Range Handler" layer.
+</li>
+<li>
+The Range Handler takes requests to read or write blocks, implements different semantics (overwrite, versioned, or worm), then passes the requests to the Backend(s). (It could be possible to have multiple Backends here, but I think performance would be better if the Client used RAID on multiple jnbds Servers. Perhaps the only case not would be, for example, multiple ftp accounts on the same server.)
+</li>
+<li>
+The Backend's purpose is to get and put blocks. It can implement any time/space strategies it sees fit.
+</li>
+</ol>
+</li>
+</ul>
+</p>
+</dd>
+
+<dt>2005.03.18</dt>
+<dd>
+<p>
+The 2005.03.18 release features both Read and ReadWrite FTP Backends. Multiple "Sequence of Ranges" files are stored on the ftp server and hold data. I've successfully been able to format an 8 MiB reiserfs, manage files on it, and do a check.
+</p>
+<p>
+Notes:
+<ul>
+<li>
+The Sequence of Ranges files only support one sequence right now. Eventually multiple ranges of bytes will be held in each file.
+</li>
+<li>
+There is no keep-alive for the ftp server. This is a major problem, but I couldn't figure out how to do it without introducing threading to the code, which I don't want to do yet. In the mean time it might be easier to write a little client program that writes data to a garbage file, which would be inefficient and work, so it's probably best. ;)
+</li>
+<li>
+Depending on your connection the latency can be a second or more. This means that the time to read a single byte or ten thousand bytes can be the same. Therefor, formatting the Backend with bigger blocks is probably a good idea.
+</li>
+<li>
+There's no support for atomic writes -- if a write dies before finishing then the Backend is effectively corrupted. <strong>However</strong>, a journalled filesystem might be able to handle that because the write did not return a "successful" flag and so the journal is still intact. I still want to implement atomic writes because I think it will lead to better performance down the line (see "reordering" below).
+</li>
+</ul>
+</p>
+<p>
+Thoughts on the code:
+<ul>
+<li>
+Cleanup and removal of duplicate code needs to be done, especially now that the SoRs have been introduced. The way return codes and Exceptions are handled is a mess, too.
+</li>
+<li>
+Testing. How do I test the code?
+</li>
+<li>
+Should I introduce the Backend which uses SoRs locally? I made it first to test the SoRs, then copied the code and replaced parts with the ftp code. I can't think of a great reason to use it versus the FileBackend, but it makes me wonder if all these Backends are just acting as a "virtual memory" system... design-wise it might make sense to have it around.
+</li>
+</ul>
+</p>
+<p>
+The absolute biggest design challenge I face stems from the "atomic" write code I want to introduce. Once write requests are serialized to the disk and then fulfilled later you are capable of performing "reordering". Read requests can also be reordered. As long as the requests don't overlap you can do them in any order you want (subject to the guarantee that the writes will succeed). The problem is simply to figure out where this reordering code lives. In the jnbds server? The Backend? In between, as a transactional queue? Should the write requests be serialized to the local disk, or to the Backend itself? Write performance will probably be a dog if the Backend is used (ftp has something like a 1 second latency), unless some clever reordering is done. Is there a way to minimize code duplication and maximize performance?
+</p>
+<p>
+I am beginning to believe that a "ranges-to-files-mapper" Class should be created that will manage the storage of ranges of data -- the Backends will be simple readers and writers of files. Yes...
+</p>
+</dd>
+
+<dt>2005.03.04</dt>
+<dd>
+<p>
+The 2005.03.04 release features both Read and ReadWrite DB Backends. Data is stored in small BLOBs in the database and the Server uses some simple SQL to retrieve and update the BLOBs. In my limited tests I have formatted a small 10 MiB ext2 filesystem (using Apache Derby as the DB), copied data to it, and successfully done an e2fsck. Currently this is mostly just a proof of concept -- with a better design the Server will be faster and support more users. With all the advanced features that DBs possess it's possible that a DB backed (block) filesystem could be very powerful.
+</p>
+<p>
+Right now the DB (via its Schema) only supports a single user, BLOBs of a fixed size, and no transactions or locking. I see the next version supporting:
+<ul>
+<li>
+Multiple users. DBs which aren't embedded can easily support multiple users and have all the blocks stored in the same table.
+</li>
+<li>
+BLOBs of variable size. This will allow blocks to be sliced into their optimum sizes based on collected performance metrics (which is easier said than done).
+</li>
+<li>
+DB-side coalescing of written data. The Server will write only new data and rely on the DB to merge the new data into the existing blocks.
+</li>
+<li>
+Transactions. If the Server encounters a problem the writes can be rolled back, although I'm not sure of the usefullness of this given the "block nature" of the storage.
+</li>
+<li>
+Locking. Individual writes will lock the DB so that the data can be written to the correct blocks (ie, rows). However, given that there are no logical beginnings and ends to the stream of reads and writes, is proper multi-user locking handled at the filesystem level?
+</li>
+</ul>
+</p>
+<p>
+Lots of questions, not many answers.
+</p>
+</dd>
+
+<dt>2005.02.16</dt>
+<dd>
+<p>
+The 2005.02.16 release features Read and ReadWrite servers. (See the 2005.02.11 entry for design notes.) The default behavior is read-only -- to get read-write a -rw has to appended to the command line.
+</p>
+<p>
+This release also has a bit of javadoc and a few junit tests. More extensive tests will require me to write half of the Client.
+</p>
+</dd>
+
+<dt>2005.02.15</dt>
+<dd>
+<p>
+I've been thinking that the next version of jnbds will contain a read-only Server that allows multiple Clients to read simultaneously. There are some obvious difficulties with this:
+<ol>
+<li>
+Multiple reads on the same file means some form of locking so that the "file pointer" doesn't encounter a race condition. But you've now got yourself a disk scheduler! So, perhaps there are ways of handing the requests off to the OS.
+</li>
+<li>
+Denial of Service can be achieved by Clients demanding blocks 0..N. All sorts of security procedures can be implemented to handle this scenario.
+</li>
+<li>
+The Server uses long-lived tcp/ip connections which might not be appropriate in this case. A connection pool could be created and Clients would line up to get one -- if a Client wanted to connect, but the pool was empty, the Server could drop an idle Client. Hmmm... isn't that just a web server?
+</li>
+</ol>
+</p>
+</dd>
+
+<dt>2005.02.15</dt>
+<dd>
+<p>
+Junit is interesting because it forces you to think hard about how to effectively test your code.
+</p>
+<p>
+To properly test jnbds I think I will have to implement half of the Client: the "top" half which implements the protocol, not the "bottom" half which interfaces with the kernel. Some corner cases will be tested, and probably lots of random reads, but what worries me is that I'm not entirely sure how the protocol works. Therefor, writing a Server and Client that work together doesn't tell me much -- only tests with 3rd party Servers and Clients would be truely helpful.
+</p>
+</dd>
+
+<dt>2005.02.13</dt>
+<dd>
+<p>
+I've been bothered by the Least Recently Used data-structure used for caching for a long time. The idea that access patterns can be efficiently represented by a one dimensional data-structure is laughable. In my mind the relationship between blocks is fractal: there isn't two, three, or even ten variables that can represent the relationships between blocks. Instead, there is a "fractional" number of variables.
+</p>
+<p>
+Here's how I imagine the algorithm:
+<ol>
+<li>
+Record the sequence of block accesses to a file. So, 10, 3, 900, 600, etc. This would be in a thread, I suppose.
+</li>
+<li>
+Create a graph data-structure which contains "block" nodes and where each node contains edges to the blocks that were accessed after. Multiple edges are necessary, I think, to capture frequent accesses. Note that this graph only captures "pairs" of accesses; ie, (10, 3) and (3, 900) -- there's no info about (10, 3, 900).
+</li>
+<li>
+Traverse the graph and look for clusters of block accesses (easier said than done). These clusters of blocks should be considered as one "unit" when making decisions about caching, storage on Gmail, etc. In other words, the blocks' physical layout will no longer match their logical layout.
+</li>
+</ol>
+</p>
+<p>
+Would the above algorithm work better than an LRU? It captures how blocks relate to each other, in that if block 10 was accessed, then blocks 3, 900, and 600 will probably be accessed too, regardless of how long ago those blocks were accessed. Perhaps layering an LRU on top would improve performance further, or there might be a way of encoding time information into the graph.
+</p>
+</dd>
+
+<dt>2005.02.12</dt>
+<dd>
+<p>
+Next up is documentation and junit. Actually, creating good junit tests is hard. But I really want to do it to see how it improves the code.
+</p>
+<p>
+After that will be more backends. It's going to be quite the challenge because some backends, like Gmail, won't be able to support 102,400 4 KB messages. Instead, they will have to use Blocks of Blocks (BoBs). Synchronous writes could be very slow if the BoBs are too large, since the BoBs will have to be written to the backend synchronously.
+</p>
+</dd>
+
+<dt>2005.02.11</dt>
+<dd>
+<p>
+The next release is going to feature Read and ReadWrite servers. I thought long and hard about it and decided that a ReadWrite server Is Not A Read server. This means you can't use a ReadWrite server in place of a Read server. The reason is because of security: no matter how many layers of clever security you have, there's always the chance that someone will crack them and turn your "read-only" ReadWrite server into a "read/write" server. But that's impossible with the Read server because it has no ability to write. In other words, the Read server doesn't understand the "write" portions of the NBD protocol.
+</p>
+<p>
+On the other hand, the ReadWriteBackend Is A ReadBackend. This makes it easier to use from an OO standpoint. The security is handled by the server.
+</p>
+<p>
+But, what do I know? Perhaps I have it backwards.
+</p>
+</dd>
+
+<dt>2005.02.09</dt>
+<dd>
+<p>
+First public release. I've been able to mount and format the block device as an ext2 filesystem. However, to shutdown the server one still has to control-c it, which doesn't seem too elegant.
+</p>
+</dd>
+
+</dl>
+
+<hr/>
+
+<p>
+<a href="http://sourceforge.net"><img src="http://sourceforge.net/sflogo.php?group_id=130835&amp;type=2" width="125" height="37" border="0" alt="SourceForge.net Logo" style="float: right"/></a>
+
+Copyright 2005 Greg Gabelmann
+</p>
+
+</body>
+</html>

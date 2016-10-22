@@ -1,0 +1,41 @@
+<jnbds>
+	<rangehandler>
+		<bob_size>65536</bob_size>
+		<jdbc>
+			<connect>jdbc:hsqldb:file:jnbds/jnbds</connect>
+			<user>sa</user>
+			<password>sa</password>
+		</jdbc>
+		<backend class="net.sf.jnbds.CachingBackend">
+			<cache_size>50</cache_size>
+			<real>
+				<backend class="net.sf.jnbds.ZipBackend">
+					<backend class="net.sf.jnbds.RAID0Backend">
+						<backends>
+							<backend class="net.sf.jnbds.FTPBackend">
+								<server>a</server>
+								<user>b</user>
+								<password>c</password>
+							</backend>
+							<backend class="net.sf.jnbds.FTPBackend">
+								<server>d</server>
+								<user>e</user>
+								<password>f</password>
+							</backend>
+						</backends>
+					</backend>
+				</backend>
+			</real>
+			<read>
+				<backend class="net.sf.jnbds.FileBackend">
+					<name>ReadCache</name>
+				</backend>
+			</read>
+			<write>
+				<backend class="net.sf.jnbds.FileBackend">
+					<name>WriteCache</name>
+				</backend>
+			</write>
+		</backend>
+	</rangehandler>
+</jnbds>
