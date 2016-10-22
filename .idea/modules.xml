@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/blackhole/blackhole.iml" filepath="$PROJECT_DIR$/blackhole/blackhole.iml" />
       <module fileurl="file://$PROJECT_DIR$/mineblimp.iml" filepath="$PROJECT_DIR$/mineblimp.iml" />
       <module fileurl="file://$PROJECT_DIR$/nbd/nbd.iml" filepath="$PROJECT_DIR$/nbd/nbd.iml" />
     </modules>
