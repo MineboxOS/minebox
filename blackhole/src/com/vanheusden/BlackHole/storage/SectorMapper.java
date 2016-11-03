@@ -220,9 +220,8 @@ public class SectorMapper {
 
 	public boolean verifySpaceAvailable(long size) {
 		readLock();
-		for(int index=0; index<partitionToLun.size(); index++) {
-			int p = partitionToLun.get(index);
-			if (p == -1) {
+		for (Integer aPartitionToLun : partitionToLun) {
+			if (aPartitionToLun == -1) {
 				size -= GB;
 				if (size <= 0)
 					break;

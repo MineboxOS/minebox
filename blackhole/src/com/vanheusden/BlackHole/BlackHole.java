@@ -175,13 +175,13 @@ public class BlackHole {
 			Log.setLogfile(config.getLogfile());
 			Log.setLogfileDebugLevel(config.getLogfileDebugLevel());
 
-			if (config.getDebugLevel() == LogLevel.LOG_DEBUG) {
+			/*if (config.getDebugLevel() == LogLevel.LOG_DEBUG) {
 				cc = new Thread(new ConcurrencyChecker());
 				std = new StackTraceDotter();
 				stdt = new Thread(std);
 				cc.start();
 				stdt.start();
-			}
+			}*/
 
 			uncleanPath = config.getDatastorePath() + File.separator + uncleanCheckName;
 			uncleanFile = new File(uncleanPath);
@@ -258,7 +258,8 @@ public class BlackHole {
 					System.err.println("not enough space in datastore for new lun " + current[3]);
 					System.exit(1);
 				}
-				if (lm.addLun(ProtocolType.PROTOCOL_NBD, new String [] { current[0], current[1] }, size, current[3]) == -1) {
+				final String assumeBarriers = "false";
+				if (lm.addLun(ProtocolType.PROTOCOL_NBD, new String [] { current[0], current[1] , assumeBarriers}, size, current[3]) == -1) {
 					System.err.println("Error creating lun");
 					System.exit(1);
 				}

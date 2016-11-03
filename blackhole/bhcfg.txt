@@ -1,0 +1,6 @@
+block-size=4096
+#size=104857600
+size=10737418240
+local-user-file=bhdata.dat
+http-listen-port=8877
+path=./datastore
