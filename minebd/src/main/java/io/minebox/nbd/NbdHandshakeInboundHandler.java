@@ -1,11 +1,11 @@
-package de.m3y3r.nnbd;
+package io.minebox.nbd;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import de.m3y3r.nnbd.ep.ExportProvider;
-import de.m3y3r.nnbd.ep.ExportProviders;
+import io.minebox.nbd.ep.ExportProvider;
+import io.minebox.nbd.ep.ExportProviders;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;

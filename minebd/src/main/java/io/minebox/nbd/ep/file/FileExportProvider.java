@@ -1,4 +1,4 @@
-package de.m3y3r.nnbd.ep.file;
+package io.minebox.nbd.ep.file;
 
 import java.io.File;
 import java.io.IOException;
@@ -6,7 +6,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-import de.m3y3r.nnbd.ep.ExportProvider;
+import io.minebox.nbd.ep.ExportProvider;
 
 public class FileExportProvider implements ExportProvider {
 

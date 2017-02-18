@@ -1,4 +1,4 @@
-package de.m3y3r.nnbd;
+package io.minebox.nbd;
 
 import java.net.InetSocketAddress;
 import java.util.logging.Level;

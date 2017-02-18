@@ -1,4 +1,4 @@
-package de.m3y3r.nnbd.ep.gd;
+package io.minebox.nbd.ep.gd;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -7,25 +7,13 @@ import java.util.logging.Logger;
 
 import javax.ws.rs.core.MultivaluedMap;
 
-import org.glassfish.jersey.uri.UriComponent;
-
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandler;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.http.DefaultHttpResponse;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpMessage;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.*;
+import org.glassfish.jersey.uri.UriComponent;
 
 public class OAuthCallbackServer implements Runnable {
 

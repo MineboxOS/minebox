@@ -1,4 +1,4 @@
-package de.m3y3r.nnbd;
+package io.minebox.nbd;
 
 public class Protocol {
 

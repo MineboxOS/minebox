@@ -1,8 +1,7 @@
-package de.m3y3r.nnbd.ep.gd;
+package io.minebox.nbd.ep.gd;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -18,12 +17,11 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import io.minebox.nbd.ep.ExportProvider;
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.MultiPart;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
-
-import de.m3y3r.nnbd.ep.ExportProvider;
 
 public class GdExportProvider implements ExportProvider {
 

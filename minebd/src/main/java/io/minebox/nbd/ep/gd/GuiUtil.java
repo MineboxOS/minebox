@@ -1,4 +1,4 @@
-package de.m3y3r.nnbd.ep.gd;
+package io.minebox.nbd.ep.gd;
 
 import java.io.IOException;
 import java.net.URI;

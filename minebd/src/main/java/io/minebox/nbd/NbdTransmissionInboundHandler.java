@@ -1,10 +1,10 @@
-package de.m3y3r.nnbd;
+package io.minebox.nbd;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-import de.m3y3r.nnbd.ep.ExportProvider;
+import io.minebox.nbd.ep.ExportProvider;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;

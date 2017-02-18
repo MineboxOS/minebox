@@ -1,4 +1,4 @@
-package de.m3y3r.nnbd.ep.gd;
+package io.minebox.nbd.ep.gd;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -17,10 +17,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
-import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
-
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 
 public class OAuth extends ChannelInboundHandlerAdapter implements Closeable {
 

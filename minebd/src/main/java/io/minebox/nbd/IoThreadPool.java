@@ -1,4 +1,4 @@
-package de.m3y3r.nnbd;
+package io.minebox.nbd;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;

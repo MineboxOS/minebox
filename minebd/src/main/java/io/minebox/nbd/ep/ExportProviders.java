@@ -1,9 +1,8 @@
-package de.m3y3r.nnbd.ep;
+package io.minebox.nbd.ep;
 
 import java.io.File;
 
-import de.m3y3r.nnbd.ep.file.FileExportProvider;
-import de.m3y3r.nnbd.ep.gd.GdExportProvider;
+import io.minebox.nbd.ep.file.FileExportProvider;
 
 public class ExportProviders {
 	public static ExportProvider getNewDefault(int clientFlags) {

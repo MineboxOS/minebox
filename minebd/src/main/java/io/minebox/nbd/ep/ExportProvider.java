@@ -1,4 +1,4 @@
-package de.m3y3r.nnbd.ep;
+package io.minebox.nbd.ep;
 
 import java.io.Closeable;
 import java.io.IOException;
