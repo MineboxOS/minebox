@@ -13,3 +13,4 @@ doc/whitepaper/*/*.log
 
 keymanager/api/build/
 keymanager/.gradle/
+*.img
