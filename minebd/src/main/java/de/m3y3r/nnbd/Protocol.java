@@ -33,4 +33,5 @@ public class Protocol {
 	public static final int NBD_REP_ERR_INVALID = (3 | NBD_REP_FLAG_ERROR); /** Client issued an invalid request */
 	public static final int NBD_REP_ERR_PLATFORM = (4 | NBD_REP_FLAG_ERROR);
 
+	public static final int REQUEST_MAGIC = 0x25609513;
 }

@@ -9,7 +9,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
-import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 
 public class NbdTransmissionInboundHandler extends ByteToMessageDecoder {
@@ -51,7 +50,7 @@ public class NbdTransmissionInboundHandler extends ByteToMessageDecoder {
 				if(cmdType == Protocol.NBD_CMD_WRITE && !hasMin(in, (int) cmdLength))
 					return;
 
-				processOption(ctx, in);
+				processOperation(ctx, in);
 				state = State.TM_RECEIVE_CMD;
 				break;
 			}
@@ -62,7 +61,7 @@ public class NbdTransmissionInboundHandler extends ByteToMessageDecoder {
 			return in.readableBytes() >= wanted;
 	}
 
-	private void processOption(ChannelHandlerContext ctx, ByteBuf in) throws IOException {
+	private void processOperation(ChannelHandlerContext ctx, ByteBuf in) throws IOException {
 
 		switch(cmdType) {
 		case Protocol.NBD_CMD_READ:
@@ -133,7 +132,7 @@ public class NbdTransmissionInboundHandler extends ByteToMessageDecoder {
 	}
 
 	private void receiveTransmissionCommand(ChannelHandlerContext ctx, ByteBuf message) throws IOException {
-		if(message.readInt() != 0x25609513) {
+		if(message.readInt() != Protocol.REQUEST_MAGIC) {
 			throw new IllegalArgumentException("Invalid request magic!");
 		}
 
