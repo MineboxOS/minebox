@@ -1,12 +1,10 @@
 package io.minebox.nbd.ep;
 
-import java.io.File;
-
-import io.minebox.nbd.ep.file.FileExportProvider;
+import io.minebox.nbd.ep.chunked.MineboxExport;
 
 public class ExportProviders {
-	public static ExportProvider getNewDefault(int clientFlags) {
-		return new FileExportProvider(new File("nbd-server"));
-//		return new GdExportProvider();
-	}
+    public static ExportProvider getNewDefault(int clientFlags) {
+        return new MineboxExport();
+//        return new FileExportProvider(new File("nbd-server"));
+    }
 }

@@ -13,7 +13,9 @@ repositories {
 }
 
 dependencies {
-    compile group: 'com.google.guava', name: 'guava', version: '19.0'
+    compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.1'
+
+    compile group: 'com.google.guava', name: 'guava', version: '21.0'
 
     compile 'org.glassfish.jersey.media:jersey-media-json-processing:2.23.2'
 
