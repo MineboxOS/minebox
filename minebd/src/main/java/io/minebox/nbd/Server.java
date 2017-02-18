@@ -12,23 +12,22 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
-public class Server implements Runnable {
+public class Server {
 
 	private int port;
 	private static final Logger logger = Logger.getLogger(Server.class.getName());
 
-	public Server(int port) {
+	private Server(int port) {
 		this.port = port;
 	}
 
 	public static void main(String... args) {
 		int nbdPort = Integer.parseInt(args.length > 1 && args[0] != null ? args[0] : "10809");
 		Server s = new Server(nbdPort);
-		s.run();
+		s.startServer(nbdPort);
 	}
 
-	@Override
-	public void run() {
+	private void startServer(int nbdPort) {
 		EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
 		try {
 			ServerBootstrap b = new ServerBootstrap();
@@ -42,6 +41,7 @@ public class Server implements Runnable {
 					}
 				});
 			ChannelFuture f = b.bind().sync();
+			logger.info("started up minebd on port " + nbdPort);
 			f.channel().closeFuture().sync();
 		} catch (InterruptedException e) {
 			logger.log(Level.SEVERE, "Int1", e);

@@ -33,5 +33,9 @@ public class Protocol {
 	public static final int NBD_REP_ERR_INVALID = (3 | NBD_REP_FLAG_ERROR); /** Client issued an invalid request */
 	public static final int NBD_REP_ERR_PLATFORM = (4 | NBD_REP_FLAG_ERROR);
 
-	public static final int REQUEST_MAGIC = 0x25609513;
+//	https://github.com/NetworkBlockDevice/nbd/blob/master/doc/proto.md
+
+    public static final int NBD_REQUEST_MAGIC = 0x25609513; //
+    public static final long NBDMAGIC = 0x4e42444d41474943L; //(ASCII 'NBDMAGIC') (also known as the INIT_PASSWD)
+    public static final long IHAVEOPT = 0x49484156454F5054L; // (ASCII 'IHAVEOPT');
 }

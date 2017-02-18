@@ -3,6 +3,7 @@ package io.minebox.nbd;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.logging.Logger;
 
 import io.minebox.nbd.ep.ExportProvider;
 import io.minebox.nbd.ep.ExportProviders;
@@ -13,6 +14,8 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 public class NbdHandshakeInboundHandler extends ByteToMessageDecoder {
 
     private enum State {HS_CLIENT_FLAGS, HS_OPTION_HAGGLING, HS_OPTION_DATA}
+
+    private static final Logger logger = Logger.getLogger(NbdHandshakeInboundHandler.class.getName());
 
     ;
     private State state;
@@ -52,11 +55,10 @@ public class NbdHandshakeInboundHandler extends ByteToMessageDecoder {
                     if (!hasMin(in, (int) currentOptionLen))
                         return;
 
-                    Object o = processOption(ctx, in);
-                    System.out.println("got option:" + o);
-//				if(o != null) {
-//					break out;
-//				}
+                    String o = processOption(ctx, in);
+                    if (o != null) {
+                        logger.info(() -> "got option:" + o);
+                    }
 
                     state = State.HS_OPTION_HAGGLING;
                     break;
@@ -64,7 +66,7 @@ public class NbdHandshakeInboundHandler extends ByteToMessageDecoder {
         }
     }
 
-    private Object processOption(ChannelHandlerContext ctx, ByteBuf in) throws IOException {
+    private String processOption(ChannelHandlerContext ctx, ByteBuf in) throws IOException {
         switch (currentOption) {
             case Protocol.NBD_OPT_EXPORT_NAME:
                 CharSequence exportName = in.readCharSequence((int) currentOptionLen, Charset.forName("UTF-8"));
@@ -93,7 +95,7 @@ public class NbdHandshakeInboundHandler extends ByteToMessageDecoder {
                 // Handshake complete, switch to transmission phase
                 ctx.pipeline().addLast("transmission", new NbdTransmissionInboundHandler(ep));
                 ctx.pipeline().remove(this);
-                return exportName;
+                return exportName.toString();
 
             default:
                 sendHandshakeOptionHagglingReply(ctx, currentOption, Protocol.NBD_REP_ERR_UNSUP, null);
@@ -108,8 +110,8 @@ public class NbdHandshakeInboundHandler extends ByteToMessageDecoder {
     private void initHandshake(ChannelHandlerContext ctx) throws IOException {
 		/* initiate handshake */
         ByteBuf bb = ctx.alloc().buffer(20);
-        bb.writeLong(0x4e42444d41474943l);
-        bb.writeLong(0x49484156454F5054l);
+        bb.writeLong(Protocol.NBDMAGIC);
+        bb.writeLong(Protocol.IHAVEOPT);
 
         // "handshake flags"
         handshakeFlags = Protocol.NBD_FLAG_FIXED_NEWSTYLE & Protocol.NBD_FLAG_NO_ZEROES;
@@ -119,13 +121,16 @@ public class NbdHandshakeInboundHandler extends ByteToMessageDecoder {
 
     private void receiveHandshakeClientFlag(ChannelHandlerContext ctx, ByteBuf message) throws IOException {
         clientFlags = message.readInt();
+        logger.info("got client flags " + clientFlags);
+//
         /*if ((clientFlags & Protocol.NBD_FLAG_FIXED_NEWSTYLE) == 0)
             ctx.channel().close();*/
     }
 
     private void receiveHandshakeOption(ChannelHandlerContext ctx, ByteBuf message) throws IOException {
 
-        if (message.readLong() != 0x49484156454F5054l)
+        final long ihaveopt = message.readLong();
+        if (ihaveopt != Protocol.IHAVEOPT)
             throw new IllegalArgumentException("Invalid negotiation magic != 'IHAVEOPT'");
 
         int option = message.readInt();
@@ -133,7 +138,7 @@ public class NbdHandshakeInboundHandler extends ByteToMessageDecoder {
 
         currentOption = option;
         currentOptionLen = optionLen;
-
+        logger.fine("currentOption " + currentOption + " currentOptionLen " + currentOptionLen);
         state = State.HS_OPTION_DATA;
     }
 

@@ -132,7 +132,7 @@ public class NbdTransmissionInboundHandler extends ByteToMessageDecoder {
 	}
 
 	private void receiveTransmissionCommand(ChannelHandlerContext ctx, ByteBuf message) throws IOException {
-		if(message.readInt() != Protocol.REQUEST_MAGIC) {
+		if(message.readInt() != Protocol.NBD_REQUEST_MAGIC) {
 			throw new IllegalArgumentException("Invalid request magic!");
 		}
 
