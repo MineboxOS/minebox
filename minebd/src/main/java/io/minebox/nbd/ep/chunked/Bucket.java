@@ -7,6 +7,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,15 +16,18 @@ class Bucket {
 
     private final FileChannel channel;
     private final long baseOffset;
-    private long upperBound;
+    /**
+     * highest valid offset, given minimum length of 1
+     */
+    private final long upperBound;
     private RandomAccessFile randomAccessFile;
     private final String filename;
     final long bucketNumber;
 
     Bucket(long bucketNumber, String parentDir) {
         this.bucketNumber = bucketNumber;
-        baseOffset = bucketNumber * MineboxExport.BUCKET_SIZE; //rounded down
-        upperBound = baseOffset + MineboxExport.BUCKET_SIZE;
+        baseOffset = bucketNumber * MineboxExport.BUCKET_SIZE;
+        upperBound = baseOffset + MineboxExport.BUCKET_SIZE - 1;
         final String leadingZeros = String.format("%0" + MineboxExport.FILENAME_DIGITS + "X", bucketNumber);
         filename = "minebox_v1_" + leadingZeros + ".dat";
         final File parentDirF = new File(parentDir);
@@ -89,25 +93,33 @@ class Bucket {
         return bb;
     }
 
-    private void checkRange(long offset, long length) {
-        if (offset < baseOffset) {
+    @VisibleForTesting
+    void checkRange(long offset, long length) {
+        if (length < 1) {
+            throw new UnsupportedOperationException("she said it's too small: " + length);
+        } else if (offset < baseOffset) {
             throw new UnsupportedOperationException("unable to get offset " + offset + " smaller than my base " + baseOffset);
         } else {
-            if (offset + length >= upperBound) {
-                throw new UnsupportedOperationException("unable to get offset " + offset + " greater than my base " + upperBound);
+            final long lastIndex = offset + length - 1;
+            if (lastIndex > upperBound) {
+                throw new UnsupportedOperationException("unable to get offset " + lastIndex + " greater than my upper bound " + upperBound);
             }
         }
     }
 
     void flush() {
         try {
-            channel.force(true);
+            //todo make sure this triggers after potentially different pending writes have their lock
+            synchronized (this) {
+                channel.force(true);
+            }
         } catch (IOException e) {
             logger.warn("unable to flush file {}", filename);
         }
     }
 
     void putBytes(long offset, ByteBuffer message) throws IOException {
+        checkRange(offset, message.remaining());
         synchronized (this) {
             channel.position(offsetInThisBucket(offset));
             channel.write(message);
@@ -116,5 +128,22 @@ class Bucket {
 
     private long offsetInThisBucket(long offset) {
         return offset - baseOffset;
+    }
+
+    public void trim(long offset, long length) throws IOException {
+        checkRange(offset, length);
+        final ByteBuffer bb = ByteBuffer.allocate((int) length);
+        bb.put(new byte[(int) length]);
+        bb.flip();
+        putBytes(offset, bb);
+
+    }
+
+    public long getBaseOffset() {
+        return baseOffset;
+    }
+
+    public long getUpperBound() {
+        return upperBound;
     }
 }

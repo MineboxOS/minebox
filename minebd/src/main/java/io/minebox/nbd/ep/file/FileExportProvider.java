@@ -61,7 +61,7 @@ public class FileExportProvider implements ExportProvider {
     }
 
     @Override
-    public void trim() {
+    public void trim(long offset, long length) {
         throw new UnsupportedOperationException();
     }
 

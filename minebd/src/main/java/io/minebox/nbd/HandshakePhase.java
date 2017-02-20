@@ -83,7 +83,10 @@ public class HandshakePhase extends ByteToMessageDecoder {
 			/* build response */
                 ByteBuf resp = ctx.alloc().buffer(256);
                 resp.writeLong(exportSize);
-                short transmissionFlags = Protocol.NBD_FLAG_HAS_FLAGS | Protocol.NBD_FLAG_SEND_FLUSH;
+                short transmissionFlags =
+                        Protocol.NBD_FLAG_HAS_FLAGS
+                                | Protocol.NBD_FLAG_SEND_FLUSH
+                                | Protocol.NBD_FLAG_SEND_TRIM;
                 resp.writeShort(transmissionFlags);
 
                 if ((clientFlags & Protocol.NBD_FLAG_NO_ZEROES) == 0) {

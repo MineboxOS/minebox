@@ -16,5 +16,5 @@ public interface ExportProvider extends Closeable {
 
     void flush() throws IOException;
 
-    void trim() throws IOException;
+    void trim(long offset, long length) throws IOException;
 }

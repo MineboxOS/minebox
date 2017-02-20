@@ -10,12 +10,14 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TransmissionPhase extends ByteToMessageDecoder {
 
     private enum State {TM_RECEIVE_CMD, TM_RECEIVE_CMD_DATA}
 
-    ;
+    private static final Logger logger = LoggerFactory.getLogger(TransmissionPhase.class);
     private State state = State.TM_RECEIVE_CMD;
 
     private final ExportProvider exportProvider;
@@ -111,15 +113,25 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 break;
             }
             case Protocol.NBD_CMD_FLUSH: {
+                final long cmdOffset = this.cmdOffset;
+                final long cmdLength = this.cmdLength;
+                //offset + length must be zero
+                final long cmdHandle = this.cmdHandle;
+
+                logger.debug("got flush..");
             /* we must drain all NBD_CMD_WRITE and NBD_WRITE_TRIM from the queue
-			 * before processing NBD_CMD_FLUSH
+             * before processing NBD_CMD_FLUSH
 			 */
-//			exportProvider.flush(exportName);
+                exportProvider.flush();
                 sendTransmissionSimpleReply(ctx, 0, cmdHandle, null);
                 break;
             }
             case Protocol.NBD_CMD_TRIM: {
-//			exportProvider.trim(exportName);
+                final long cmdOffset = this.cmdOffset;
+                final long cmdLength = this.cmdLength;
+                final long cmdHandle = this.cmdHandle;
+
+                exportProvider.trim(cmdOffset, cmdLength);
                 sendTransmissionSimpleReply(ctx, 0, cmdHandle, null);
                 break;
             }

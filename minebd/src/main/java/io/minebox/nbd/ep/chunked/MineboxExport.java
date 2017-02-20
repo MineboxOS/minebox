@@ -3,7 +3,9 @@ package io.minebox.nbd.ep.chunked;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.IntStream;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -12,6 +14,8 @@ import com.google.common.cache.RemovalListener;
 import io.minebox.nbd.ep.ExportProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static java.util.stream.Collectors.toList;
 
 public class MineboxExport implements ExportProvider {
 
@@ -91,8 +95,11 @@ public class MineboxExport implements ExportProvider {
     }
 
     private Bucket getBucket(long offset) throws IOException {
-        final Bucket bucket;
-        final long bucketNumber = bucketFromOffset(offset);
+        return getBucketFromIndex(bucketFromOffset(offset));
+    }
+
+    private Bucket getBucketFromIndex(long bucketNumber) throws IOException {
+        Bucket bucket;
         try {
             bucket = files.get(bucketNumber);
         } catch (ExecutionException e) {
@@ -108,8 +115,24 @@ public class MineboxExport implements ExportProvider {
     }
 
     @Override
-    public void trim() throws IOException {
+    public void trim(long offset, long length) throws IOException {
+        logger.debug("trimming {} bytes from offset {} to bucket", length, offset);
+        for (Integer bucketNumber : getBuckets(offset, length)) {
+            final Bucket bucket = getBucketFromIndex(bucketNumber);
+            final long start = Math.max(offset, bucket.getBaseOffset());
+            final long lengthForBucket = Math.min(bucket.getUpperBound(), offset + length) - start;
+            bucket.trim(start, lengthForBucket);
+        }
+    }
 
+    private List<Integer> getBuckets(long offset, long length) {
+        final long startIndex = bucketFromOffset(offset);
+        final long endIndex = bucketFromOffset(offset + length);
+        final List<Integer> ret = IntStream.range((int) startIndex, (int) endIndex + 1)
+                .boxed()
+                .collect(toList());
+        logger.debug("i see {} buckets at offset {} length {}", ret.size(), offset, length);
+        return ret;
     }
 
     @Override
