@@ -132,11 +132,15 @@ class Bucket {
 
     public void trim(long offset, long length) throws IOException {
         checkRange(offset, length);
-        final ByteBuffer bb = ByteBuffer.allocate((int) length);
-        bb.put(new byte[(int) length]);
-        bb.flip();
-        putBytes(offset, bb);
-
+        if (length == MineboxExport.BUCKET_SIZE) {
+            channel.truncate(0);
+            channel.force(true);
+        } else {
+            final ByteBuffer bb = ByteBuffer.allocate((int) length);
+            bb.put(new byte[(int) length]);
+            bb.flip();
+            putBytes(offset, bb);
+        }
     }
 
     public long getBaseOffset() {

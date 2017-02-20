@@ -120,7 +120,7 @@ public class MineboxExport implements ExportProvider {
         for (Integer bucketNumber : getBuckets(offset, length)) {
             final Bucket bucket = getBucketFromIndex(bucketNumber);
             final long start = Math.max(offset, bucket.getBaseOffset());
-            final long lengthForBucket = Math.min(bucket.getUpperBound(), offset + length) - start;
+            final long lengthForBucket = Math.min(bucket.getUpperBound() + 1, offset + length) - start;
             bucket.trim(start, lengthForBucket);
         }
     }
