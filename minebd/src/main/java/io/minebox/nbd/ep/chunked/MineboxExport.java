@@ -127,7 +127,7 @@ public class MineboxExport implements ExportProvider {
 
     private List<Integer> getBuckets(long offset, long length) {
         final long startIndex = bucketFromOffset(offset);
-        final long endIndex = bucketFromOffset(offset + length);
+        final long endIndex = bucketFromOffset(offset + length - 1);
         final List<Integer> ret = IntStream.range((int) startIndex, (int) endIndex + 1)
                 .boxed()
                 .collect(toList());
