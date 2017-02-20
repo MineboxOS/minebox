@@ -1,5 +1,6 @@
 package io.minebox.nbd;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
@@ -17,7 +18,7 @@ import com.mashape.unirest.http.exceptions.UnirestException;
  */
 public class Uploader {
 
-    //yes this password contains real money. but not enouch to make me figure out how to secure it for this test...
+    //yes this password contains real money. but not enough to make me figure out how to secure it for this test...
     public static final String PASSWORD = "fainted pumpkins awful adventure gnaw vortex nutshell sifting afoot hijack pride doctor lymph total reunion arena distance oozed vipers claim hockey damp sash calamity bowling arises riots jigsaw acumen";
     //    public static final String PASSWORD = "rage return onto madness abort vegan under inwardly madness stick swept tucks demonstrate duration viking oneself extra jabbed arsenic dotted renting orchid honked mighty onslaught batch tugs jagged absorb";
     public static final long SECONDS_2 = Duration.ofSeconds(2).toMillis();
@@ -25,9 +26,13 @@ public class Uploader {
 
     public static void main(String[] args) throws UnirestException, IOException {
         Unirest.setTimeouts(SECONDS_2, MINUTES_30);
-        final String command = "wallet/unlock";
-        final ImmutableMap<String, Object> params = ImmutableMap.of("encryptionpassword", PASSWORD);
-        siaCommand(command, params);
+        new ProcessBuilder("./siad")
+                .redirectError(ProcessBuilder.Redirect.PIPE)
+                .redirectInput(ProcessBuilder.Redirect.PIPE)
+                .redirectOutput(ProcessBuilder.Redirect.PIPE).directory(new File("/home/andreas/minebox/siablank"));
+
+
+        siaCommand("wallet/unlock", ImmutableMap.of("encryptionpassword", PASSWORD));
     }
 
     private static void siaCommand(String command, ImmutableMap<String, Object> params) throws UnirestException, IOException {
