@@ -15,6 +15,14 @@ import org.slf4j.LoggerFactory;
 
 public class MineboxExport implements ExportProvider {
 
+    final private Config config;
+
+    public static class Config {
+        public int maxOpenFiles = MAX_OPEN_FILES;
+        public final String parentDir = "minedbDat";
+        public long reportedSize = 1 * GIGABYTE;
+    }
+
     private static final Logger logger = LoggerFactory.getLogger(MineboxExport.class);
 
     //base-2 style size
@@ -27,24 +35,28 @@ public class MineboxExport implements ExportProvider {
 
     public static final long FILENAME_DIGITS = (long) Math.log(MAX_SUPPORTED_SIZE);
     public static final long BUCKET_SIZE = MEGABYTE * 10;
-    public static final CacheLoader<Long, Bucket> CACHE_LOADER = new CacheLoader<Long, Bucket>() {
-        @Override
-        public Bucket load(Long key) throws Exception {
-            logger.debug("starting to monitor bucket {}", key);
-            return new Bucket(key);
-        }
-    };
     public static final int MAX_OPEN_FILES = 20;
 
 
-    private final LoadingCache<Long, Bucket> files = CacheBuilder.newBuilder()
-            .maximumSize(MAX_OPEN_FILES)
-            .removalListener((RemovalListener<Long, Bucket>) notification -> {
-                logger.debug("no longer monitoring bucket {}", notification.getKey());
-                notification.getValue().close();
-            })
-            .build(CACHE_LOADER);
+    private final LoadingCache<Long, Bucket> files;
 
+    public MineboxExport(Config config) {
+        this.config = config;
+
+        files = CacheBuilder.newBuilder()
+                .maximumSize(config.maxOpenFiles)
+                .removalListener((RemovalListener<Long, Bucket>) notification -> {
+                    logger.debug("no longer monitoring bucket {}", notification.getKey());
+                    notification.getValue().close();
+                })
+                .build(new CacheLoader<Long, Bucket>() {
+                    @Override
+                    public Bucket load(Long key) throws Exception {
+                        logger.debug("starting to monitor bucket {}", key);
+                        return new Bucket(key, config.parentDir);
+                    }
+                });
+    }
 
     @Override
     public String create(CharSequence exportName, long size) throws IOException {
@@ -54,7 +66,7 @@ public class MineboxExport implements ExportProvider {
     @Override
     public long open(CharSequence exportName) throws IOException {
         logger.debug("opening {}", exportName);
-        return 1 * GIGABYTE; //todo read the total amount of potentially available space
+        return config.reportedSize;
     }
 
     @Override

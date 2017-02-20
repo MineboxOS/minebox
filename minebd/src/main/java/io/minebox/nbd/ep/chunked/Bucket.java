@@ -20,15 +20,15 @@ class Bucket {
     private final String filename;
     final long bucketNumber;
 
-    Bucket(long bucketNumber) {
+    Bucket(long bucketNumber, String parentDir) {
         this.bucketNumber = bucketNumber;
         baseOffset = bucketNumber * MineboxExport.BUCKET_SIZE; //rounded down
         upperBound = baseOffset + MineboxExport.BUCKET_SIZE;
         final String leadingZeros = String.format("%0" + MineboxExport.FILENAME_DIGITS + "d", bucketNumber);
         filename = "minebox" + leadingZeros + ".dat";
-        final File parentDir = new File("minedbDat");
-        parentDir.mkdirs();
-        final File file = new File(parentDir, filename);
+        final File parentDirF = new File(parentDir);
+        parentDirF.mkdirs();
+        final File file = new File(parentDirF, filename);
 
         ensureFileExists(file);
         try {
