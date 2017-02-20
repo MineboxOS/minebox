@@ -1,8 +1,13 @@
 group 'minebox.io'
 version '1.0-SNAPSHOT'
 
+apply from: 'tools.gradle'
+
 apply plugin: 'java'
 apply plugin: 'application'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+
 mainClassName = 'io.minebox.nbd.Server'
 
 
@@ -11,6 +16,24 @@ sourceCompatibility = 1.8
 repositories {
     mavenCentral()
 }
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.3'
+    }
+
+}
+
+
+
+shadowJar {
+    mergeServiceFiles()
+}
+
 
 
 dependencies {
@@ -35,4 +58,18 @@ dependencies {
 
     testCompile group: 'junit', name: 'junit', version: '4.11'
     testCompile group: 'commons-io', name: 'commons-io', version: '2.5'
+}
+
+
+
+jar {
+    manifest {
+        attributes(
+                'Timestamp': String.valueOf(System.currentTimeMillis()),
+                'Main-Class': project.mainClassName,
+
+                //Include the git-hash in the main.jar file, so it is accessible at runtime
+                'Implementation-Version': getCheckedOutGitCommitHash()
+        )
+    }
 }
