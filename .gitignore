@@ -15,3 +15,4 @@ keymanager/api/build/
 keymanager/.gradle/
 *.img
 *.dat
+.idea
