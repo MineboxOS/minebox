@@ -24,8 +24,8 @@ class Bucket {
         this.bucketNumber = bucketNumber;
         baseOffset = bucketNumber * MineboxExport.BUCKET_SIZE; //rounded down
         upperBound = baseOffset + MineboxExport.BUCKET_SIZE;
-        final String leadingZeros = String.format("%0" + MineboxExport.FILENAME_DIGITS + "d", bucketNumber);
-        filename = "minebox" + leadingZeros + ".dat";
+        final String leadingZeros = String.format("%0" + MineboxExport.FILENAME_DIGITS + "X", bucketNumber);
+        filename = "minebox_v1_" + leadingZeros + ".dat";
         final File parentDirF = new File(parentDir);
         parentDirF.mkdirs();
         final File file = new File(parentDirF, filename);

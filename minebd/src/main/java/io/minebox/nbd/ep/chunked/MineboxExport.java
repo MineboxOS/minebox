@@ -19,7 +19,7 @@ public class MineboxExport implements ExportProvider {
 
     public static class Config {
         public int maxOpenFiles = MAX_OPEN_FILES;
-        public final String parentDir = "minedbDat";
+        public String parentDir = "minedbDat";
         public long reportedSize = 1 * GIGABYTE;
     }
 
@@ -33,7 +33,7 @@ public class MineboxExport implements ExportProvider {
     public static final long PETABYTE = TERABYTE * KILO;
     public static final long MAX_SUPPORTED_SIZE = PETABYTE;
 
-    public static final long FILENAME_DIGITS = (long) Math.log(MAX_SUPPORTED_SIZE);
+    public static final long FILENAME_DIGITS = (long) (Math.log(MAX_SUPPORTED_SIZE) / Math.log(16));
     public static final long BUCKET_SIZE = MEGABYTE * 10;
     public static final int MAX_OPEN_FILES = 20;
 
