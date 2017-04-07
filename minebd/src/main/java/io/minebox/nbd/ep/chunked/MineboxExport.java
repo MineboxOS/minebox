@@ -137,7 +137,7 @@ public class MineboxExport implements ExportProvider {
 
     @Override
     public void close() throws IOException {
-
+        files.asMap().values().forEach(Bucket::close);
     }
 
 }

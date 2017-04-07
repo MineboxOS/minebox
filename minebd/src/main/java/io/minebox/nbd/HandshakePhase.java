@@ -5,7 +5,6 @@ import java.nio.charset.Charset;
 import java.util.List;
 
 import io.minebox.nbd.ep.ExportProvider;
-import io.minebox.nbd.ep.ExportProviders;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
@@ -13,6 +12,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class HandshakePhase extends ByteToMessageDecoder {
+
+    private final ExportProvider exportProvider;
+
+    public HandshakePhase(ExportProvider exportProvider) {
+        this.exportProvider = exportProvider;
+    }
 
     private enum State {HS_CLIENT_FLAGS, HS_OPTION_HAGGLING, HS_OPTION_DATA}
 
@@ -72,9 +77,14 @@ public class HandshakePhase extends ByteToMessageDecoder {
             case Protocol.NBD_OPT_EXPORT_NAME:
                 CharSequence exportName = in.readCharSequence((int) currentOptionLen, Charset.forName("UTF-8"));
 
-                ExportProvider ep = ExportProviders.getNewDefault(clientFlags);
+                if (!exportProvider.supportsClientFlags(clientFlags)) {
+                    logger.error("client flags {} not supported", clientFlags);
+                    ctx.channel().close();
+                    break;
+                }
+
                 long exportSize = 0;
-                if ((exportSize = ep.open(exportName)) < 0) {
+                if ((exportSize = exportProvider.open(exportName)) < 0) {
                     // ep us unwilling to export this name
                     ctx.channel().close();
                     break;
@@ -97,7 +107,7 @@ public class HandshakePhase extends ByteToMessageDecoder {
                 //FIXME: transfer any remaining bytes into the transmission phase!
             /* The NBD protocol has two phases: the handshake (HS_) and the transmission (TM_) */
                 // Handshake complete, switch to transmission phase
-                ctx.pipeline().addLast("transmission", new TransmissionPhase(ep));
+                ctx.pipeline().addLast("transmission", new TransmissionPhase(exportProvider));
                 ctx.pipeline().remove(this);
                 return exportName.toString();
 
