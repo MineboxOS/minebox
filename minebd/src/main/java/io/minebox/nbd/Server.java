@@ -49,6 +49,7 @@ public class Server {
                     //close also flushes first, so we only do one of them
                     exportProvider.close();
                 }
+
                 logger.info("shutting down eventLoops");
                 try {
                     eventLoopGroup.shutdownGracefully().sync();
@@ -56,11 +57,9 @@ public class Server {
                     logger.info("error shutting down eventLoops");
                 }
                 logger.info("we appear to have shut down gracefully..");
-                System.exit(0);
             } catch (IOException e) {
                 logger.error("unable to flush and close ", e);
                 SystemdUtil.sendError(2);
-                System.exit(2);
             } finally {
                 logger.info("shutdown finally complete..");
             }
