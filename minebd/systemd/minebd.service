@@ -1,5 +1,6 @@
 [Unit]
 Description=Minebd daemon
+Type=notify
 #Requires=
 #After=
 
