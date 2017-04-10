@@ -23,6 +23,7 @@ public class Server {
     private static final Logger logger = LoggerFactory.getLogger(Server.class);
     private final MineboxExport.Config config;
     private final ExportProvider exportProvider;
+    private EventLoopGroup eventLoopGroup;
 
     private Server(int port) {
         addShutownHook();
@@ -48,17 +49,26 @@ public class Server {
                     //close also flushes first, so we only do one of them
                     exportProvider.close();
                 }
+                logger.info("shutting down eventLoops");
+                try {
+                    eventLoopGroup.shutdownGracefully().sync();
+                } catch (InterruptedException e) {
+                    logger.info("error shutting down eventLoops");
+                }
+                logger.info("we appear to have shut down gracefully..");
+                System.exit(0);
             } catch (IOException e) {
                 logger.error("unable to flush and close ", e);
                 SystemdUtil.sendError(2);
+                System.exit(2);
             } finally {
-                logger.info("shutdown complete..");
+                logger.info("shutdown finally complete..");
             }
         }));
     }
 
     private void startServer(int nbdPort) {
-        EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
+        eventLoopGroup = new NioEventLoopGroup();
         try {
             ServerBootstrap b = new ServerBootstrap();
             b.group(eventLoopGroup)
@@ -76,17 +86,18 @@ public class Server {
             final ChannelFuture channelFuture = channel.closeFuture();
             SystemdUtil.sendNotify(); //tell systemd we are ready
             channelFuture.sync(); //wait infinitely?
+            logger.info("stopped main thread");
         } catch (InterruptedException e) {
             //very unexpected
             SystemdUtil.sendError(1);
             logger.error("Int1", e);
         } finally {
-            try {
-                SystemdUtil.sendStopping();
-                eventLoopGroup.shutdownGracefully().sync();
-            } catch (InterruptedException e) {
-                logger.error("Int2", e);
-            }
+//            try {
+//                SystemdUtil.sendStopping();
+//                eventLoopGroup.shutdownGracefully().sync();
+//            } catch (InterruptedException e) {
+//                logger.error("Int2", e);
+//            }
         }
     }
 
