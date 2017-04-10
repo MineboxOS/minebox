@@ -1,10 +1,10 @@
 [Unit]
 Description=Minebd daemon
-Type=notify
 #Requires=
 #After=
 
 [Service]
+Type=notify
 # Once we properly install Minbd, we should put it in a nicer path.
 ExecStart=/usr/bin/java -jar /root/mineblimp_vm/minebd/build/libs/minebd-1.0-SNAPSHOT-all.jar
 #ExecStop=
