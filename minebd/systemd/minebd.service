@@ -9,7 +9,9 @@ Type=notify
 # Once we properly install Minbd, we should put it in a nicer path.
 ExecStart=/usr/bin/java -jar /root/mineblimp_vm/minebd/build/libs/minebd-1.0-SNAPSHOT-all.jar
 ExecStartPost=/usr/bin/systemctl start nbd@nbd0
-SuccessExitStatus=130 143
+#the exepected return code is 143, since this is the one java sends as answer to SIGTERM (kill -15) 143 = 128+15
+SuccessExitStatus=143
+
 #ExecStop=
 
 [Install]
