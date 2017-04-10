@@ -1,5 +1,6 @@
 [Unit]
 Description=Minebd daemon
+Before=nbd@.service
 #Requires=
 #After=
 
@@ -7,6 +8,7 @@ Description=Minebd daemon
 Type=notify
 # Once we properly install Minbd, we should put it in a nicer path.
 ExecStart=/usr/bin/java -jar /root/mineblimp_vm/minebd/build/libs/minebd-1.0-SNAPSHOT-all.jar
+ExecStartPost=/usr/bin/systemctl start nbd@nbd0
 SuccessExitStatus=130 143
 #ExecStop=
 
