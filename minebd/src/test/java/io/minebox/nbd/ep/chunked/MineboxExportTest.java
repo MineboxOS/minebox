@@ -35,7 +35,7 @@ public class MineboxExportTest {
         underTest.read(32 * MineboxExport.MEGABYTE, 1024, false);
         underTest.read(111 * MineboxExport.MEGABYTE, 1024, false);
 
-        Assert.assertEquals(5, new File(cfg.parentDir).list().length);
+        Assert.assertEquals(2, new File(cfg.parentDir).list().length);
     }
 
     @AfterClass
