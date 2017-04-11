@@ -17,7 +17,6 @@ public class ByteBufferEncryptionBenchmark {
     public void testXor() {
 
       t.testSimpleXor();
-//        bitPatternGenerator.createDeterministicPattern1(123123);
     }
 
     @Setup

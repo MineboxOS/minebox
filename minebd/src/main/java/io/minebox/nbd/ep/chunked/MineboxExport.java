@@ -63,11 +63,6 @@ public class MineboxExport implements ExportProvider {
     }
 
     @Override
-    public String create(CharSequence exportName, long size) throws IOException {
-        return null;
-    }
-
-    @Override
     public long open(CharSequence exportName) throws IOException {
         logger.debug("opening {}", exportName);
         return config.reportedSize;
