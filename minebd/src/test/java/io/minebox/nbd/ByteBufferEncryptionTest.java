@@ -9,7 +9,6 @@ import org.junit.Test;
  */
 public class ByteBufferEncryptionTest {
 
-    private BitPatternGenerator bitPatternGenerator = new BitPatternGenerator("thisIsMySecretKeyForTesting");
 
     @Test
     public void testSimpleXor() {
@@ -22,32 +21,10 @@ public class ByteBufferEncryptionTest {
     public ByteBuffer testFor(long offset, int msgSize) {
         final byte[] plaintext = new byte[msgSize];
         final ByteBuffer plainBuffer = ByteBuffer.wrap(plaintext);
-
-        byte[] blockXor = new byte[0];
-        long curentBlockNumber = -1;
-        final ByteBuffer result = ByteBuffer.wrap(new byte[msgSize]);
-
-        while (plainBuffer.remaining() > 0) {
-            final int bytes = plainBuffer.remaining();
-            final int pos = plainBuffer.position();
-
-            long blockNumber = (pos + offset) / Constants.BLOCKSIZE;
-            if (curentBlockNumber != blockNumber) {
-                blockXor = createBlockXor(offset);
-            }
-            curentBlockNumber = blockNumber;
-            final byte value = plainBuffer.get();
-            final int xorBlockIndex = pos % Constants.BLOCKSIZE;
-            final byte encrypted = (byte) ((value ^ blockXor[xorBlockIndex]) & 0xFF);
-            result.put(encrypted);
-        }
-        result.flip();
+        final Encryption encryption = new SymmetricEncryption("keyForTesting");
+        final ByteBuffer result = encryption.encrypt(plainBuffer, offset);
         return result;
     }
 
-    private byte[] createBlockXor(long offset) {
-        byte[] blockXor=bitPatternGenerator.createDeterministicPattern1(offset);
-        return blockXor;
-    }
 
 }

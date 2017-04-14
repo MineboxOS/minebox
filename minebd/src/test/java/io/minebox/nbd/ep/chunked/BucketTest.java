@@ -2,6 +2,7 @@ package io.minebox.nbd.ep.chunked;
 
 import java.io.IOException;
 
+import io.minebox.nbd.NullEncryption;
 import org.junit.Test;
 
 import static org.junit.Assert.fail;
@@ -23,7 +24,7 @@ public class BucketTest {
 
     @Test
     public void testExport() throws IOException {
-        final MineboxExport export = new MineboxExport(new MineboxExport.Config());
+        final MineboxExport export = new MineboxExport(new MinebdConfig(), new NullEncryption());
         export.trim(0,MineboxExport.BUCKET_SIZE);
     }
     @Test

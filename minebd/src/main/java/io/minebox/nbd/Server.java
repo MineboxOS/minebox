@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 
 import io.minebox.nbd.ep.ExportProvider;
+import io.minebox.nbd.ep.chunked.MinebdConfig;
 import io.minebox.nbd.ep.chunked.MineboxExport;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -21,15 +22,16 @@ public class Server {
     private static final String NBD_DEFAULT_PORT = "10809";
     private int port;
     private static final Logger logger = LoggerFactory.getLogger(Server.class);
-    private final MineboxExport.Config config;
+    private final MinebdConfig config;
     private final ExportProvider exportProvider;
     private EventLoopGroup eventLoopGroup;
 
     private Server(int port) {
         addShutownHook();
         this.port = port;
-        config = new MineboxExport.Config();
-        exportProvider = new MineboxExport(config);
+        config = new MinebdConfig();
+        final Encryption encryption = new SymmetricEncryption(config.encryptionSeed);
+        exportProvider = new MineboxExport(config, encryption);
     }
 
     public static void main(String... args) {

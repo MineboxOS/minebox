@@ -72,10 +72,12 @@ dependencies {
 
 }
 jmh {
+    //these values are optimized for execution speed, for accurate results uncomment sizes/iterations to the default values
     iterations = 3
     includeTests = true
     duplicateClassesStrategy = 'INCLUDE'
-    batchSize = 1 // Batch size: number of benchmark method calls per operation. (some benchmark modes can ignore this setting)
+    batchSize = 1
+    // Batch size: number of benchmark method calls per operation. (some benchmark modes can ignore this setting)
 //    fork = 2 // How many times to forks a single benchmark. Use 0 to disable forking altogether
     warmupBatchSize = 3 // Warmup batch size: number of benchmark method calls per operation.
     warmupIterations = 3

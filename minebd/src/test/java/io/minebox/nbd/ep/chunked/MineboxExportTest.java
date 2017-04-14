@@ -3,6 +3,8 @@ package io.minebox.nbd.ep.chunked;
 import java.io.File;
 import java.io.IOException;
 
+import io.minebox.nbd.Constants;
+import io.minebox.nbd.NullEncryption;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -15,25 +17,25 @@ import org.junit.Test;
 public class MineboxExportTest {
 
     private static long startTime;
-    private static MineboxExport.Config cfg;
+    private static MinebdConfig cfg;
 
     @BeforeClass
     public static void getMeStarted() {
         System.out.println("Setup");
         startTime = System.currentTimeMillis();
-        cfg = new MineboxExport.Config();
+        cfg = new MinebdConfig();
         cfg.parentDir = "minedbTESTDat";
     }
     @Test
     public void testCache() throws IOException {
         //trivial test to check out how the cache behaves. meant to be tested with a cache size of 2
         cfg.maxOpenFiles = 2;
-        final MineboxExport underTest = new MineboxExport(cfg);
+        final MineboxExport underTest = new MineboxExport(cfg, new NullEncryption());
         underTest.read(0, 1024, false);
-        underTest.read(12 * MineboxExport.MEGABYTE, 1024, false);
-        underTest.read(22 * MineboxExport.MEGABYTE, 1024, false);
-        underTest.read(32 * MineboxExport.MEGABYTE, 1024, false);
-        underTest.read(111 * MineboxExport.MEGABYTE, 1024, false);
+        underTest.read(12 * Constants.MEGABYTE, 1024, false);
+        underTest.read(22 * Constants.MEGABYTE, 1024, false);
+        underTest.read(32 * Constants.MEGABYTE, 1024, false);
+        underTest.read(111 * Constants.MEGABYTE, 1024, false);
 
         Assert.assertEquals(2, new File(cfg.parentDir).list().length);
     }
