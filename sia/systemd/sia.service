@@ -1,0 +1,16 @@
+[Unit]
+Description=Sia daemon
+After=network.target
+
+[Service]
+Type=simple
+User=sia
+Nice=5
+# WorkingDirectory may not be required but to be sure.
+WorkingDirectory=/mnt/lower/sia
+ExecStart=/usr/local/bin/siad --sia-directory /mnt/lower/sia
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target
