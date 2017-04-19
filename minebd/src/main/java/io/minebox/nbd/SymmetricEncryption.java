@@ -6,11 +6,9 @@ import java.nio.ByteBuffer;
  * Created by andreas on 11.04.17.
  */
 public class SymmetricEncryption implements Encryption {
-    private final String key;
     private BitPatternGenerator bitPatternGenerator;
 
     public SymmetricEncryption(String key) {
-        this.key = key;
         bitPatternGenerator = new BitPatternGenerator(key);
     }
 

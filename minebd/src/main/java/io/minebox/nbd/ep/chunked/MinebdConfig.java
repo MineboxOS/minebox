@@ -1,5 +1,6 @@
 package io.minebox.nbd.ep.chunked;
 
+import com.google.common.primitives.Ints;
 import io.minebox.nbd.Constants;
 
 /**
@@ -10,4 +11,6 @@ public class MinebdConfig {
     public String parentDir = "minedbDat";
     public long reportedSize = 4 * Constants.GIGABYTE;
     public String encryptionSeed = "test";
+    public int bucketSize = Ints.checkedCast(Constants.MEGABYTE * 40);
+
 }

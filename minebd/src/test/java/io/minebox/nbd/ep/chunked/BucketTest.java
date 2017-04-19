@@ -3,6 +3,7 @@ package io.minebox.nbd.ep.chunked;
 import java.io.IOException;
 
 import io.minebox.nbd.NullEncryption;
+import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.fail;
@@ -24,18 +25,30 @@ public class BucketTest {
 
     @Test
     public void testExport() throws IOException {
-        final MineboxExport export = new MineboxExport(new MinebdConfig(), new NullEncryption());
-        export.trim(0,MineboxExport.BUCKET_SIZE);
+        final MinebdConfig config = new MinebdConfig();
+        final MineboxExport export = new MineboxExport(config, new NullEncryption());
+        export.trim(0, config.bucketSize);
     }
+
     @Test
     public void checkPositiveBounds() throws IOException {
-        final Bucket underTest = new Bucket(0, "testJunit");
+        long bucketSize = new MinebdConfig().bucketSize;
 
-        underTest.checkRange(0, MineboxExport.BUCKET_SIZE);
-        assertExeption(() -> underTest.checkRange(0, MineboxExport.BUCKET_SIZE + 1));
+        final Bucket underTest = new Bucket(0, "testJunit", bucketSize);
 
-        underTest.checkRange(MineboxExport.BUCKET_SIZE - 1, 1);
 
+        Assert.assertEquals(bucketSize, underTest.calcLengthInThisBucket(0, bucketSize));
+
+        Assert.assertEquals(bucketSize, underTest.calcLengthInThisBucket(0, bucketSize + 1));
+
+
+        Assert.assertEquals(bucketSize - 50, underTest.calcLengthInThisBucket(50, bucketSize + 1));
+
+        Assert.assertEquals(1, underTest.calcLengthInThisBucket(bucketSize - 1, 1));
+
+        assertExeption(() -> underTest.calcLengthInThisBucket(bucketSize, 0));
+
+        assertExeption(() -> underTest.calcLengthInThisBucket(-1, 1));
 
     }
 

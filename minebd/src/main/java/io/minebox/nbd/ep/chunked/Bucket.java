@@ -16,6 +16,7 @@ class Bucket {
 
     private final FileChannel channel;
     private final long baseOffset;
+    private final long size;
     /**
      * highest valid offset, given minimum length of 1
      */
@@ -24,12 +25,13 @@ class Bucket {
     private final String filename;
     final long bucketNumber;
 
-    Bucket(long bucketNumber, String parentDir) {
+    Bucket(long bucketNumber, String parentDir, long size) {
         this.bucketNumber = bucketNumber;
-        baseOffset = bucketNumber * MineboxExport.BUCKET_SIZE;
-        upperBound = baseOffset + MineboxExport.BUCKET_SIZE - 1;
-        final String leadingZeros = String.format("%0" + MineboxExport.FILENAME_DIGITS + "X", bucketNumber);
-        filename = "minebox_v1_" + leadingZeros + ".dat";
+        baseOffset = bucketNumber * size;
+        this.size = size;
+        upperBound = baseOffset + size - 1;
+//        final String leadingZeros = String.format("%0" + MineboxExport.FILENAME_DIGITS + "X", bucketNumber);
+        filename = "minebox_v1_" + bucketNumber + ".dat";
         final File parentDirF = new File(parentDir);
         parentDirF.mkdirs();
         final File file = new File(parentDirF, filename);
@@ -69,41 +71,47 @@ class Bucket {
         }
     }
 
-    ByteBuffer getBytes(long offset, long length) throws IOException {
-        checkRange(offset, length);
-        ByteBuffer bb = ByteBuffer.allocate((int) length);
+    long getBytes(ByteBuffer readInto, long offset, long length) throws IOException {
+        final long offsetInThisBucket = offsetInThisBucket(offset);
+        final long lengthInThisBucket = calcLengthInThisBucket(offsetInThisBucket, length);
+//        ByteBuffer bb = ByteBuffer.allocate((int) lengthInThisBucket);
         final int read;
         synchronized (this) {
-            channel.position(offsetInThisBucket(offset));
-            read = channel.read(bb);
+            channel.position(offsetInThisBucket);
+//            final int oldLimit = readInto.limit();
+            final int thisBucketLimit = (int) (offsetInThisBucket + (int) lengthInThisBucket);
+//            final int limitThatCanBeRead = Math.min(thisBucketLimit, oldLimit);
+//            readInto.limit(limitThatCanBeRead);
+            read = channel.read(readInto);
+//            readInto.limit(oldLimit);
         }
-        if (read != length) {
-            ;
+        if (read != lengthInThisBucket) {
             final byte[] zeroes;
             if (read == -1) {
-                zeroes = new byte[(int) length];
+                zeroes = new byte[(int) lengthInThisBucket];
             } else {
-                zeroes = new byte[(int) (length - read)];
+                zeroes = new byte[(int) (lengthInThisBucket - read)];
             }
             logger.debug("tried to read more bytes from this file than ever were written, replacing with {} zeroes", zeroes.length);
-            bb.put(zeroes);
+            readInto.put(zeroes);
 
         }
-        bb.flip();
-        return bb;
+        return lengthInThisBucket;
     }
 
     @VisibleForTesting
-    void checkRange(long offset, long length) {
+    long calcLengthInThisBucket(long offsetInThisBucket, long length) {
         if (length < 1) {
             throw new UnsupportedOperationException("she said it's too small: " + length);
-        } else if (offset < baseOffset) {
-            throw new UnsupportedOperationException("unable to get offset " + offset + " smaller than my base " + baseOffset);
+        } else if (offsetInThisBucket < 0) {
+            throw new UnsupportedOperationException("unable to get offset " + offsetInThisBucket + " smaller than my base " + baseOffset);
         } else {
-            final long lastIndex = offset + length - 1;
-            if (lastIndex > upperBound) {
-                throw new UnsupportedOperationException("unable to get offset " + lastIndex + " greater than my upper bound " + upperBound);
+            final long consumableBytes = size - offsetInThisBucket;
+            final long lenghtThisBucket = Math.min(consumableBytes, length);
+            if (lenghtThisBucket < 0) {
+                throw new UnsupportedOperationException("unable to get offset " + offsetInThisBucket + " length is negative: " + lenghtThisBucket);
             }
+            return lenghtThisBucket;
         }
     }
 
@@ -118,11 +126,17 @@ class Bucket {
         }
     }
 
-    void putBytes(long offset, ByteBuffer message) throws IOException {
-        checkRange(offset, message.remaining());
+    public long putBytes(long offset, ByteBuffer message) throws IOException {
         synchronized (this) {
-            channel.position(offsetInThisBucket(offset));
+            final long offsetInThisBucket = offsetInThisBucket(offset);
+//            final long lengthToWrite;
+//            lengthToWrite = calcLengthInThisBucket(offsetInThisBucket, message.remaining());
+            channel.position(offsetInThisBucket);
+//            final int oldLimit = message.limit();
+//            message.limit((int) lengthToWrite);
             channel.write(message);
+//            message.limit(oldLimit);
+            return message.remaining();
         }
     }
 
@@ -131,8 +145,9 @@ class Bucket {
     }
 
     public void trim(long offset, long length) throws IOException {
-        checkRange(offset, length);
-        if (length == MineboxExport.BUCKET_SIZE) {
+        final long offsetInThisBucket = offsetInThisBucket(offset);
+        final long lengthInThisBucket = calcLengthInThisBucket(offsetInThisBucket, length);
+        if (lengthInThisBucket == size) {
             channel.truncate(0);
             channel.force(true);
         } else {
@@ -150,4 +165,6 @@ class Bucket {
     public long getUpperBound() {
         return upperBound;
     }
+
+
 }

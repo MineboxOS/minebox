@@ -11,6 +11,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalListener;
+import com.google.common.primitives.Ints;
 import io.minebox.nbd.Constants;
 import io.minebox.nbd.Encryption;
 import io.minebox.nbd.ep.ExportProvider;
@@ -22,31 +23,36 @@ import static java.util.stream.Collectors.toList;
 public class MineboxExport implements ExportProvider {
 
     public static final long FILENAME_DIGITS = log16(Constants.MAX_SUPPORTED_SIZE);
-    public static final long BUCKET_SIZE = Constants.MEGABYTE * 40; //according to taek42 , 40 MB is the bucket size for contracts, so we use the same for efficientcy.
+    private final long bucketSize;//according to taek42 , 40 MB is the bucket size for contracts, so we use the same for efficientcy.
     public static final int MAX_OPEN_FILES = 20;
     private static final Logger logger = LoggerFactory.getLogger(MineboxExport.class);
     final private MinebdConfig config;
     private final Encryption encryption;
-    private final LoadingCache<Long, Bucket> files;
+    private final LoadingCache<Integer, Bucket> files;
 
     public MineboxExport(MinebdConfig config, Encryption encryption) {
         this.config = config;
         files = createFilesCache(config);
         this.encryption = encryption;
+        this.bucketSize = config.bucketSize;
     }
 
-    private LoadingCache<Long, Bucket> createFilesCache(final MinebdConfig config) {
+    public long getBucketSize() {
+        return bucketSize;
+    }
+
+    private LoadingCache<Integer, Bucket> createFilesCache(final MinebdConfig config) {
         return CacheBuilder.newBuilder()
                 .maximumSize(config.maxOpenFiles)
-                .removalListener((RemovalListener<Long, Bucket>) notification -> {
+                .removalListener((RemovalListener<Integer, Bucket>) notification -> {
                     logger.debug("no longer monitoring bucket {}", notification.getKey());
                     notification.getValue().close();
                 })
-                .build(new CacheLoader<Long, Bucket>() {
+                .build(new CacheLoader<Integer, Bucket>() {
                     @Override
-                    public Bucket load(Long key) throws Exception {
+                    public Bucket load(Integer key) throws Exception {
                         logger.debug("starting to monitor bucket {}", key);
-                        return new Bucket(key, config.parentDir);
+                        return new Bucket(key, config.parentDir, getBucketSize());
                     }
                 });
     }
@@ -61,32 +67,55 @@ public class MineboxExport implements ExportProvider {
         return config.reportedSize;
     }
 
+    //todo all lengths should be ints not longs
     @Override
-    public ByteBuffer read(long offset, long length, boolean sync) throws IOException {
-        final Bucket bucket = getBucket(offset);
-        logger.debug("reading {} bytes from offset {} from bucket {}", length, offset, bucket.bucketNumber);
-        return encryption.encrypt(bucket.getBytes(offset, length), offset);
+    public ByteBuffer read(final long offset, final int length) throws IOException {
+        final ByteBuffer origMessage = ByteBuffer.allocate(length);
+        for (Integer bucketIndex : getBuckets(offset, length)) { //eventually make parallel
+            Bucket bucket = getBucketFromIndex(bucketIndex);
+            final long absoluteOffsetForThisBucket = Math.max(offset, bucket.getBaseOffset());
+            final int lengthForBucket = Ints.checkedCast(Math.min(bucket.getUpperBound() + 1, offset + length) - absoluteOffsetForThisBucket);
+            final int dataOffset = Ints.checkedCast(Math.max(0, bucket.getBaseOffset() - offset));
+            final ByteBuffer pseudoCopy = bufferForBucket(origMessage, lengthForBucket, dataOffset);
+
+            bucket.getBytes(pseudoCopy, absoluteOffsetForThisBucket, lengthForBucket);
+        }
+        return origMessage;
     }
 
-    private long bucketFromOffset(long offset) {
-        return offset / BUCKET_SIZE;
+    private int bucketFromOffset(long offset) {
+        return Ints.checkedCast(offset / getBucketSize());
     }
 
     @Override
-    public void write(long offset, ByteBuffer message, boolean sync) throws IOException {
-        final Bucket bucket = getBucket(offset);
-        logger.debug("writing {} bytes from offset {} to bucket {}", message.remaining(), offset, bucket.bucketNumber);
-        bucket.putBytes(offset, encryption.encrypt(message, offset));
-        if (sync) {
-            bucket.flush();
+    public void write(long offset, ByteBuffer origMessage, boolean sync) throws IOException {
+        logger.debug("writing {} bytes from offset {}", origMessage.remaining(), offset);
+
+        final int length = origMessage.remaining();
+
+        for (Integer bucketIndex : getBuckets(offset, length)) { //eventually make parallel
+            Bucket bucket = getBucketFromIndex(bucketIndex);
+            writeDataToBucket(bucket, offset, length, origMessage);
         }
     }
 
-    private Bucket getBucket(long offset) throws IOException {
-        return getBucketFromIndex(bucketFromOffset(offset));
+    private void writeDataToBucket(Bucket bucket, long offset, int length, ByteBuffer origMessage) throws IOException {
+        final long start = Math.max(offset, bucket.getBaseOffset());
+        final int lengthForBucket = Ints.checkedCast(Math.min(bucket.getUpperBound() + 1, offset + length) - start);
+        final int dataOffset = Ints.checkedCast(Math.max(0, bucket.getBaseOffset() - offset));
+        final ByteBuffer pseudoCopy = bufferForBucket(origMessage, lengthForBucket, dataOffset);
+        final long writtenBytes = bucket.putBytes(start, pseudoCopy);
+        logger.debug("wrote {} bytes to bucket {}", writtenBytes, bucket.bucketNumber);
     }
 
-    private Bucket getBucketFromIndex(long bucketNumber) throws IOException {
+    private ByteBuffer bufferForBucket(ByteBuffer origMessage, int lengthForBucket, int dataOffset) {
+        final ByteBuffer pseudoCopy = origMessage.slice();
+        pseudoCopy.position(dataOffset);
+        pseudoCopy.limit(dataOffset + Ints.checkedCast(lengthForBucket));
+        return pseudoCopy;
+    }
+
+    private Bucket getBucketFromIndex(int bucketNumber) throws IOException {
         Bucket bucket;
         try {
             bucket = files.get(bucketNumber);
@@ -103,7 +132,7 @@ public class MineboxExport implements ExportProvider {
     }
 
     @Override
-    public void trim(long offset, long length) throws IOException {
+    public void trim(long offset, int length) throws IOException {
         logger.debug("trimming {} bytes from offset {} to bucket", length, offset);
         for (Integer bucketNumber : getBuckets(offset, length)) {
             final Bucket bucket = getBucketFromIndex(bucketNumber);
@@ -113,18 +142,25 @@ public class MineboxExport implements ExportProvider {
         }
     }
 
-    private List<Integer> getBuckets(long offset, long length) {
-        final long startIndex = bucketFromOffset(offset);
-        final long endIndex = bucketFromOffset(offset + length - 1);
-        final List<Integer> ret = IntStream.range((int) startIndex, (int) endIndex + 1)
+    private List<Integer> getBuckets(long offset, int length) {
+        final IntStream intStream = getBucketsStream(offset, length);
+        final List<Integer> ret = intStream
                 .boxed()
                 .collect(toList());
         logger.debug("i see {} buckets at offset {} length {}", ret.size(), offset, length);
         return ret;
     }
 
+    private IntStream getBucketsStream(long offset, int length) {
+        final long startIndex = bucketFromOffset(offset);
+        final long endIndex = bucketFromOffset(offset + length - 1);
+        return IntStream.range((int) startIndex, (int) endIndex + 1);
+    }
+
     @Override
     public void close() throws IOException {
-        files.asMap().values().forEach(Bucket::close);
+        files.asMap()
+                .values()
+                .forEach(Bucket::close);
     }
 }
