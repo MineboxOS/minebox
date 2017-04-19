@@ -74,16 +74,10 @@ class Bucket {
     long getBytes(ByteBuffer readInto, long offset, long length) throws IOException {
         final long offsetInThisBucket = offsetInThisBucket(offset);
         final long lengthInThisBucket = calcLengthInThisBucket(offsetInThisBucket, length);
-//        ByteBuffer bb = ByteBuffer.allocate((int) lengthInThisBucket);
         final int read;
         synchronized (this) {
             channel.position(offsetInThisBucket);
-//            final int oldLimit = readInto.limit();
-            final int thisBucketLimit = (int) (offsetInThisBucket + (int) lengthInThisBucket);
-//            final int limitThatCanBeRead = Math.min(thisBucketLimit, oldLimit);
-//            readInto.limit(limitThatCanBeRead);
             read = channel.read(readInto);
-//            readInto.limit(oldLimit);
         }
         if (read != lengthInThisBucket) {
             final byte[] zeroes;
@@ -129,14 +123,8 @@ class Bucket {
     public long putBytes(long offset, ByteBuffer message) throws IOException {
         synchronized (this) {
             final long offsetInThisBucket = offsetInThisBucket(offset);
-//            final long lengthToWrite;
-//            lengthToWrite = calcLengthInThisBucket(offsetInThisBucket, message.remaining());
             channel.position(offsetInThisBucket);
-//            final int oldLimit = message.limit();
-//            message.limit((int) lengthToWrite);
-            channel.write(message);
-//            message.limit(oldLimit);
-            return message.remaining();
+            return channel.write(message);
         }
     }
 

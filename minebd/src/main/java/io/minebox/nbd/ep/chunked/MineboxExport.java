@@ -89,7 +89,7 @@ public class MineboxExport implements ExportProvider {
 
     @Override
     public void write(long offset, ByteBuffer origMessage, boolean sync) throws IOException {
-        logger.debug("writing {} bytes from offset {}", origMessage.remaining(), offset);
+        logger.debug("writing {} bytes to offset {}", origMessage.remaining(), offset);
 
         final int length = origMessage.remaining();
 
@@ -147,7 +147,9 @@ public class MineboxExport implements ExportProvider {
         final List<Integer> ret = intStream
                 .boxed()
                 .collect(toList());
-        logger.debug("i see {} buckets at offset {} length {}", ret.size(), offset, length);
+        if (ret.size() != 1) {
+            logger.debug("i see {} buckets at offset {} length {}", ret.size(), offset, length);
+        }
         return ret;
     }
 
