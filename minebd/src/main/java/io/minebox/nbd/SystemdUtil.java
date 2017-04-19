@@ -19,21 +19,21 @@ public class SystemdUtil {
         }
     }
 
-    static void sendStopping() {
+    void sendStopping() {
         LOGGER.info("sendStopping");
         if (hasEnv) {
             SDNotify.sendStopping();
         }
     }
 
-    static void sendError(int errno) {
+    void sendError(int errno) {
         LOGGER.info("sendErrno {}", errno);
         if (hasEnv) {
             SDNotify.sendErrno(errno);
         }
     }
 
-    static void sendNotify() {
+    void sendNotify() {
         LOGGER.info("sendNotify");
         if (hasEnv) {
             SDNotify.sendNotify();

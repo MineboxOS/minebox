@@ -51,8 +51,9 @@ public class MineboxExport implements ExportProvider {
                 .build(new CacheLoader<Integer, Bucket>() {
                     @Override
                     public Bucket load(Integer key) throws Exception {
-                        logger.debug("starting to monitor bucket {}", key);
-                        return new Bucket(key, config.parentDir, getBucketSize());
+                        final Bucket ret = new Bucket(key, config.parentDir, getBucketSize());
+                        logger.debug("starting to monitor bucket {} with file {}", key);
+                        return ret;
                     }
                 });
     }
@@ -89,7 +90,7 @@ public class MineboxExport implements ExportProvider {
 
     @Override
     public void write(long offset, ByteBuffer origMessage, boolean sync) throws IOException {
-        logger.debug("writing {} bytes to offset {}", origMessage.remaining(), offset);
+//        logger.debug("writing {} bytes to offset {}", origMessage.remaining(), offset);
 
         final int length = origMessage.remaining();
 
@@ -105,7 +106,7 @@ public class MineboxExport implements ExportProvider {
         final int dataOffset = Ints.checkedCast(Math.max(0, bucket.getBaseOffset() - offset));
         final ByteBuffer pseudoCopy = bufferForBucket(origMessage, lengthForBucket, dataOffset);
         final long writtenBytes = bucket.putBytes(start, pseudoCopy);
-        logger.debug("wrote {} bytes to bucket {}", writtenBytes, bucket.bucketNumber);
+//        logger.debug("wrote {} bytes to bucket {}", writtenBytes, bucket.bucketNumber);
     }
 
     private ByteBuffer bufferForBucket(ByteBuffer origMessage, int lengthForBucket, int dataOffset) {

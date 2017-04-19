@@ -91,10 +91,10 @@ public class TransmissionPhase extends ByteToMessageDecoder {
             }
             case Protocol.NBD_CMD_WRITE: {
                 final long cmdOffset = this.cmdOffset;
-                final long cmdLength = this.cmdLength;
+                final int cmdLength = this.cmdLength;
                 final long cmdHandle = this.cmdHandle;
 //			System.out.println("cmdLength = " + cmdLength);
-                final ByteBuf buf = in.readBytes((int) cmdLength);
+                final ByteBuf buf = in.readBytes(cmdLength);
                 Runnable operation = () -> {
                     int err = 0;
                     try {
@@ -104,6 +104,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                         err = Error.EIO;
                     } finally {
                         sendTransmissionSimpleReply(ctx, err, cmdHandle, null);
+                        buf.release();
                     }
                 };
                 GlobalEventExecutor.INSTANCE.execute(operation);

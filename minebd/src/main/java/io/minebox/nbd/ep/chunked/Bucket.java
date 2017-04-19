@@ -23,14 +23,13 @@ class Bucket {
     private final long upperBound;
     private RandomAccessFile randomAccessFile;
     private final String filename;
-    final long bucketNumber;
+    private final long bucketNumber;
 
     Bucket(long bucketNumber, String parentDir, long size) {
         this.bucketNumber = bucketNumber;
         baseOffset = bucketNumber * size;
         this.size = size;
         upperBound = baseOffset + size - 1;
-//        final String leadingZeros = String.format("%0" + MineboxExport.FILENAME_DIGITS + "X", bucketNumber);
         filename = "minebox_v1_" + bucketNumber + ".dat";
         final File parentDirF = new File(parentDir);
         parentDirF.mkdirs();
@@ -42,9 +41,7 @@ class Bucket {
         } catch (FileNotFoundException e) {
             throw new IllegalStateException(e);
         }
-
         channel = randomAccessFile.getChannel();
-
     }
 
     private void ensureFileExists(File file) {
@@ -63,11 +60,15 @@ class Bucket {
 
     void close() {
         try {
-            channel.force(true);
-            channel.close();
+            if (channel.isOpen()) {
+                channel.force(true);
+                channel.close();
+            } else {
+                logger.warn("closing bucket {} without an open channel.", bucketNumber);
+            }
             randomAccessFile.close();
         } catch (IOException e) {
-            logger.warn("unable to flush and close file {}", filename);
+            logger.warn("unable to flush and close file " + filename, e);
         }
     }
 
@@ -113,7 +114,9 @@ class Bucket {
         try {
             //todo make sure this triggers after potentially different pending writes have their lock
             synchronized (this) {
-                channel.force(true);
+                if (channel.isOpen()) {
+                    channel.force(true);
+                }
             }
         } catch (IOException e) {
             logger.warn("unable to flush file {}", filename);
