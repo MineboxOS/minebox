@@ -34,7 +34,7 @@ class Bucket {
         final File parentDirF = new File(parentDir);
         parentDirF.mkdirs();
         final File file = new File(parentDirF, filename);
-
+        logger.debug("starting to monitor bucket {} with file {}", bucketNumber, file.getAbsolutePath());
         ensureFileExists(file);
         try {
             randomAccessFile = new RandomAccessFile(file, "rw");
@@ -156,6 +156,5 @@ class Bucket {
     public long getUpperBound() {
         return upperBound;
     }
-
 
 }

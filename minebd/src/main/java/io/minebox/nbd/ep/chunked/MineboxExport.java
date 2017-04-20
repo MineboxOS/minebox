@@ -51,9 +51,7 @@ public class MineboxExport implements ExportProvider {
                 .build(new CacheLoader<Integer, Bucket>() {
                     @Override
                     public Bucket load(Integer key) throws Exception {
-                        final Bucket ret = new Bucket(key, config.parentDir, getBucketSize());
-                        logger.debug("starting to monitor bucket {} with file {}", key);
-                        return ret;
+                        return new Bucket(key, config.parentDir, getBucketSize());
                     }
                 });
     }
