@@ -4,7 +4,8 @@
 
 # Uploading is a multi-step process:
 # 1) Create a read-only snapshot of the data subvolumes on all lower disks.
-# 2) Unlock sia wallet if it is locked (is this needed at all? seems to work fine without it).
+# 2) Unlock sia wallet if it is locked.
+#    (Is this needed at all? Seems to work fine without it.)
 # 3) Initiate uploads for all non-zero-size files in the snapshot(s) whose
 #    unique name does not exist in the uploaded sia files yet.
 #    Create a metadata list of all files belonging to the snapshot(s).
@@ -16,14 +17,18 @@
 # Open questions:
 # - Are old files on sia cleaned up or are they just timing out at some point?
 # - What to do with instances where uploader was prematurely terminated?
-# - Upload can take over all your outgoing bandwidth, is this a problem?
+# - Upload can take over all your outgoing bandwidth (and take it for a longer
+#   time after upload is said to be finished), is this a problem?
 
+DATADIR_MASK="/mnt/lower*/data"
+METADATA_BASE="/mnt/lower1/mineboxmeta"
+SIA_DIR="/mnt/lower1/sia"
 
 # Step 1: Create snapshot.
 snapname=`date "+%s"`
 echo "Creating lower-level data snapshot(s) with name: $snapname"
 # Potentially, we should ensure that those data/ directories are actually subvolumes.
-for subvol in /mnt/lower*/data; do
+for subvol in $DATADIR_MASK; do
   mkdir -p $subvol/snapshots
   btrfs subvolume snapshot -r $subvol $subvol/snapshots/$snapname
 done
@@ -47,12 +52,12 @@ echo "TBD: Unlocking wallet."
 # Step 3: Initiate needed uploads.
 
 echo "Start downloads."
-metadir="/mnt/lower1/mineboxmeta/backup.$snapname"
+metadir="$METADATA_BASE/backup.$snapname"
 mkdir -p $metadir
 uploaded_files=`siac renter list | awk '/.dat$/ { print $3; }'`
 uploading_files=`siac renter list | awk '/.dat \(uploading/ { print $3; }'`
 uploads_in_progress=0
-for filepath in /mnt/lower*/data/snapshots/$snapname/*.dat; do
+for filepath in $DATADIR_MASK/snapshots/$snapname/*.dat; do
   # Only use files of non-zero size.
   if [ -s "$filepath" ]; then
     filename=`basename $filepath`
@@ -76,7 +81,7 @@ done
 
 ourfiles=`cat $metadir/files`
 while [ $uploads_in_progress -gt 0 ]; do
-  echo "$uploads_in_progress uploads are in progress, wait 30 minutes and see if they clear."
+  echo "$uploads_in_progress uploads are in progress, wait 30 minutes and see if they clear. Current time: "`date`
   sleep 30m
   # uploads in progress can be retrieved from `siac renter uploads` or
   # REST API /renter/files: https://github.com/NebulousLabs/Sia/blob/master/doc/API.md#renterfiles-get
@@ -91,10 +96,10 @@ done
 
 # Copy .sia files to metadata directory.
 for file in $ourfiles; do
-  cp /mnt/lower1/sia/renter/$file.sia $metadir/
+  cp $SIA_DIR/renter/$file.sia $metadir/
 done
 # Create a bundle of all metadata for this backup.
-pushd /mnt/lower1/mineboxmeta
+pushd $METADATA_BASE
 zip -r9 "backup.$snapname.zip" "backup.$snapname/"
 if [ -e "backup.$snapname.zip" ]; then
   rm -rf "backup.$snapname"
@@ -107,6 +112,6 @@ echo "TBD: Upload metadata."
 
 # Step 5: Remove snapshot.
 echo "(NOT) Removing lower-level data snapshot(s) with name: $snapname"
-for snap in /mnt/lower*/data/snapshots/$snapname; do
+for snap in $DATADIR_MASK/snapshots/$snapname; do
   btrfs subvolume delete $snap
 done
