@@ -34,7 +34,7 @@ class Bucket {
         final File parentDirF = new File(parentDir);
         parentDirF.mkdirs();
         final File file = new File(parentDirF, filename);
-
+        logger.debug("opening {} ", file.getAbsolutePath());
         ensureFileExists(file);
         try {
             randomAccessFile = new RandomAccessFile(file, "rw");
