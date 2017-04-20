@@ -4,7 +4,7 @@
 
 # Uploading is a multi-step process:
 # 1) Create a read-only snapshot of the data subvolumes on all lower disks.
-# 2) Unlock sia wallet if it is locked.
+# 2) Unlock sia wallet if it is locked (is this needed at all? seems to work fine without it).
 # 3) Initiate uploads for all non-zero-size files in the snapshot(s) whose
 #    unique name does not exist in the uploaded sia files yet.
 #    Create a metadata list of all files belonging to the snapshot(s).
@@ -15,6 +15,8 @@
 #
 # Open questions:
 # - Are old files on sia cleaned up or are they just timing out at some point?
+# - What to do with instances where uploader was prematurely terminated?
+# - Upload can take over all your outgoing bandwidth, is this a problem?
 
 
 # Step 1: Create snapshot.
@@ -72,6 +74,7 @@ done
 
 # Step 4: Save/upload metadata.
 
+ourfiles=`cat $metadir/files`
 while [ $uploads_in_progress -gt 0 ]; do
   echo "$uploads_in_progress uploads are in progress, wait 30 minutes and see if they clear."
   sleep 30m
@@ -79,7 +82,6 @@ while [ $uploads_in_progress -gt 0 ]; do
   # REST API /renter/files: https://github.com/NebulousLabs/Sia/blob/master/doc/API.md#renterfiles-get
   uploads_in_progress=0
   files_in_progress=`siac renter uploads | awk '/.dat($| )/ { print $3; }'`
-  ourfiles=`cat $metadir/files`
   for file in $files_in_progress; do
     if [[ $ourfiles =~ (^|[[:space:]])"$file"($|[[:space:]]) ]]; then
       (( uploads_in_progress += 1 ))
@@ -87,13 +89,24 @@ while [ $uploads_in_progress -gt 0 ]; do
   done
 done
 
-echo "TBD: Save and upload metadata."
-
+# Copy .sia files to metadata directory.
+for file in $ourfiles; do
+  cp /mnt/lower1/sia/renter/$file.sia $metadir/
+done
+# Create a bundle of all metadata for this backup.
+pushd /mnt/lower1/mineboxmeta
+zip -r9 "backup.$snapname.zip" "backup.$snapname/"
+if [ -e "backup.$snapname.zip" ]; then
+  rm -rf "backup.$snapname"
+fi
+popd
+# Upload metadata bundle.
+echo "TBD: Upload metadata."
 # TBD
 
 
 # Step 5: Remove snapshot.
 echo "(NOT) Removing lower-level data snapshot(s) with name: $snapname"
 for snap in /mnt/lower*/data/snapshots/$snapname; do
-  echo btrfs subvolume delete $snap
+  btrfs subvolume delete $snap
 done
