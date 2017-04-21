@@ -30,6 +30,18 @@ DATADIR_MASK="/mnt/lower*/data"
 METADATA_BASE="/mnt/lower1/mineboxmeta"
 SIA_DIR="/mnt/lower1/sia"
 
+die() {
+    echo -e "$1"
+    exit 1
+}
+LANG=C
+
+# Step 0: Check if siad is running.
+systemctl status sia > /dev/null
+if [ "$?" != "0" ]; then
+  die "sia daemon needs to be running for this to be successful."
+fi
+
 # Step 1: Create snapshot.
 if [ -n "$1" ]; then
   snapname=""
@@ -39,8 +51,7 @@ if [ -n "$1" ]; then
     fi
   done
   if [ -z $snapname ]; then
-    echo "A started backup with the name $1 does not exist."
-    exit 1
+    die "A started backup with the name $1 does not exist."
   fi
   echo "Re-starting backup $snapname"
 else
@@ -93,7 +104,12 @@ for filepath in $DATADIR_MASK/snapshots/$snapname/*.dat; do
       (( uploads_in_progress += 1 ))
     else
       echo "$sia_filename has to be uploaded, starting that."
-      siac renter upload $filepath $sia_filename
+      timeout 30s siac renter upload $filepath $sia_filename
+      if [ "$?" = "124" ]; then
+        die "ERROR: upload command timed out. You may need to restart the sia daemon, see https://github.com/NebulousLabs/Sia/issues/1605 for more information. You can re-start this backup process later by calling |$0 $snapname|."
+      elif [ "$?" != "0" ]; then
+        die "ERROR: upload unsuccessful. Please check what the problem is. You can re-start this backup process later by calling |$0 $snapname|."
+      fi
       (( uploads_in_progress += 1 ))
     fi
     # Add filename to the backup file list (metadata for restore).
