@@ -91,7 +91,6 @@ if [ -e $metadir/files ]; then
 fi
 uploaded_files=`siac renter list | awk '/.dat$/ { print $3; }'`
 uploading_files=`siac renter list | awk '/.dat \(uploading/ { print $3; }'`
-uploads_in_progress=0
 for filepath in $DATADIR_MASK/snapshots/$snapname/*.dat; do
   # Only use files of non-zero size.
   if [ -s "$filepath" ]; then
@@ -101,7 +100,6 @@ for filepath in $DATADIR_MASK/snapshots/$snapname/*.dat; do
       echo "$sia_filename is part of the set but already uploaded."
     elif [[ $uploading_files =~ (^|[[:space:]])"$sia_filename"($|[[:space:]]) ]]; then
       echo "$sia_filename is part of the set but the upload is already in progress."
-      (( uploads_in_progress += 1 ))
     else
       echo "$sia_filename has to be uploaded, starting that."
       timeout 30s siac renter upload $filepath $sia_filename
@@ -110,7 +108,6 @@ for filepath in $DATADIR_MASK/snapshots/$snapname/*.dat; do
       elif [ "$?" != "0" ]; then
         die "ERROR: upload unsuccessful. Please check what the problem is. You can re-start this backup process later by calling |$0 $snapname|."
       fi
-      (( uploads_in_progress += 1 ))
     fi
     # Add filename to the backup file list (metadata for restore).
     echo $sia_filename >> $metadir/files
@@ -120,18 +117,29 @@ done
 # Step 4: Save/upload metadata.
 
 ourfiles=`cat $metadir/files`
-while [ $uploads_in_progress -gt 0 ]; do
-  echo "$uploads_in_progress uploads are in progress, wait 30 minutes and see if they clear. Current time: "`date`
-  sleep 30m
+uploads_in_progress=0
+upload_mb_total=0
+upload_mb_remaining=0
+calc_remaining() {
   # uploads in progress can be retrieved from `siac renter uploads` or
   # REST API /renter/files: https://github.com/NebulousLabs/Sia/blob/master/doc/API.md#renterfiles-get
-  uploads_in_progress=0
-  files_in_progress=`siac renter uploads | awk '/.dat($| )/ { print $3; }'`
-  for file in $files_in_progress; do
-    if [[ $ourfiles =~ (^|[[:space:]])"$file"($|[[:space:]]) ]]; then
-      (( uploads_in_progress += 1 ))
-    fi
+  local rx=""
+  for file in $ourfiles; do
+    # If rx exists and has content, add a | at the end, and always add $file but escape the dots in it for use in a regular expression.
+    rx=${rx:+$rx|}${file//./\\.}
   done
+  local uploads=`siac renter uploads`
+  # We replace all dots by escaped dots for a proper regular expression.
+  uploads_in_progress=`echo "$uploads" | awk "/ ($rx) \(uploading/ { count+=1; } END { print count }"`
+  # We assume all file sizes are MB (smaller doesn't weigh much, and we never get larger than 40 MB)
+  upload_mb_total=`echo "$uploads" | awk "/ MB +($rx) \(uploading/ { total+=\\$1; } END { print total }"`
+  upload_mb_remaining=`echo "$uploads" | awk "/ MB +($rx) \(uploading/ { remaining+=\\$1*(100-\\$5)/100; } END { print remaining }"`
+}
+calc_remaining
+while [ $uploads_in_progress -gt 0 ]; do
+  echo "$uploads_in_progress uploads are in progress ($upload_mb_remaining of $upload_mb_total MB still to do), wait 30 minutes and see if they clear. Current time: "`date`
+  sleep 30m
+  calc_remaining
 done
 
 # Copy .sia files to metadata directory.

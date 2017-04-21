@@ -8,4 +8,7 @@ fi
 
 screen -dmS uploader bash -c "~/mineblimp_vm/sia/uploader.sh $@; read -p 'Press [ENTER] to continue/terminate ' -s"
 
+# Give us a little bit of time so screen is sure to have created the "window".
+sleep 1s
+
 screen -list uploader
