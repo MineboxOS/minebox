@@ -42,6 +42,7 @@ if [ -n "$1" ]; then
     echo "A started backup with the name $1 does not exist."
     exit 1
   fi
+  echo "Re-starting backup $snapname"
 else
   snapname=`date "+%s"`
   echo "Creating lower-level data snapshot(s) with name: $snapname"
@@ -123,6 +124,8 @@ for file in $ourfiles; do
     cp $SIA_DIR/renter/$file.sia $metadir/
   fi
 done
+# We don't need the files list there, it's now implied from the list of .sia files.
+rm "$metadir/files"
 # Create a bundle of all metadata for this backup.
 pushd $METADATA_BASE
 if [ -e "backup.$snapname.zip" ]; then
@@ -144,9 +147,12 @@ for snap in $DATADIR_MASK/snapshots/$snapname; do
   btrfs subvolume delete $snap
 done
 
+echo "Checking for non-processed snapshots..."
 (for subvol in $DATADIR_MASK; do
   btrfs subvolume list $subvol
-done) | grep 'snapshots' > /dev/null
-if [ "$?" != "0" ]; then
+done) | grep 'snapshots'
+if [ "$?" = "0" ]; then
   echo "There are snapshots that haven't been fully processed yet. You can finish them with |uploader.sh <timestamp>|."
 fi
+
+echo "Backup $snapname has been uploaded."
