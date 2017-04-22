@@ -6,7 +6,8 @@ import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 
 public class ApiConfig extends Configuration {
 
-    public SwaggerBundleConfiguration swaggerBundleConfiguration;
+
+    public SwaggerBundleConfiguration swagger;
 
     public MinebdConfig minebd;
 

@@ -5,7 +5,32 @@ server:
 swagger:
   resourcePackage: io.minebox.resource
 
+# Logging settings.
+logging:
+  level: INFO
+  loggers:
+    io.minebox: DEBUG
+
+
+
+# Logback's Time Based Rolling Policy - archivedLogFilenamePattern: /tmp/application-%d{yyyy-MM-dd}.log.gz
+# Logback's Size and Time Based Rolling Policy -  archivedLogFilenamePattern: /tmp/application-%d{yyyy-MM-dd}-%i.log.gz
+# Logback's Fixed Window Rolling Policy -  archivedLogFilenamePattern: /tmp/application-%i.log.gz
+
+#  appenders:
+#    - type: console
+#    - type: file
+#      threshold: INFO
+#      logFormat: "%-6level [%d{HH:mm:ss.SSS}] [%t] %logger{5} - %X{code} %msg %n"
+#      currentLogFilename: /tmp/application.log
+#      archivedLogFilenamePattern: /tmp/application-%d{yyyy-MM-dd}-%i.log.gz
+#      archivedFileCount: 7
+#      timeZone: UTC
+#      maxFileSize: 10MB
+
+
 minebd:
+  nbdPort : 10811
   maxOpenFiles : 20
   parentDir : /home/andreas/minebox/mineblimp/minedbDat
   reportedSize : 10G

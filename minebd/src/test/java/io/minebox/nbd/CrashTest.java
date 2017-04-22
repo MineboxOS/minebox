@@ -1,6 +1,7 @@
 package io.minebox.nbd;
 
 import java.io.IOException;
+import java.net.BindException;
 import java.util.concurrent.CountDownLatch;
 
 import io.minebox.config.MinebdConfig;
@@ -20,13 +21,19 @@ public class CrashTest {
         CountDownLatch started = new CountDownLatch(1);
         final MinebdConfig config = TestUtil.createSampleConfig();
         config.nbdPort = 10811;
-        final Server server = new Server(new SystemdUtil() {
+        final NbdServer nbdServer = new NbdServer(new SystemdUtil() {
             @Override
             void sendNotify() {
                 started.countDown();
             }
         }, config);
-        new Thread(server::startServer).start();
+        new Thread(() -> {
+            try {
+                nbdServer.start();
+            } catch (BindException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        }).start();
         started.await();
         final Process process = new ProcessBuilder("sudo", "./mountnbd1.sh")
                 .inheritIO()

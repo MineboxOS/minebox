@@ -1,7 +1,17 @@
 package io.minebox;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.Set;
+import java.util.function.Consumer;
+
+import javax.servlet.DispatcherType;
+import javax.servlet.FilterRegistration;
+import javax.ws.rs.Path;
+
 import com.google.common.annotations.VisibleForTesting;
-import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.hubspot.dropwizard.guice.GuiceBundle;
@@ -11,44 +21,49 @@ import io.dropwizard.jersey.errors.EarlyEofExceptionMapper;
 import io.dropwizard.jersey.errors.LoggingExceptionMapper;
 import io.dropwizard.jersey.jackson.JsonProcessingExceptionMapper;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
+import io.dropwizard.lifecycle.Managed;
+import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import io.minebox.config.ApiConfig;
+import io.minebox.nbd.NbdModule;
 import io.minebox.util.GlobalErrorHandler;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.DispatcherType;
-import javax.servlet.FilterRegistration;
-import javax.ws.rs.Path;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.EnumSet;
 
+public class MinebdApplication extends Application<ApiConfig> {
 
-public class KeyManagerApplication extends Application<ApiConfig> {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(KeyManagerApplication.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MinebdApplication.class);
     private static final Reflections REFLECTIONS = new Reflections("io.minebox");
     @VisibleForTesting
     public Injector injector;
 
     public static void main(String[] args) throws Exception {
         Thread.setDefaultUncaughtExceptionHandler(new GlobalErrorHandler());
-        if (args.length == 3) { //small hack for commit hash
-            args = new String[]{args[0], args[1]};
-        }
-        new KeyManagerApplication().run(args);
+
+        args = addServerString(args);
+        new MinebdApplication().run(args);
+    }
+
+    private static String[] addServerString(String[] args) {
+        final String[] ret = new String[args.length + 1];
+        ret[0] = "server"; //dropwizard wants the word "server" at the start...
+        System.arraycopy(args, 0, ret, 1, args.length);
+        return ret;
+
     }
 
     @Override
     public void run(ApiConfig configuration, Environment environment) throws Exception {
         LOGGER.info("api started up");
         JerseyEnvironment jersey = environment.jersey();
+        register(environment.lifecycle(), REFLECTIONS.getSubTypesOf(Managed.class));
+
 //        injector.getInstance(SessionFactory.class); //init DB
         installCorsFilter(environment);
 
@@ -68,6 +83,11 @@ public class KeyManagerApplication extends Application<ApiConfig> {
         });
         jersey.register(new JsonProcessingExceptionMapper(true));
         jersey.register(new EarlyEofExceptionMapper());
+    }
+
+    private void register(LifecycleEnvironment lifecycle, Collection<Class<? extends Managed>> managed) {
+        LOGGER.info("managing lifecycle of {} services", managed.size());
+        managed.forEach(managedClass -> lifecycle.manage(injector.getInstance(managedClass)));
     }
 
 
@@ -92,12 +112,7 @@ public class KeyManagerApplication extends Application<ApiConfig> {
 
         GuiceBundle<ApiConfig> guiceBundle = GuiceBundle.<ApiConfig>newBuilder()
                 .setConfigClass(ApiConfig.class)
-                .addModule(new AbstractModule() {
-                    @Override
-                    protected void configure() {
-//a single module is required
-                    }
-                })
+                .addModule(new NbdModule())
                 .build();
 
         bootstrap.addBundle(guiceBundle);
@@ -107,7 +122,7 @@ public class KeyManagerApplication extends Application<ApiConfig> {
         SwaggerBundle<ApiConfig> swagger = new SwaggerBundle<ApiConfig>() {
             @Override
             protected SwaggerBundleConfiguration getSwaggerBundleConfiguration(ApiConfig configuration) {
-                return configuration.swaggerBundleConfiguration;
+                return configuration.swagger;
             }
         };
 
