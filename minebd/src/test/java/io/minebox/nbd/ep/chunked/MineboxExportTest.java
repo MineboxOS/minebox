@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import io.dropwizard.util.Size;
+import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.Constants;
 import io.minebox.nbd.NullEncryption;
 import org.apache.commons.io.FileUtils;
@@ -53,7 +55,7 @@ public class MineboxExportTest {
     public void testBoundaries() throws IOException {
         final MinebdConfig cfg = new MinebdConfig();
 
-        cfg.bucketSize = 16; //buckets for ants
+        cfg.bucketSize = Size.bytes(16); //buckets for ants
         cfg.maxOpenFiles = 3;
         cfg.parentDir = "tinyfiles";
 

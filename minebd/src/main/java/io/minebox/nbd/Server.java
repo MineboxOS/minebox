@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 
 import com.google.common.annotations.VisibleForTesting;
+import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.ep.ExportProvider;
-import io.minebox.nbd.ep.chunked.MinebdConfig;
 import io.minebox.nbd.ep.chunked.MineboxExport;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 public class Server {
 
-    private static final String NBD_DEFAULT_PORT = "10809";
     private final int port;
     private final SystemdUtil systemdUtil;
     private static final Logger logger = LoggerFactory.getLogger(Server.class);
@@ -29,18 +28,23 @@ public class Server {
     private EventLoopGroup eventLoopGroup;
 
     @VisibleForTesting
-    Server(int port,SystemdUtil systemdUtil) {
-        this.port = port;
+    Server(SystemdUtil systemdUtil, MinebdConfig config) {
+        this.port = config.nbdPort;
         this.systemdUtil = systemdUtil;
-        config = new MinebdConfig();
-        final Encryption encryption = new SymmetricEncryption(config.encryptionSeed);
-        exportProvider = new MineboxExport(config, encryption);
+        this.config = config;
+        final Encryption encryption = new SymmetricEncryption(this.config.encryptionSeed);
+        exportProvider = new MineboxExport(this.config, encryption);
     }
 
     public static void main(String... args) {
-        int nbdPort = Integer.parseInt(args.length > 1 && args[0] != null ? args[0] : NBD_DEFAULT_PORT);
-        Server s = new Server(nbdPort,new SystemdUtil());
+        Server s = new Server(new SystemdUtil(), createDefaultConfig());
         s.startServer();
+    }
+
+    private static MinebdConfig createDefaultConfig() {
+        final MinebdConfig config = new MinebdConfig();
+        config.parentDir = "minedbDat";
+        return config;
     }
 
     private void addShutownHook(ExportProvider exportProvider, EventLoopGroup eventLoopGroup) {
@@ -74,8 +78,8 @@ public class Server {
         eventLoopGroup = new NioEventLoopGroup();
         addShutownHook(exportProvider, eventLoopGroup);
         try {
-            ServerBootstrap b = new ServerBootstrap();
-            b.group(eventLoopGroup)
+            ServerBootstrap bootstrap = new ServerBootstrap();
+            bootstrap.group(eventLoopGroup)
                     .channel(NioServerSocketChannel.class)
                     .localAddress(new InetSocketAddress(port))
                     .childHandler(new ChannelInitializer<SocketChannel>() {
@@ -84,17 +88,24 @@ public class Server {
                             ch.pipeline().addLast(new HandshakePhase(exportProvider));
                         }
                     });
-            ChannelFuture f = b.bind().sync();
+            final ChannelFuture bind = bootstrap.bind();
+            ChannelFuture f = bind.sync();
             logger.info("started up minebd on port {} ", port);
             final Channel channel = f.channel();
             final ChannelFuture channelFuture = channel.closeFuture();
             systemdUtil.sendNotify(); //tell systemd we are ready
-            channelFuture.sync(); //wait infinitely?
+            channelFuture.sync();
+            //wait infinitely?
             logger.info("stopped main thread");
+
         } catch (InterruptedException e) {
             //very unexpected
             systemdUtil.sendError(1);
             logger.info("terminated due to interrupt.", e);
+        } catch (Exception e) {
+            systemdUtil.sendError(1);
+            logger.info("terminated due to exception at startup.", e);
+            System.exit(1);
         }
     }
 

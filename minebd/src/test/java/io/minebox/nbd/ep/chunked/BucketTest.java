@@ -1,8 +1,12 @@
 package io.minebox.nbd.ep.chunked;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
+import io.dropwizard.util.Size;
+import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.NullEncryption;
+import io.minebox.nbd.TestUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -25,14 +29,17 @@ public class BucketTest {
 
     @Test
     public void testExport() throws IOException {
-        final MinebdConfig config = new MinebdConfig();
+        final MinebdConfig config = TestUtil.createSampleConfig();
         final MineboxExport export = new MineboxExport(config, new NullEncryption());
-        export.trim(0, config.bucketSize);
+        export.open("test");
+        export.write(0, ByteBuffer.wrap(new byte[]{1, 2, 3}), true);
+        export.read(0, 100);
+        export.trim(0, (int) config.bucketSize.toBytes());
     }
 
     @Test
     public void checkPositiveBounds() throws IOException {
-        long bucketSize = new MinebdConfig().bucketSize;
+        long bucketSize = Size.megabytes(40).toBytes();
 
         final Bucket underTest = new Bucket(0, "testJunit", bucketSize);
 

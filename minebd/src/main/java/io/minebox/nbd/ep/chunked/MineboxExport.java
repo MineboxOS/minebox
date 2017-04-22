@@ -7,12 +7,13 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 
+import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalListener;
 import com.google.common.primitives.Ints;
-import io.minebox.nbd.Constants;
+import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.Encryption;
 import io.minebox.nbd.ep.ExportProvider;
 import org.slf4j.Logger;
@@ -22,19 +23,18 @@ import static java.util.stream.Collectors.toList;
 
 public class MineboxExport implements ExportProvider {
 
-    public static final long FILENAME_DIGITS = log16(Constants.MAX_SUPPORTED_SIZE);
     private final long bucketSize;//according to taek42 , 40 MB is the bucket size for contracts, so we use the same for efficientcy.
     public static final int MAX_OPEN_FILES = 20;
     private static final Logger logger = LoggerFactory.getLogger(MineboxExport.class);
     final private MinebdConfig config;
-    private final Encryption encryption;
+    private final Encryption encryption; //todo pass this to the bucket
     private final LoadingCache<Integer, Bucket> files;
 
     public MineboxExport(MinebdConfig config, Encryption encryption) {
         this.config = config;
         files = createFilesCache(config);
         this.encryption = encryption;
-        this.bucketSize = config.bucketSize;
+        this.bucketSize = config.bucketSize.toBytes();
     }
 
     public long getBucketSize() {
@@ -42,8 +42,12 @@ public class MineboxExport implements ExportProvider {
     }
 
     private LoadingCache<Integer, Bucket> createFilesCache(final MinebdConfig config) {
+        Preconditions.checkNotNull(config.parentDir);
+        final Integer maxOpenFiles = config.maxOpenFiles;
+        Preconditions.checkNotNull(maxOpenFiles);
+        Preconditions.checkArgument(maxOpenFiles > 0);
         return CacheBuilder.newBuilder()
-                .maximumSize(config.maxOpenFiles)
+                .maximumSize(maxOpenFiles)
                 .removalListener((RemovalListener<Integer, Bucket>) notification -> {
                     logger.debug("no longer monitoring bucket {}", notification.getKey());
                     notification.getValue().close();
@@ -63,7 +67,7 @@ public class MineboxExport implements ExportProvider {
     @Override
     public long open(CharSequence exportName) throws IOException {
         logger.debug("opening {}", exportName);
-        return config.reportedSize;
+        return config.reportedSize.toBytes();
     }
 
     //todo all lengths should be ints not longs

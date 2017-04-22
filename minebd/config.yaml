@@ -1,0 +1,13 @@
+server:
+  registerDefaultExceptionMappers: false
+  rootPath: /v1/*
+
+swagger:
+  resourcePackage: io.minebox.resource
+
+minebd:
+  maxOpenFiles : 20
+  parentDir : /home/andreas/minebox/mineblimp/minedbDat
+  reportedSize : 10G
+  encryptionSeed: test123  #to be replaced with seedLocation path which lies on USB
+  bucketSize : 40M
