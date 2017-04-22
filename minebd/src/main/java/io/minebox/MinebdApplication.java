@@ -4,8 +4,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Collection;
 import java.util.EnumSet;
-import java.util.Set;
-import java.util.function.Consumer;
 
 import javax.servlet.DispatcherType;
 import javax.servlet.FilterRegistration;
@@ -13,6 +11,7 @@ import javax.ws.rs.Path;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Injector;
+import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.hubspot.dropwizard.guice.GuiceBundle;
 import io.dropwizard.Application;
@@ -28,6 +27,7 @@ import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import io.minebox.config.ApiConfig;
+import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.NbdModule;
 import io.minebox.util.GlobalErrorHandler;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
@@ -112,7 +112,17 @@ public class MinebdApplication extends Application<ApiConfig> {
 
         GuiceBundle<ApiConfig> guiceBundle = GuiceBundle.<ApiConfig>newBuilder()
                 .setConfigClass(ApiConfig.class)
-                .addModule(new NbdModule())
+                .addModule(new NbdModule() {
+                    @Override
+                    public MinebdConfig getConfig() {
+                        return getProvider(MinebdConfig.class).get();
+                    }
+
+                    @Provides
+                    public MinebdConfig getConfig(ApiConfig apiConfig) {
+                        return apiConfig.minebd;
+                    }
+                })
                 .build();
 
         bootstrap.addBundle(guiceBundle);

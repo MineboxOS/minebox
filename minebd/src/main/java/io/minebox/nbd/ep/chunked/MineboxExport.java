@@ -13,6 +13,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalListener;
 import com.google.common.primitives.Ints;
+import com.google.inject.Inject;
 import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.Encryption;
 import io.minebox.nbd.ep.ExportProvider;
@@ -30,6 +31,7 @@ public class MineboxExport implements ExportProvider {
     private final Encryption encryption; //todo pass this to the bucket
     private final LoadingCache<Integer, Bucket> files;
 
+    @Inject
     public MineboxExport(MinebdConfig config, Encryption encryption) {
         this.config = config;
         files = createFilesCache(config);

@@ -5,11 +5,12 @@ import java.net.BindException;
 import java.net.InetSocketAddress;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.inject.Guice;
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 import io.dropwizard.lifecycle.Managed;
 import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.ep.ExportProvider;
-import io.minebox.nbd.ep.chunked.MineboxExport;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -41,16 +42,22 @@ public class NbdServer implements Managed {
 
     @VisibleForTesting
     @Inject
-    public NbdServer(SystemdUtil systemdUtil, MinebdConfig config) {
+    public NbdServer(SystemdUtil systemdUtil, MinebdConfig config, ExportProvider exportProvider) {
         this.port = config.nbdPort;
         this.systemdUtil = systemdUtil;
         this.config = config;
-        final Encryption encryption = new SymmetricEncryption(this.config.encryptionSeed);
-        exportProvider = new MineboxExport(this.config, encryption);
+        this.exportProvider = exportProvider;
     }
 
     public static void main(String... args) {
-        NbdServer s = new NbdServer(new SystemdUtil(), createDefaultConfig());
+        final Injector injector = Guice.createInjector(new NbdModule() {
+            @Override
+            public MinebdConfig getConfig() {
+                return createDefaultConfig();
+            }
+        });
+        NbdServer s;
+        s = injector.getInstance(NbdServer.class);
         try {
             s.start();
         } catch (BindException | InterruptedException e) {

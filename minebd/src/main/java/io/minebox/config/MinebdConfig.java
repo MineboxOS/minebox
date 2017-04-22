@@ -14,4 +14,6 @@ public class MinebdConfig {
     public String encryptionSeed = "to_be_replaced_with_usb";
     public Size bucketSize = Size.megabytes(40);
 
+    public MinebdConfig() {
+    }
 }

@@ -2,13 +2,17 @@ package io.minebox.nbd;
 
 import java.nio.ByteBuffer;
 
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
+
 /**
  * Created by andreas on 11.04.17.
  */
 public class SymmetricEncryption implements Encryption {
     private BitPatternGenerator bitPatternGenerator;
 
-    public SymmetricEncryption(String key) {
+    @Inject
+    public SymmetricEncryption(@Named(NbdModule.ENCRYPTION_KEY) String key) {
         bitPatternGenerator = new BitPatternGenerator(key);
     }
 
