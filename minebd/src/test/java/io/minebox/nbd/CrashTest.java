@@ -28,7 +28,7 @@ public class CrashTest {
         new Thread(server::startServer).start();
         started.await();
 //        Thread.sleep(1000);
-        System.out.println(new File(".").getAbsolutePath());
+//        System.out.println(new File(".").getAbsolutePath());
         final Process process = new ProcessBuilder("sudo", "./mountnbd1.sh")
                 .inheritIO()
                 .start();

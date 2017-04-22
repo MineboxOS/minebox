@@ -3,6 +3,7 @@ package io.minebox.nbd;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.primitives.Ints;
 import io.minebox.nbd.ep.ExportProvider;
@@ -22,6 +23,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
     private State state = State.TM_RECEIVE_CMD;
 
     private final ExportProvider exportProvider;
+    private final AtomicInteger numOperations = new AtomicInteger(0);
 
     private static class Error {
         public final static int EIO = 5;
@@ -41,23 +43,31 @@ public class TransmissionPhase extends ByteToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         for (; ; ) {
-            switch (state) {
-                case TM_RECEIVE_CMD:
-                    if (!hasMin(in, 28))
-                        return;
+            final int i = numOperations.incrementAndGet();
+            if (i != 1) {
+                logger.warn("parallel action {}", i);
+            }
+            try {
+                switch (state) {
+                    case TM_RECEIVE_CMD:
+                        if (!hasMin(in, 28))
+                            return;
 
-                    receiveTransmissionCommand(ctx, in);
-                    state = State.TM_RECEIVE_CMD_DATA;
-                    break;
+                        receiveTransmissionCommand(ctx, in);
+                        state = State.TM_RECEIVE_CMD_DATA;
+                        break;
 
-                //FIXME: this will buffer maybe a lot of bytes?!
-                case TM_RECEIVE_CMD_DATA:
-                    if (cmdType == Protocol.NBD_CMD_WRITE && !hasMin(in, (int) cmdLength))
-                        return;
+                    //FIXME: this will buffer maybe a lot of bytes?!
+                    case TM_RECEIVE_CMD_DATA:
+                        if (cmdType == Protocol.NBD_CMD_WRITE && !hasMin(in, (int) cmdLength))
+                            return;
 
-                    processOperation(ctx, in);
-                    state = State.TM_RECEIVE_CMD;
-                    break;
+                        processOperation(ctx, in);
+                        state = State.TM_RECEIVE_CMD;
+                        break;
+                }
+            } finally {
+                numOperations.decrementAndGet();
             }
         }
     }

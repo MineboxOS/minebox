@@ -139,8 +139,10 @@ class Bucket {
         final long offsetInThisBucket = offsetInThisBucket(offset);
         final long lengthInThisBucket = calcLengthInThisBucket(offsetInThisBucket, length);
         if (lengthInThisBucket == size) {
-            channel.truncate(0);
-            channel.force(true);
+            synchronized (this) {
+                channel.truncate(0);
+                channel.force(true);
+            }
         } else {
             final ByteBuffer bb = ByteBuffer.allocate((int) length);
             bb.put(new byte[(int) length]);
