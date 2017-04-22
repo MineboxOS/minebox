@@ -5,7 +5,7 @@ import java.net.BindException;
 import java.util.concurrent.CountDownLatch;
 
 import io.minebox.config.MinebdConfig;
-import io.minebox.nbd.ep.chunked.MineboxExport;
+import io.minebox.nbd.ep.MineboxExport;
 import org.junit.Ignore;
 import org.junit.Test;
 

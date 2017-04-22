@@ -5,7 +5,7 @@ import com.google.inject.Provides;
 import com.google.inject.name.Named;
 import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.ep.ExportProvider;
-import io.minebox.nbd.ep.chunked.MineboxExport;
+import io.minebox.nbd.ep.MineboxExport;
 
 /**
  * Created by andreas on 22.04.17.

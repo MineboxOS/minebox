@@ -1,4 +1,4 @@
-package io.minebox.nbd.ep.chunked;
+package io.minebox.nbd.ep;
 
 import java.io.File;
 import java.io.FileNotFoundException;

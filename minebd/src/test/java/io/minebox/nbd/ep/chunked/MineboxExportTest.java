@@ -8,6 +8,7 @@ import io.dropwizard.util.Size;
 import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.Constants;
 import io.minebox.nbd.NullEncryption;
+import io.minebox.nbd.ep.MineboxExport;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
