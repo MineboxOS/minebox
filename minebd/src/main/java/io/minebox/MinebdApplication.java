@@ -113,11 +113,6 @@ public class MinebdApplication extends Application<ApiConfig> {
         GuiceBundle<ApiConfig> guiceBundle = GuiceBundle.<ApiConfig>newBuilder()
                 .setConfigClass(ApiConfig.class)
                 .addModule(new NbdModule() {
-                    @Override
-                    public MinebdConfig getConfig() {
-                        return getProvider(MinebdConfig.class).get();
-                    }
-
                     @Provides
                     public MinebdConfig getConfig(ApiConfig apiConfig) {
                         return apiConfig.minebd;

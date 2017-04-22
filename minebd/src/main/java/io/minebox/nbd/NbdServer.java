@@ -8,6 +8,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.google.inject.Provides;
 import io.dropwizard.lifecycle.Managed;
 import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.ep.ExportProvider;
@@ -51,7 +52,7 @@ public class NbdServer implements Managed {
 
     public static void main(String... args) {
         final Injector injector = Guice.createInjector(new NbdModule() {
-            @Override
+            @Provides
             public MinebdConfig getConfig() {
                 return createDefaultConfig();
             }
