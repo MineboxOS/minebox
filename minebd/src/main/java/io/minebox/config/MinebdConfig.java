@@ -15,5 +15,6 @@ public class MinebdConfig {
     public Size bucketSize = Size.megabytes(40);
 
     public MinebdConfig() {
+        //explicit non-annotated constructor so guice does not accidentally this class badly
     }
 }

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.BindException;
 import java.util.concurrent.CountDownLatch;
 
+import com.codahale.metrics.MetricRegistry;
 import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.ep.MineboxExport;
 import org.junit.Ignore;
@@ -18,7 +19,7 @@ public class CrashTest {
 
     @Test(timeout = 100000)
 
-    public void testCrash() throws InterruptedException, IOException {
+    public void testCrash() throws Exception {
         CountDownLatch started = new CountDownLatch(1);
         final MinebdConfig config = TestUtil.createSampleConfig();
         config.nbdPort = 10811;
@@ -27,7 +28,7 @@ public class CrashTest {
             void sendNotify() {
                 started.countDown();
             }
-        }, config, new MineboxExport(config, new NullEncryption()));
+        }, config, new MineboxExport(config, new NullEncryption(), new MetricRegistry()));
         new Thread(() -> {
             try {
                 nbdServer.start();
@@ -40,5 +41,6 @@ public class CrashTest {
                 .inheritIO()
                 .start();
         process.waitFor();
+        nbdServer.stop();
     }
 }

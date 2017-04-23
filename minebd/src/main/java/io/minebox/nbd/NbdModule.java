@@ -1,5 +1,6 @@
 package io.minebox.nbd;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.name.Named;
@@ -18,6 +19,9 @@ public abstract class NbdModule extends AbstractModule {
     protected void configure() {
         bind(Encryption.class).to(SymmetricEncryption.class);
         bind(ExportProvider.class).to(MineboxExport.class);
+        bind(NbdStatsReporter.class).asEagerSingleton();
+        bind(MetricRegistry.class).asEagerSingleton();
+//        bind(MetricRegistry.class).asEagerSingleton();
     }
 
     @Provides

@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -14,6 +17,7 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalListener;
 import com.google.common.primitives.Ints;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.Encryption;
 import org.slf4j.Logger;
@@ -21,21 +25,26 @@ import org.slf4j.LoggerFactory;
 
 import static java.util.stream.Collectors.toList;
 
+//@Singleton //holds bucks which hold open files, we dont want this to be recreated over and over
 public class MineboxExport implements ExportProvider {
 
     private final long bucketSize;//according to taek42 , 40 MB is the bucket size for contracts, so we use the same for efficientcy.
-    public static final int MAX_OPEN_FILES = 20;
     private static final Logger logger = LoggerFactory.getLogger(MineboxExport.class);
     final private MinebdConfig config;
     private final Encryption encryption; //todo pass this to the bucket
     private final LoadingCache<Integer, Bucket> files;
+    private Meter read;
+    private Meter write;
 
     @Inject
-    public MineboxExport(MinebdConfig config, Encryption encryption) {
+    public MineboxExport(MinebdConfig config, Encryption encryption, MetricRegistry metrics) {
         this.config = config;
         files = createFilesCache(config);
         this.encryption = encryption;
         this.bucketSize = config.bucketSize.toBytes();
+        read = metrics.meter("readBytes");
+        write = metrics.meter("writeBytes");
+        metrics.gauge("openfiles", () -> files::size);
     }
 
     public long getBucketSize() {
@@ -61,10 +70,6 @@ public class MineboxExport implements ExportProvider {
                 });
     }
 
-    private static long log16(long value) {
-        return (long) (Math.log(value) / Math.log(16));
-    }
-
     @Override
     public long open(CharSequence exportName) throws IOException {
         logger.debug("opening {}", exportName);
@@ -74,6 +79,7 @@ public class MineboxExport implements ExportProvider {
     //todo all lengths should be ints not longs
     @Override
     public ByteBuffer read(final long offset, final int length) throws IOException {
+        read.mark(length);
         final ByteBuffer origMessage = ByteBuffer.allocate(length);
         for (Integer bucketIndex : getBuckets(offset, length)) { //eventually make parallel
             Bucket bucket = getBucketFromIndex(bucketIndex);
@@ -94,9 +100,8 @@ public class MineboxExport implements ExportProvider {
     @Override
     public void write(long offset, ByteBuffer origMessage, boolean sync) throws IOException {
 //        logger.debug("writing {} bytes to offset {}", origMessage.remaining(), offset);
-
         final int length = origMessage.remaining();
-
+        write.mark(length);
         for (Integer bucketIndex : getBuckets(offset, length)) { //eventually make parallel
             Bucket bucket = getBucketFromIndex(bucketIndex);
             writeDataToBucket(bucket, offset, length, origMessage);

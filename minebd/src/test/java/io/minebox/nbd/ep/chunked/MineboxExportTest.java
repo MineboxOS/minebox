@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import com.codahale.metrics.MetricRegistry;
 import io.dropwizard.util.Size;
 import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.Constants;
@@ -35,7 +36,7 @@ public class MineboxExportTest {
     public void testCache() throws IOException {
         //trivial test to check out how the cache behaves. meant to be tested with a cache size of 2
         cfg.maxOpenFiles = 2;
-        final MineboxExport underTest = new MineboxExport(cfg, new NullEncryption());
+        final MineboxExport underTest = buildMineboxExport(cfg);
         underTest.read(0, 1024);
         underTest.read(12 * Constants.MEGABYTE, 1024);
         underTest.read(22 * Constants.MEGABYTE, 1024);
@@ -60,7 +61,7 @@ public class MineboxExportTest {
         cfg.maxOpenFiles = 3;
         cfg.parentDir = "tinyfiles";
 
-        final MineboxExport underTest = new MineboxExport(cfg, new NullEncryption());
+        final MineboxExport underTest = buildMineboxExport(cfg);
         final byte[] data = new byte[257];
 
         for (int i = 0; i < data.length; i++) {
@@ -80,5 +81,9 @@ public class MineboxExportTest {
         Assert.assertEquals(25, read.get(25));
 
 
+    }
+
+    public static MineboxExport buildMineboxExport(MinebdConfig cfg) {
+        return new MineboxExport(cfg, new NullEncryption(),new MetricRegistry());
     }
 }

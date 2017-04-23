@@ -47,6 +47,7 @@ shadowJar {
 dependencies {
 
     compile group: 'io.dropwizard', name: 'dropwizard-core', version: '1.1.0'
+    compile group: 'io.dropwizard.metrics', name: 'metrics-core', version: '3.2.2'
     compile 'com.hubspot.dropwizard:dropwizard-guice:1.0.0.3'
     compile 'com.smoketurner:dropwizard-swagger:1.1.0-1'
     compile group: 'com.google.inject', name: 'guice', version: '4.0'

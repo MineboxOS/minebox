@@ -5,10 +5,7 @@ import java.net.BindException;
 import java.net.InetSocketAddress;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.inject.Guice;
-import com.google.inject.Inject;
-import com.google.inject.Injector;
-import com.google.inject.Provides;
+import com.google.inject.*;
 import io.dropwizard.lifecycle.Managed;
 import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.ep.ExportProvider;
@@ -26,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import static io.minebox.nbd.NbdServer.State.*;
 
 
+@Singleton
 public class NbdServer implements Managed {
 
     private final int port;
@@ -66,11 +64,17 @@ public class NbdServer implements Managed {
             System.exit(1);
         }
         s.block();
+        try {
+            s.stop();
+        } catch (Exception e) {
+            s.sendError(e);
+            System.exit(1);
+        }
     }
 
     private void sendError(Throwable e) {
         systemdUtil.sendError(1);
-        logger.error("terminated due to exception at startup.", e);
+        logger.error("terminated due to exception.", e);
     }
 
     private void block() {
@@ -95,7 +99,7 @@ public class NbdServer implements Managed {
 
     private void gracefulShutdown() {
         if (state == SHUTTINGDOWN || state == SHUTDOWN) {
-            logger.error("we have already attempted to shut down, not doing it twice..");
+            logger.error("we have already attempted to shut down to {}, not doing it twice..", state);
             return;
         }
         state = SHUTTINGDOWN;
@@ -127,7 +131,6 @@ public class NbdServer implements Managed {
     public void start() throws BindException, InterruptedException {
         state = STARTING;
         eventLoopGroup = new NioEventLoopGroup();
-        addShutownHook();
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(eventLoopGroup)
                 .channel(NioServerSocketChannel.class)
@@ -148,7 +151,7 @@ public class NbdServer implements Managed {
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop() {
         gracefulShutdown();
     }
 }

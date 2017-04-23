@@ -40,8 +40,11 @@ public class MinebdApplication extends Application<ApiConfig> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MinebdApplication.class);
     private static final Reflections REFLECTIONS = new Reflections("io.minebox");
+    private GuiceBundle<ApiConfig> guiceBundle;
+    private Injector injector;
+
     @VisibleForTesting
-    public Injector injector;
+//    public Injector injector;
 
     public static void main(String[] args) throws Exception {
         Thread.setDefaultUncaughtExceptionHandler(new GlobalErrorHandler());
@@ -61,12 +64,12 @@ public class MinebdApplication extends Application<ApiConfig> {
     @Override
     public void run(ApiConfig configuration, Environment environment) throws Exception {
         LOGGER.info("api started up");
+        injector = guiceBundle.getInjector();
         JerseyEnvironment jersey = environment.jersey();
         register(environment.lifecycle(), REFLECTIONS.getSubTypesOf(Managed.class));
 
 //        injector.getInstance(SessionFactory.class); //init DB
         installCorsFilter(environment);
-
         //init all Singletons semi-eagerly
         REFLECTIONS.getTypesAnnotatedWith(Singleton.class).forEach(injector::getInstance);
         register(jersey, REFLECTIONS.getTypesAnnotatedWith(Path.class));
@@ -110,7 +113,7 @@ public class MinebdApplication extends Application<ApiConfig> {
     @Override
     public void initialize(Bootstrap<ApiConfig> bootstrap) {
 
-        GuiceBundle<ApiConfig> guiceBundle = GuiceBundle.<ApiConfig>newBuilder()
+        guiceBundle = GuiceBundle.<ApiConfig>newBuilder()
                 .setConfigClass(ApiConfig.class)
                 .addModule(new NbdModule() {
                     @Provides
@@ -122,7 +125,6 @@ public class MinebdApplication extends Application<ApiConfig> {
 
         bootstrap.addBundle(guiceBundle);
 
-        injector = guiceBundle.getInjector();
 
         SwaggerBundle<ApiConfig> swagger = new SwaggerBundle<ApiConfig>() {
             @Override

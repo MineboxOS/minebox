@@ -3,6 +3,7 @@ package io.minebox.nbd.ep;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import com.codahale.metrics.MetricRegistry;
 import io.dropwizard.util.Size;
 import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.NullEncryption;
@@ -30,7 +31,7 @@ public class BucketTest {
     @Test
     public void testExport() throws IOException {
         final MinebdConfig config = TestUtil.createSampleConfig();
-        final MineboxExport export = new MineboxExport(config, new NullEncryption());
+        final MineboxExport export = new MineboxExport(config, new NullEncryption(), new MetricRegistry());
         export.open("test");
         export.write(0, ByteBuffer.wrap(new byte[]{1, 2, 3}), true);
         export.read(0, 100);
