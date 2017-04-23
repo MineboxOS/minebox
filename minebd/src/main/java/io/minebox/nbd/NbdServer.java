@@ -57,6 +57,7 @@ public class NbdServer implements Managed {
         });
         NbdServer s;
         s = injector.getInstance(NbdServer.class);
+        s.addShutownHook();
         try {
             s.start();
         } catch (BindException | InterruptedException e) {
