@@ -7,4 +7,6 @@ import java.nio.ByteBuffer;
  */
 public interface Encryption {
     ByteBuffer encrypt(ByteBuffer message, long offset);
+
+    String getPublicIdentifier();
 }

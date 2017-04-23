@@ -8,7 +8,9 @@ import com.codahale.metrics.MetricRegistry;
 import io.dropwizard.util.Size;
 import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.Constants;
+import io.minebox.nbd.MetadataService;
 import io.minebox.nbd.NullEncryption;
+import io.minebox.nbd.ep.BucketFactory;
 import io.minebox.nbd.ep.MineboxExport;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
@@ -43,7 +45,8 @@ public class MineboxExportTest {
         underTest.read(32 * Constants.MEGABYTE, 1024);
         underTest.read(111 * Constants.MEGABYTE, 1024);
 
-        Assert.assertEquals(2, new File(cfg.parentDir).list().length);
+        final String[] files = new File(cfg.parentDir, NullEncryption.PUB_ID).list();
+        Assert.assertEquals(2, files.length);
     }
 
     @AfterClass
@@ -84,6 +87,7 @@ public class MineboxExportTest {
     }
 
     public static MineboxExport buildMineboxExport(MinebdConfig cfg) {
-        return new MineboxExport(cfg, new NullEncryption(),new MetricRegistry());
+        final BucketFactory bucketFactory = new BucketFactory(cfg.parentDir, cfg.bucketSize.toBytes(), new NullEncryption(), new MetadataService());
+        return new MineboxExport(cfg, new MetricRegistry(), bucketFactory);
     }
 }
