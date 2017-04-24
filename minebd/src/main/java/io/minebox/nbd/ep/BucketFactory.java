@@ -8,6 +8,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.inject.Inject;
+import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.Encryption;
 import io.minebox.nbd.MetadataService;
 import org.slf4j.Logger;
@@ -20,9 +22,10 @@ public class BucketFactory {
     private final MetadataService metadataService;
     private final File parentFolder;
 
-    public BucketFactory(String parentDir, long size, Encryption encryption, MetadataService metadataService) {
-        this.parentDir = parentDir;
-        this.size = size;
+    @Inject
+    public BucketFactory(MinebdConfig config, Encryption encryption, MetadataService metadataService) {
+        this.parentDir = config.parentDir;
+        this.size = config.bucketSize.toBytes();
         this.encryption = encryption;
         this.metadataService = metadataService;
         parentFolder = new File(parentDir, encryption.getPublicIdentifier());
@@ -66,15 +69,22 @@ public class BucketFactory {
 
         private void ensureFileExists(File file) {
             if (!file.exists()) {
-                final boolean created;
-                try {
-                    created = file.createNewFile();
-                } catch (IOException e1) {
-                    throw new IllegalStateException("unable to create file");
+                boolean wasDownloaded = metadataService.downloadIfPossible(file);
+                if (!wasDownloaded) {
+                    createEmptyFile(file);
                 }
-                if (!created) {
-                    throw new IllegalStateException("file already existed");
-                }
+            }
+        }
+
+        private void createEmptyFile(File file) {
+            final boolean created;
+            try {
+                created = file.createNewFile();
+            } catch (IOException e1) {
+                throw new IllegalStateException("unable to create file");
+            }
+            if (!created) {
+                throw new IllegalStateException("file already existed");
             }
         }
 

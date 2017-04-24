@@ -87,7 +87,7 @@ public class MineboxExportTest {
     }
 
     public static MineboxExport buildMineboxExport(MinebdConfig cfg) {
-        final BucketFactory bucketFactory = new BucketFactory(cfg.parentDir, cfg.bucketSize.toBytes(), new NullEncryption(), new MetadataService());
+        final BucketFactory bucketFactory = new BucketFactory(cfg, new NullEncryption(), new MetadataService());
         return new MineboxExport(cfg, new MetricRegistry(), bucketFactory);
     }
 }

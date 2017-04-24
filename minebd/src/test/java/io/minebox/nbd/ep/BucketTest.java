@@ -32,7 +32,7 @@ public class BucketTest {
     @Test
     public void testExport() throws IOException {
         final MinebdConfig cfg = TestUtil.createSampleConfig();
-        final BucketFactory bucketFactory = new BucketFactory(cfg.parentDir, cfg.bucketSize.toBytes(), new NullEncryption(), new MetadataService());
+        final BucketFactory bucketFactory = new BucketFactory(cfg, new NullEncryption(), new MetadataService());
         final MineboxExport export = new MineboxExport(cfg, new MetricRegistry(), bucketFactory);
         export.open("test");
         export.write(0, ByteBuffer.wrap(new byte[]{1, 2, 3}), true);
@@ -42,8 +42,10 @@ public class BucketTest {
 
     @Test
     public void checkPositiveBounds() throws IOException {
-        long bucketSize = Size.megabytes(40).toBytes();
-        final BucketFactory bucketFactory = new BucketFactory("testJunit", bucketSize, new NullEncryption(), new MetadataService());
+        MinebdConfig cfg = TestUtil.createSampleConfig();
+        cfg.bucketSize = Size.megabytes(40);
+        long bucketSize = cfg.bucketSize.toBytes();
+        final BucketFactory bucketFactory = new BucketFactory(cfg, new NullEncryption(), new MetadataService());
 
         final BucketFactory.BucketImpl underTest = (BucketFactory.BucketImpl) bucketFactory.create(0);
 

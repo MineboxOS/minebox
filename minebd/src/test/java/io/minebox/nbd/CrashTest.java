@@ -23,7 +23,7 @@ public class CrashTest {
         CountDownLatch started = new CountDownLatch(1);
         final MinebdConfig cfg = TestUtil.createSampleConfig();
         cfg.nbdPort = 10811;
-        final BucketFactory bucketFactory = new BucketFactory(cfg.parentDir, cfg.bucketSize.toBytes(), new NullEncryption(), new MetadataService());
+        final BucketFactory bucketFactory = new BucketFactory(cfg, new NullEncryption(), new MetadataService());
         final NbdServer nbdServer = new NbdServer(new SystemdUtil() {
             @Override
             void sendNotify() {

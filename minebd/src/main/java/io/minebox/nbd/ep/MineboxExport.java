@@ -87,7 +87,7 @@ public class MineboxExport implements ExportProvider {
         for (Integer bucketIndex : getBuckets(offset, length)) { //eventually make parallel
             Bucket bucket = getBucketFromIndex(bucketIndex);
             final long absoluteOffsetForThisBucket = Math.max(offset, bucket.getBaseOffset());
-            final int lengthForBucket = Ints.checkedCast(Math.min(bucket.getUpperBound() + 1, offset + length) - absoluteOffsetForThisBucket);
+            final int lengthForBucket = Ints.checkedCast(Math.min(bucket.getUpperBound() + 1, offset + length) - absoluteOffsetForThisBucket); //todo this threw an exception
             final int dataOffset = Ints.checkedCast(Math.max(0, bucket.getBaseOffset() - offset));
             final ByteBuffer pseudoCopy = bufferForBucket(origMessage, lengthForBucket, dataOffset);
 
