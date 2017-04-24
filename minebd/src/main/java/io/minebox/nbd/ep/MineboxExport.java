@@ -3,6 +3,8 @@ package io.minebox.nbd.ep;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
@@ -16,14 +18,14 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalListener;
 import com.google.common.primitives.Ints;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import io.minebox.config.MinebdConfig;
-import io.minebox.nbd.Encryption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static java.util.stream.Collectors.toList;
 
-//@Singleton //holds bucks which hold open files, we dont want this to be recreated over and over
+@Singleton //holds bucks which hold open files, we dont want this to be recreated over and over
 public class MineboxExport implements ExportProvider {
 
     private final long bucketSize;//according to taek42 , 40 MB is the bucket size for contracts, so we use the same for efficientcy.
@@ -33,6 +35,7 @@ public class MineboxExport implements ExportProvider {
     private Meter read;
     private Meter write;
     private final BucketFactory bucketFactory;
+    private volatile Instant blockedTime;
 
     @Inject
     public MineboxExport(MinebdConfig config, MetricRegistry metrics, BucketFactory bucketFactory) {
@@ -139,9 +142,25 @@ public class MineboxExport implements ExportProvider {
 
     @Override
     public void flush() throws IOException {
+        maybeBlock();
         logger.info("flushing all open buckets");
         for (Bucket bucket : files.asMap().values()) {
             bucket.flush();
+        }
+    }
+
+    private void maybeBlock() {
+        if (blockedTime != null) {
+            final long sleepMillis = Instant.now().until(blockedTime, ChronoUnit.MILLIS);
+            if (sleepMillis > 0) {
+                logger.info("we are set to blocked, actively waiting");
+                try {
+                    Thread.sleep(sleepMillis);
+                } catch (InterruptedException e) {
+                    //ignore
+                }
+            }
+            blockedTime = null;
         }
     }
 
@@ -179,5 +198,11 @@ public class MineboxExport implements ExportProvider {
         for (Bucket bucket : files.asMap().values()) {
             bucket.close();
         }
+    }
+
+    public Instant blockFlushFor1500Millis() {
+        blockedTime = Instant.now().plusMillis(1500);
+        return blockedTime;
+
     }
 }

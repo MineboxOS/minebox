@@ -1,9 +1,11 @@
 package io.minebox.nbd.ep;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import com.google.inject.ImplementedBy;
+
+@ImplementedBy(MineboxExport.class)
 public interface ExportProvider {
 
     long open(CharSequence exportName) throws IOException;
