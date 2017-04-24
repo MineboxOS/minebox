@@ -20,24 +20,40 @@
 # - Upload can take over all your outgoing bandwidth (and take it for a longer
 #   time after upload is said to be finished), is this a problem?
 # - How do we message the MineBD to pause for 1.5s once snapshot(s) are done?
+#   --> REST API of MineBD. TBD.
 # - Do we care to have things on the upper level being snapshotted?
 #   If so, how do we do that?
 # - How/where to actually upload the metadata?
+#   --> REST API @ minebox.io, with Authentication, encryption, signing. TBD.
 # - Do we need to include all of renter/ in the backup metadata bundles (what
 #   exactly do we need for restore)?
+#   --> Right now, as long as sia runs, the sia files get updated, and we need
+#       the latest version of that at the time of restoring. This should get
+#       fixed in a few weeks. Also see
+#       https://forum.sia.tech/topic/157/insufficient-hosts-to-recover-file/8
 # - Does timestamp really make sense for sia files or would md5sum be better?
+#   --> No, because comparing all blocks of the whole snapshot for backing is
+#       too slow (needs sequential reads of all data).
 # - Do we run uploader as a permanent-on daemon or one-shot process?
+#   --> one-shot
 # - How do we handle previously unfinished uploads (when/how do we restart, do
 #   we run multiple forked processes for them, etc.)?
 # - How do we get/save the wallet seed?
+#   --> Minebd cares about that
 # - Are there circumstances where the wallet needs to be unlocked when uploading?
+#   --> We need some service to set/manage allowance!
 # - Do we wait for full 3x redundancy or may we call or backup "done" earlier?
-# - We need (web) UI for SIA details and uploader progress, how do we integrate that?
+#   --> Right now, stick with 100% redundancy.
+# - We need (web) UI for SIA details and uploader progress, how do we integrate
+#   that?
+#   --> Target to run Minebox UI as a Rock-on and have that integrated there.
 # - Can we do some kind of traffic shaping/prioritization of sia to ensure the
 #   system can still do other things while uploading?
 # - Can we ensure decent upload speeds? With VM traffic shaped to 256 KiB/s
 #   (~2 MBit/s) I got about 1 MB / minute of actual data uploaded (avg over 3 h).
+#   If that speed continues over 24 h, that makes ~1.5 GB/day.
 # - TODO: Warn/exit if siad is not running
+# - TODO: Report when finished (via email?)
 
 
 DATADIR_MASK="/mnt/lower*/data"
