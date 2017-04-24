@@ -31,6 +31,8 @@
 # - Are there circumstances where the wallet needs to be unlocked when uploading?
 # - Do we wait for full 3x redundancy or may we call or backup "done" earlier?
 # - We need (web) UI for SIA details and uploader progress, how do we integrate that?
+# - Can we do some kind of traffic shaping/prioritization of sia to ensure the system can still do other things while uploading?
+# - Can we ensure decent upload speeds? With VM traffic shaped to 256 KiB/s (~2MBit/s) I got about 1MB / minute of actual data uploaded (average over 3 hours).
 # - TODO: Warn/exit if siad is not running
 
 
