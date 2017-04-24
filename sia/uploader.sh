@@ -20,7 +20,7 @@
 # - Upload can take over all your outgoing bandwidth (and take it for a longer
 #   time after upload is said to be finished), is this a problem?
 # - How do we message the MineBD to pause for 1.5s once snapshot(s) are done?
-# - Do we care to have things on the upper level being snapshotted and flushed?
+# - Do we care to have things on the upper level being snapshotted?
 #   If so, how do we do that?
 # - How/where to actually upload the metadata?
 # - Do we need to include all of renter/ in the backup metadata bundles (what
@@ -70,6 +70,8 @@ if [ -n "$1" ]; then
   echo "Re-starting backup $snapname"
 else
   snapname=`date "+%s"`
+  echo "Flush filesystem caches to make sure user data has been written."
+  sync
   echo "Creating lower-level data snapshot(s) with name: $snapname"
   # Potentially, we should ensure that those data/ directories are actually subvolumes.
   for subvol in $DATADIR_MASK; do
