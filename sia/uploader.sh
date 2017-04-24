@@ -28,6 +28,7 @@
 # - Do we run uploader as a permanent-on daemon or one-shot process?
 # - How do we handle previously unfinished uploads (when/how do we restart, do we run multiple forked processes for them, etc.)?
 # - How do we get/save the wallet seed?
+# - Are there circumstances where the wallet needs to be unlocked when uploading?
 # - Do we wait for full 3x redundancy or may we call or backup "done" earlier?
 # - We need (web) UI for SIA details and uploader progress, how do we integrate that?
 # - TODO: Warn/exit if siad is not running
