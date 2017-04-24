@@ -23,7 +23,14 @@
 # - Do we care to have things on the upper level being snapshotted and flushed?
 #   If so, how do we do that?
 # - How/where to actually upload the metadata?
-# - Warn/exit if siad is not running
+# - Do we need to upload a bundle of all of renter/ (what exactly do we need for restore)?
+# - Does timestamp really make sense for sia files or would md5sum be better?
+# - Do we run uploader as a permanent-on daemon or one-shot process?
+# - How do we handle previously unfinished uploads (when/how do we restart, do we run multiple forked processes for them, etc.)?
+# - How do we get/save the wallet seed?
+# - Do we wait for full 3x redundancy or may we call or backup "done" earlier?
+# - We need (web) UI for SIA details and uploader progress, how do we integrate that?
+# - TODO: Warn/exit if siad is not running
 
 
 DATADIR_MASK="/mnt/lower*/data"
@@ -128,6 +135,7 @@ calc_remaining() {
     # If rx exists and has content, add a | at the end, and always add $file but escape the dots in it for use in a regular expression.
     rx=${rx:+$rx|}${file//./\\.}
   done
+  # If we want more details, we may want to use `siac renter list -v` and also take available/redundancy into account.
   local uploads=`siac renter uploads`
   # We replace all dots by escaped dots for a proper regular expression.
   uploads_in_progress=`echo "$uploads" | awk "/ ($rx) \(uploading/ { count+=1; } END { print count }"`
