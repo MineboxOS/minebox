@@ -8,6 +8,8 @@ This script is long-running (as it waits for uploads to complete) and is designe
 Output is written into syslog, of called from a foreground shell, it also outputs to stderr in addition.
 If run without parameter, it creates a new bakup.
 If a snapshot name (timestamp) is handed over, it continues the given backup from where it stopped.
+ 
+![](https://bitbucket.org/mineboxgmbh/mineblimp/downloads/uploader.sequence.png){width=100%}
 
 ## uploader-bg.sh
 Run uploader.sh in the background, detached from the current shell (can be closed and it will continue to run).
