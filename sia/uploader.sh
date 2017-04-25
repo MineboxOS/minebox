@@ -19,13 +19,6 @@
 # - What to do with instances where uploader was prematurely terminated?
 # - Upload can take over all your outgoing bandwidth (and take it for a longer
 #   time after upload is said to be finished), is this a problem?
-# - How do we message the MineBD to pause for 1.5s once snapshot(s) are done?
-#   --> REST API of MineBD. TBD.
-# minebd listens now also on port 8080. after startup an UI with all possible REST commands is shown at http://localhost:8080/v1/swagger
-# the call needed is
-# curl -X PUT --header 'Content-Type: application/json' --header 'Accept: text/plain' 'http://localhost:8080/v1/pause'
-
-#
 # - Do we care to have things on the upper level being snapshotted?
 #   If so, how do we do that?
 # - How/where to actually upload the metadata?
@@ -114,7 +107,7 @@ if [ "$mode" = "restart" ]; then
   echo "Re-starting backup $snapname"
 else
   snapname=`date "+%s"`
-  echo "Flush filesystem caches to make sure user data has been written."
+  echo "Flushing filesystem caches to make sure user data has been written."
   sync
   echo "Creating lower-level data snapshot(s) with name: $snapname"
   # Potentially, we should ensure that those data/ directories are actually subvolumes.
@@ -122,6 +115,9 @@ else
     mkdir -p $subvol/snapshots
     btrfs subvolume snapshot -r $subvol $subvol/snapshots/$snapname
   done
+  echo "Telling MineBD to pause (for 1.5s) to make sure no modified blocks exist with the same timestamp as in our snapshots."
+  # To see all possible REST commands of MineDB, see http://localhost:8080/v1/swagger
+  curl -X PUT --header 'Content-Type: application/json' --header 'Accept: text/plain' 'http://localhost:8080/v1/pause'
 fi
 
 # Step 2: Unlock sia wallet.
