@@ -1,0 +1,42 @@
+@startuml
+
+participant uploader as "uploader.sh"
+participant upper as "Upper Layer\nBTRFS"
+participant MineBD
+participant sia as "Sia Client"
+participant lower as "Lower Layer\nBTRFS Snapshot"
+
+alt new backup
+
+	uploader -> upper: trim unused blocks
+	uploader <-- upper
+
+	uploader -> upper: flush data to\nlower disk (sync)
+	uploader <-- upper
+
+	uploader -> lower: create snapshot
+	activate lower
+	uploader <-- lower
+
+	uploader -> MineBD: Pause MineBD\nto assure "new" timestamps
+	uploader <-- MineBD
+else restart backup
+	note over uploader: No special preparations
+end
+
+uploader -> sia: get info about\nuploaded & uploading files
+uploader <-- sia
+
+uploader -> sia: inform about all files to be uploaded
+uploader <-- sia
+
+uploader -> sia: check progress & wait for upload
+uploader <-- sia
+
+uploader -> uploader: bundle all "renter files" (*.sia)\nin a backup.*.zip
+
+uploader -> lower: delete snapshot
+uploader <-- lower
+deactivate lower
+
+@enduml
