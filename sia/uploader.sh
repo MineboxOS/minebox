@@ -69,7 +69,11 @@ LANG=C
 # Step 0: Check if siad is running.
 systemctl status sia > /dev/null
 if [ "$?" != "0" ]; then
-  die "sia daemon needs to be running for this to be successful."
+  die "ERROR: sia daemon needs to be running for any uploads."
+fi
+siasync=`siac | awk '/^Synced:/ { print $2; }'`
+if [ "$siasync" != "Yes" ]; then
+  die "ERROR: sia seems not to be synced. Check yourself with |siac| and run again when it's synced."
 fi
 
 # Step 1: Create snapshot.
@@ -80,9 +84,28 @@ if [ -n "$1" ]; then
       snapname=$1
     fi
   done
-  if [ -z $snapname ]; then
-    die "A started backup with the name $1 does not exist."
+  if [ -z "$snapname" ]; then
+    die "ERROR: A started backup with the name $1 does not exist."
   fi
+  mode="restart"
+else
+  snapname=`date "+%s"`
+  mode="new"
+fi
+
+loggeropts=""
+# Detect if we run in the background.
+# If in foreground, state according to ps has a "+" in it.
+pstate=$(ps -o stat= -p $$)
+pstate=${pstate//[^+]/}
+if [ -n "$pstate" ]; then
+  # We run in the foreground. Add -s to logger options: echo to stderr as well.
+  loggeropts="-s"
+fi
+# Redirect stdout to syslog (via logger), and stderr to stdout (to syslog).
+exec 1> >(logger $loggeropts -t $(basename $0)":"$snapname) 2>&1
+
+if [ "$mode" = "restart" ]; then
   echo "Re-starting backup $snapname"
 else
   snapname=`date "+%s"`
@@ -122,6 +145,7 @@ if [ -e $metadir/files ]; then
   rm $metadir/files
 fi
 uploaded_files=`siac renter list | awk '/.dat$/ { print $3; }'`
+# NOTE: We may have unifinished uploads but this still may not say "uploading". :(
 uploading_files=`siac renter list | awk '/.dat \(uploading/ { print $3; }'`
 for filepath in $DATADIR_MASK/snapshots/$snapname/*.dat; do
   # Only use files of non-zero size.
@@ -165,10 +189,10 @@ calc_remaining() {
   # take available/redundancy into account.
   local uploads=`siac renter uploads`
   # We replace all dots by escaped dots for a proper regular expression.
-  uploads_in_progress=`echo "$uploads" | awk "/ ($rx) \(uploading/ { count+=1; } END { print count }"`
+  uploads_in_progress=`echo "$uploads" | awk "BEGIN { count=0 } / ($rx) \(uploading/ { count+=1; } END { print count }"`
   # We assume all file sizes are MB (smaller doesn't weigh much, and we never get larger than 40 MB)
-  upload_mb_total=`echo "$uploads" | awk "/ MB +($rx) \(uploading/ { total+=\\$1; } END { print total }"`
-  upload_mb_remaining=`echo "$uploads" | awk "/ MB +($rx) \(uploading/ { remaining+=\\$1*(100-\\$5)/100; } END { print remaining }"`
+  upload_mb_total=`echo "$uploads" | awk "BEGIN { total=0 } / MB +($rx) \(uploading/ { total+=\\$1; } END { print total }"`
+  upload_mb_remaining=`echo "$uploads" | awk "BEGIN { remaining=0 } / MB +($rx) \(uploading/ { remaining+=\\$1*(100-\\$5)/100; } END { print remaining }"`
 }
 calc_remaining
 while [ $uploads_in_progress -gt 0 ]; do
@@ -211,7 +235,7 @@ echo "Checking for non-processed snapshots..."
   btrfs subvolume list $subvol
 done) | grep 'snapshots'
 if [ "$?" = "0" ]; then
-  echo "There are snapshots that haven't been fully processed yet. You can finish them with |uploader.sh <timestamp>|."
+  echo "There are snapshots that haven't been fully processed yet. You can finish them with |$0 <timestamp>|."
 fi
 
 echo "Backup $snapname has been uploaded."
