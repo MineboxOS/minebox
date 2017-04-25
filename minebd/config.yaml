@@ -10,12 +10,13 @@ logging:
   level: INFO
   loggers:
     io.minebox: DEBUG
+    io.minebox.nbd.NbdStatsReporter: INFO
 
 #netty-spectific settings of minebd
 minebd:
-  nbdPort : 10811
+  nbdPort : 10809
   maxOpenFiles : 20
-  parentDir : /home/andreas/minebox/mineblimp/minedbDat
+  parentDir : /mnt/lower1/data/
   reportedSize : 10G
-  encryptionSeed: test123  #to be replaced with seedLocation path which lies on USB
+  encryptionSeed: /etc/minebox/minebox.key
   bucketSize : 40M
