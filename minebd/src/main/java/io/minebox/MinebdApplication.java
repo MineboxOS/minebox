@@ -15,7 +15,6 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.hubspot.dropwizard.guice.GuiceBundle;
 import io.dropwizard.Application;
-import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.jersey.errors.EarlyEofExceptionMapper;
 import io.dropwizard.jersey.errors.LoggingExceptionMapper;
 import io.dropwizard.jersey.jackson.JsonProcessingExceptionMapper;
@@ -134,6 +133,5 @@ public class MinebdApplication extends Application<ApiConfig> {
         };
 
         bootstrap.addBundle(swagger);
-        bootstrap.addBundle(new AssetsBundle("/static", "/", "index.html", "static"));
     }
 }
