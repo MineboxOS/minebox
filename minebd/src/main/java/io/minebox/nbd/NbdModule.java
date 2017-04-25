@@ -17,8 +17,6 @@ public abstract class NbdModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        bind(Encryption.class).to(SymmetricEncryption.class);
-        bind(ExportProvider.class).to(MineboxExport.class);
         bind(NbdStatsReporter.class).asEagerSingleton();
         bind(MetricRegistry.class).asEagerSingleton();
 //        bind(MetricRegistry.class).asEagerSingleton();

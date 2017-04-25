@@ -21,6 +21,11 @@
 #   time after upload is said to be finished), is this a problem?
 # - How do we message the MineBD to pause for 1.5s once snapshot(s) are done?
 #   --> REST API of MineBD. TBD.
+# minebd listens now also on port 8080. after startup an UI with all possible REST commands is shown at http://localhost:8080/v1/swagger
+# the call needed is
+# curl -X PUT --header 'Content-Type: application/json' --header 'Accept: text/plain' 'http://localhost:8080/v1/pause'
+
+#
 # - Do we care to have things on the upper level being snapshotted?
 #   If so, how do we do that?
 # - How/where to actually upload the metadata?

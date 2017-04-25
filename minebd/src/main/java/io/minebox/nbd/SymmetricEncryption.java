@@ -2,6 +2,8 @@ package io.minebox.nbd;
 
 import java.nio.ByteBuffer;
 
+import com.google.common.base.Charsets;
+import com.google.common.hash.Hashing;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
@@ -10,15 +12,26 @@ import com.google.inject.name.Named;
  */
 public class SymmetricEncryption implements Encryption {
     private BitPatternGenerator bitPatternGenerator;
+    private final String publicId;
 
     @Inject
     public SymmetricEncryption(@Named(NbdModule.ENCRYPTION_KEY) String key) {
+        publicId = buildPubId(key);
         bitPatternGenerator = new BitPatternGenerator(key);
+    }
+
+    public String buildPubId(String key) {
+        return Hashing.sha256().newHasher().putString("public", Charsets.UTF_8).putString(key, Charsets.UTF_8).hash().toString();
     }
 
     @Override
     public ByteBuffer encrypt(ByteBuffer message, long offset) {
         return encrypt(offset, message.remaining(), message);
+    }
+
+    @Override
+    public String getPublicIdentifier() {
+        return publicId;
     }
 
     private ByteBuffer encrypt(long offset, int msgSize, ByteBuffer plainBuffer) {

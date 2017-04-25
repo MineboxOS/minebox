@@ -48,6 +48,9 @@ public class NbdServer implements Managed {
         this.exportProvider = exportProvider;
     }
 
+    /*
+    this is provided to allow starting of the server in "light" mode, without any rest apis. eventually its going to be deleted.
+     */
     public static void main(String... args) {
         final Injector injector = Guice.createInjector(new NbdModule() {
             @Provides
@@ -110,7 +113,6 @@ public class NbdServer implements Managed {
             //                        exportProvider.flush();
             //close also flushes first, so we only do one of them
             exportProvider.close();
-
             logger.info("shutting down eventLoops");
             try {
                 eventLoopGroup.shutdownGracefully().sync();

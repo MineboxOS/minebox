@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import com.codahale.metrics.MetricRegistry;
 import io.dropwizard.util.Size;
 import io.minebox.config.MinebdConfig;
+import io.minebox.nbd.MetadataService;
 import io.minebox.nbd.NullEncryption;
 import io.minebox.nbd.TestUtil;
 import org.junit.Assert;
@@ -30,19 +31,23 @@ public class BucketTest {
 
     @Test
     public void testExport() throws IOException {
-        final MinebdConfig config = TestUtil.createSampleConfig();
-        final MineboxExport export = new MineboxExport(config, new NullEncryption(), new MetricRegistry());
+        final MinebdConfig cfg = TestUtil.createSampleConfig();
+        final BucketFactory bucketFactory = new BucketFactory(cfg, new NullEncryption(), new MetadataService());
+        final MineboxExport export = new MineboxExport(cfg, new MetricRegistry(), bucketFactory);
         export.open("test");
         export.write(0, ByteBuffer.wrap(new byte[]{1, 2, 3}), true);
         export.read(0, 100);
-        export.trim(0, (int) config.bucketSize.toBytes());
+        export.trim(0, (int) cfg.bucketSize.toBytes());
     }
 
     @Test
     public void checkPositiveBounds() throws IOException {
-        long bucketSize = Size.megabytes(40).toBytes();
+        MinebdConfig cfg = TestUtil.createSampleConfig();
+        cfg.bucketSize = Size.megabytes(40);
+        long bucketSize = cfg.bucketSize.toBytes();
+        final BucketFactory bucketFactory = new BucketFactory(cfg, new NullEncryption(), new MetadataService());
 
-        final Bucket underTest = new Bucket(0, "testJunit", bucketSize);
+        final BucketFactory.BucketImpl underTest = (BucketFactory.BucketImpl) bucketFactory.create(0);
 
 
         Assert.assertEquals(bucketSize, underTest.calcLengthInThisBucket(0, bucketSize));

@@ -1,11 +1,11 @@
 package io.minebox.nbd;
 
-import java.io.IOException;
 import java.net.BindException;
 import java.util.concurrent.CountDownLatch;
 
 import com.codahale.metrics.MetricRegistry;
 import io.minebox.config.MinebdConfig;
+import io.minebox.nbd.ep.BucketFactory;
 import io.minebox.nbd.ep.MineboxExport;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -21,14 +21,15 @@ public class CrashTest {
 
     public void testCrash() throws Exception {
         CountDownLatch started = new CountDownLatch(1);
-        final MinebdConfig config = TestUtil.createSampleConfig();
-        config.nbdPort = 10811;
+        final MinebdConfig cfg = TestUtil.createSampleConfig();
+        cfg.nbdPort = 10811;
+        final BucketFactory bucketFactory = new BucketFactory(cfg, new NullEncryption(), new MetadataService());
         final NbdServer nbdServer = new NbdServer(new SystemdUtil() {
             @Override
             void sendNotify() {
                 started.countDown();
             }
-        }, config, new MineboxExport(config, new NullEncryption(), new MetricRegistry()));
+        }, cfg, new MineboxExport(cfg, new MetricRegistry(), bucketFactory));
         new Thread(() -> {
             try {
                 nbdServer.start();

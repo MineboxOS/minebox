@@ -3,11 +3,12 @@ package io.minebox.nbd.ep;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 
-import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Preconditions;
@@ -19,32 +20,33 @@ import com.google.common.primitives.Ints;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.minebox.config.MinebdConfig;
-import io.minebox.nbd.Encryption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static java.util.stream.Collectors.toList;
 
-//@Singleton //holds bucks which hold open files, we dont want this to be recreated over and over
+@Singleton //holds bucks which hold open files, we dont want this to be recreated over and over
 public class MineboxExport implements ExportProvider {
 
     private final long bucketSize;//according to taek42 , 40 MB is the bucket size for contracts, so we use the same for efficientcy.
     private static final Logger logger = LoggerFactory.getLogger(MineboxExport.class);
     final private MinebdConfig config;
-    private final Encryption encryption; //todo pass this to the bucket
     private final LoadingCache<Integer, Bucket> files;
     private Meter read;
     private Meter write;
+    private final BucketFactory bucketFactory;
+    private volatile Instant blockedTime;
 
     @Inject
-    public MineboxExport(MinebdConfig config, Encryption encryption, MetricRegistry metrics) {
+    public MineboxExport(MinebdConfig config, MetricRegistry metrics, BucketFactory bucketFactory) {
         this.config = config;
         files = createFilesCache(config);
-        this.encryption = encryption;
         this.bucketSize = config.bucketSize.toBytes();
         read = metrics.meter("readBytes");
         write = metrics.meter("writeBytes");
+        this.bucketFactory = bucketFactory;
         metrics.gauge("openfiles", () -> files::size);
+
     }
 
     public long getBucketSize() {
@@ -60,12 +62,16 @@ public class MineboxExport implements ExportProvider {
                 .maximumSize(maxOpenFiles)
                 .removalListener((RemovalListener<Integer, Bucket>) notification -> {
                     logger.debug("no longer monitoring bucket {}", notification.getKey());
-                    notification.getValue().close();
+                    try {
+                        notification.getValue().close();
+                    } catch (IOException e) {
+                        logger.warn("unable to flush and close file " + notification.getKey(), e);
+                    }
                 })
                 .build(new CacheLoader<Integer, Bucket>() {
                     @Override
                     public Bucket load(Integer key) throws Exception {
-                        return new Bucket(key, config.parentDir, getBucketSize());
+                        return bucketFactory.create(key);
                     }
                 });
     }
@@ -84,7 +90,7 @@ public class MineboxExport implements ExportProvider {
         for (Integer bucketIndex : getBuckets(offset, length)) { //eventually make parallel
             Bucket bucket = getBucketFromIndex(bucketIndex);
             final long absoluteOffsetForThisBucket = Math.max(offset, bucket.getBaseOffset());
-            final int lengthForBucket = Ints.checkedCast(Math.min(bucket.getUpperBound() + 1, offset + length) - absoluteOffsetForThisBucket);
+            final int lengthForBucket = Ints.checkedCast(Math.min(bucket.getUpperBound() + 1, offset + length) - absoluteOffsetForThisBucket); //todo this threw an exception
             final int dataOffset = Ints.checkedCast(Math.max(0, bucket.getBaseOffset() - offset));
             final ByteBuffer pseudoCopy = bufferForBucket(origMessage, lengthForBucket, dataOffset);
 
@@ -136,8 +142,26 @@ public class MineboxExport implements ExportProvider {
 
     @Override
     public void flush() throws IOException {
+        maybeBlock();
         logger.info("flushing all open buckets");
-        files.asMap().values().forEach(Bucket::flush);
+        for (Bucket bucket : files.asMap().values()) {
+            bucket.flush();
+        }
+    }
+
+    private void maybeBlock() {
+        if (blockedTime != null) {
+            final long sleepMillis = Instant.now().until(blockedTime, ChronoUnit.MILLIS);
+            if (sleepMillis > 0) {
+                logger.info("we are set to blocked, actively waiting");
+                try {
+                    Thread.sleep(sleepMillis);
+                } catch (InterruptedException e) {
+                    //ignore
+                }
+            }
+            blockedTime = null;
+        }
     }
 
     @Override
@@ -150,6 +174,7 @@ public class MineboxExport implements ExportProvider {
             bucket.trim(start, lengthForBucket);
         }
     }
+
 
     private List<Integer> getBuckets(long offset, int length) {
         final IntStream intStream = getBucketsStream(offset, length);
@@ -170,8 +195,14 @@ public class MineboxExport implements ExportProvider {
 
     @Override
     public void close() throws IOException {
-        files.asMap()
-                .values()
-                .forEach(Bucket::close);
+        for (Bucket bucket : files.asMap().values()) {
+            bucket.close();
+        }
+    }
+
+    public Instant blockFlushFor1500Millis() {
+        blockedTime = Instant.now().plusMillis(1500);
+        return blockedTime;
+
     }
 }

@@ -16,7 +16,7 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 /**
  * Created by andreas on 19.02.17.
  */
-public class Uploader {
+public class SiaHelper {
 
     //yes this password contains real money. but not enough to make me figure out how to secure it for this test...
     public static final String PASSWORD = "fainted pumpkins awful adventure gnaw vortex nutshell sifting afoot hijack pride doctor lymph total reunion arena distance oozed vipers claim hockey damp sash calamity bowling arises riots jigsaw acumen";

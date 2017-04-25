@@ -1,10 +1,12 @@
 package io.minebox.nbd.ep;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-public interface ExportProvider extends Closeable {
+import com.google.inject.ImplementedBy;
+
+@ImplementedBy(MineboxExport.class)
+public interface ExportProvider {
 
     long open(CharSequence exportName) throws IOException;
 
@@ -19,4 +21,6 @@ public interface ExportProvider extends Closeable {
     default boolean supportsClientFlags(int clientFlags) {
         return true; //todo find out what those actually do
     }
+
+    void close() throws IOException;
 }
