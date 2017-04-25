@@ -148,7 +148,11 @@ fi
 uploaded_files=`siac renter list | awk '/.dat$/ { print $3; }'`
 # NOTE: We may have unifinished uploads but this still may not say "uploading". :(
 uploading_files=`siac renter list | awk '/.dat \(uploading/ { print $3; }'`
-for filepath in $DATADIR_MASK/snapshots/$snapname/*.dat; do
+# We have a randomly named subdirectory containing the .dat files.
+# As the random string is based on the wallet seed, we can be pretty sure there
+# is only one and we can ignore the risk of catching multiple directories with
+# the * wildcard.
+for filepath in $DATADIR_MASK/snapshots/$snapname/*/*.dat; do
   # Only use files of non-zero size.
   if [ -s "$filepath" ]; then
     filename=`basename $filepath`
