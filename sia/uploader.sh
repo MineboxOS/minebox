@@ -86,7 +86,7 @@ if [ -e $metadir/files ]; then
   rm $metadir/files
 fi
 uploaded_files=`$SIAC renter list | awk '/.dat$/ { print $3; }'`
-# NOTE: We may have unifinished uploads but this still may not say "uploading". :(
+# NOTE: We may have unfinished uploads but this still may not say "uploading". :(
 uploading_files=`$SIAC renter list | awk '/.dat \(uploading/ { print $3; }'`
 # We have a randomly named subdirectory containing the .dat files.
 # As the random string is based on the wallet seed, we can be pretty sure there
