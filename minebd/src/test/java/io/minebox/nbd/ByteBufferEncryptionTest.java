@@ -2,6 +2,8 @@ package io.minebox.nbd;
 
 import java.nio.ByteBuffer;
 
+import io.minebox.nbd.encryption.EncConstants;
+import io.minebox.nbd.encryption.SymmetricEncryption;
 import org.junit.Test;
 
 /**
@@ -12,8 +14,8 @@ public class ByteBufferEncryptionTest {
 
     @Test
     public void testSimpleXor() {
-        long offset = Constants.BLOCKSIZE * 12345;
-        final int msgSize = Constants.BLOCKSIZE * 64;
+        long offset = EncConstants.BLOCKSIZE * 12345;
+        final int msgSize = Math.toIntExact(Constants.MEGABYTE); //
         final ByteBuffer result = testFor(offset, msgSize);
 //        System.out.println("result = " + result.getLong());
     }
@@ -22,7 +24,7 @@ public class ByteBufferEncryptionTest {
         final byte[] plaintext = new byte[msgSize];
         final ByteBuffer plainBuffer = ByteBuffer.wrap(plaintext);
         final Encryption encryption = new SymmetricEncryption("keyForTesting");
-        final ByteBuffer result = encryption.encrypt(plainBuffer, offset);
+        final ByteBuffer result = encryption.encrypt(offset, plainBuffer);
         return result;
     }
 

@@ -19,7 +19,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
 
     private enum State {TM_RECEIVE_CMD, TM_RECEIVE_CMD_DATA}
 
-    private static final Logger logger = LoggerFactory.getLogger(TransmissionPhase.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(TransmissionPhase.class);
     private State state = State.TM_RECEIVE_CMD;
 
     private final ExportProvider exportProvider;
@@ -45,7 +45,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
         for (; ; ) {
             final int i = numOperations.incrementAndGet();
             if (i != 1) {
-                logger.warn("parallel action {}", i);
+                LOGGER.warn("parallel action {}", i);
             }
             try {
                 switch (state) {
@@ -130,7 +130,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 //offset + length must be zero
                 final long cmdHandle = this.cmdHandle;
 
-                logger.debug("got flush..");
+                LOGGER.debug("got flush..");
             /* we must drain all NBD_CMD_WRITE and NBD_WRITE_TRIM from the queue
              * before processing NBD_CMD_FLUSH
 			 */

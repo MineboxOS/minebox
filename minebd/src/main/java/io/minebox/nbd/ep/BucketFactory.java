@@ -8,6 +8,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeSet;
 import com.google.inject.Inject;
 import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.Encryption;
@@ -36,7 +39,7 @@ public class BucketFactory {
         return new BucketImpl(bucketIndex);
     }
 
-    private static final Logger logger = LoggerFactory.getLogger(BucketImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BucketImpl.class);
 
     class BucketImpl implements Bucket {
 
@@ -49,6 +52,8 @@ public class BucketFactory {
         private RandomAccessFile randomAccessFile;
         private final String filename;
         private final long bucketNumber;
+        //right now we try to keep track of the empty ranges but dont use them anywhere. there is a big optimisation opportunity here to minimize the amount of
+        RangeSet<Long> emptyRange = TreeRangeSet.create(); //offsets in this bucket
 
         BucketImpl(long bucketNumber) {
             this.bucketNumber = bucketNumber;
@@ -57,7 +62,7 @@ public class BucketFactory {
             filename = "minebox_v1_" + bucketNumber + ".dat";
 
             final File file = new File(parentFolder, filename);
-            logger.debug("starting to monitor bucket {} with file {}", bucketNumber, file.getAbsolutePath());
+            LOGGER.debug("starting to monitor bucket {} with file {}", bucketNumber, file.getAbsolutePath());
             ensureFileExists(file);
             try {
                 randomAccessFile = new RandomAccessFile(file, "rw");
@@ -72,6 +77,7 @@ public class BucketFactory {
                 boolean wasDownloaded = metadataService.downloadIfPossible(file);
                 if (!wasDownloaded) {
                     createEmptyFile(file);
+                    emptyRange.add(Range.closed(0L, size));
                 }
             }
         }
@@ -93,7 +99,7 @@ public class BucketFactory {
                 channel.force(true);
                 channel.close();
             } else {
-                logger.warn("closing bucket {} without an open channel.", bucketNumber);
+                LOGGER.warn("closing bucket {} without an open channel.", bucketNumber);
             }
             randomAccessFile.close();
         }
@@ -102,9 +108,16 @@ public class BucketFactory {
             final long offsetInThisBucket = offsetInThisBucket(offset);
             final long lengthInThisBucket = calcLengthInThisBucket(offsetInThisBucket, length);
             final int read;
+            ByteBuffer encrypted = ByteBuffer.allocate(length);
             synchronized (this) {
                 channel.position(offsetInThisBucket);
-                read = channel.read(readInto);
+                read = channel.read(encrypted);
+                if (read > 0) {
+                    encrypted.flip();
+                    encrypted.limit(read);
+                    final ByteBuffer decrypted = encryption.encrypt(offset, encrypted);
+                    readInto.put(decrypted);
+                }
             }
             if (read != lengthInThisBucket) {
                 final byte[] zeroes;
@@ -113,7 +126,7 @@ public class BucketFactory {
                 } else {
                     zeroes = new byte[(int) (lengthInThisBucket - read)];
                 }
-                logger.debug("tried to read more bytes from this file than ever were written, replacing with {} zeroes", zeroes.length);
+                LOGGER.debug("tried to read more bytes from this file than ever were written, replacing with {} zeroes", zeroes.length);
                 readInto.put(zeroes);
 
             }
@@ -137,6 +150,7 @@ public class BucketFactory {
         }
 
         public void flush() {
+            LOGGER.info("flushing bucket {}", bucketNumber);
             try {
                 //todo make sure this triggers after potentially different pending writes have their lock
                 synchronized (this) {
@@ -145,7 +159,7 @@ public class BucketFactory {
                     }
                 }
             } catch (IOException e) {
-                logger.warn("unable to flush file {}", filename);
+                LOGGER.warn("unable to flush file {}", filename);
             }
         }
 
@@ -154,7 +168,8 @@ public class BucketFactory {
             synchronized (this) {
                 final long offsetInThisBucket = offsetInThisBucket(offset);
                 channel.position(offsetInThisBucket);
-                return channel.write(message);
+                final ByteBuffer encrypted = encryption.encrypt(offset, message);
+                return channel.write(encrypted);
             }
         }
 
@@ -166,6 +181,7 @@ public class BucketFactory {
         public void trim(long offset, long length) throws IOException {
             final long offsetInThisBucket = offsetInThisBucket(offset);
             final long lengthInThisBucket = calcLengthInThisBucket(offsetInThisBucket, length);
+            emptyRange.add(Range.closed(offsetInThisBucket, offsetInThisBucket + lengthInThisBucket));
             if (lengthInThisBucket == size) {
                 synchronized (this) {
                     channel.truncate(0);
@@ -175,7 +191,7 @@ public class BucketFactory {
                 final ByteBuffer bb = ByteBuffer.allocate((int) length);
                 bb.put(new byte[(int) length]);
                 bb.flip();
-                putBytes(offset, bb);
+                putBytes(offset, bb); //sadly, this will encrypt zeroes. we need a workaround
             }
         }
 

@@ -13,7 +13,7 @@ public class NullEncryption implements Encryption {
     public static final String PUB_ID = Hashing.sha256().newHasher().putString("Junit", Charsets.UTF_8).hash().toString();
 
     @Override
-    public ByteBuffer encrypt(ByteBuffer message, long offset) {
+    public ByteBuffer encrypt(long offset, ByteBuffer message) {
         return message;
     }
 

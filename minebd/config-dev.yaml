@@ -1,0 +1,21 @@
+server:
+  registerDefaultExceptionMappers: false
+  rootPath: /v1/*
+
+swagger:
+  resourcePackage: io.minebox.resource
+
+# Logging settings.
+logging:
+  level: INFO
+  loggers:
+    io.minebox: DEBUG
+
+#netty-spectific settings of minebd
+minebd:
+  nbdPort : 10811
+  maxOpenFiles : 20
+  parentDir : minedbDat #for dev this is a relative directory to where it was started in. VM/physical should configure absolute path
+  reportedSize : 10G
+  encryptionSeed: test123  #to be replaced with seedLocation path which lies on USB
+  bucketSize : 40M
