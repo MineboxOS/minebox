@@ -1,4 +1,4 @@
-package io.minebox.nbd;
+package io.minebox.nbd.encryption;
 
 import java.nio.ByteBuffer;
 
@@ -6,6 +6,8 @@ import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import io.minebox.nbd.Encryption;
+import io.minebox.nbd.NbdModule;
 
 /**
  * Created by andreas on 11.04.17.
@@ -25,7 +27,7 @@ public class SymmetricEncryption implements Encryption {
     }
 
     @Override
-    public ByteBuffer encrypt(ByteBuffer message, long offset) {
+    public ByteBuffer encrypt(long offset, ByteBuffer message) {
         return encrypt(offset, message.remaining(), message);
     }
 
@@ -42,13 +44,13 @@ public class SymmetricEncryption implements Encryption {
         while (plainBuffer.remaining() > 0) {
             final int pos = plainBuffer.position();
 
-            long blockNumber = (pos + offset) / Constants.BLOCKSIZE;
+            long blockNumber = (pos + offset) / EncConstants.BLOCKSIZE;
             if (curentBlockNumber != blockNumber) {
-                blockXor = createBlockXor(offset);
+                blockXor = createBlockXor(blockNumber);
             }
             curentBlockNumber = blockNumber;
             final byte value = plainBuffer.get();
-            final int xorBlockIndex = pos % Constants.BLOCKSIZE;
+            final int xorBlockIndex = pos % EncConstants.BLOCKSIZE;
             final byte encrypted = (byte) ((value ^ blockXor[xorBlockIndex]) & 0xFF);
             result.put(encrypted);
         }
@@ -56,7 +58,7 @@ public class SymmetricEncryption implements Encryption {
         return result;
     }
 
-    private byte[] createBlockXor(long offset) {
-        return bitPatternGenerator.createDeterministicPattern1(offset);
+    private byte[] createBlockXor(long blockNumber) {
+        return bitPatternGenerator.createDeterministicPattern(blockNumber);
     }
 }

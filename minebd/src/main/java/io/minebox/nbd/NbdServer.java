@@ -28,7 +28,7 @@ public class NbdServer implements Managed {
 
     private final int port;
     private final SystemdUtil systemdUtil;
-    private static final Logger logger = LoggerFactory.getLogger(NbdServer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(NbdServer.class);
     private final MinebdConfig config;
     private final ExportProvider exportProvider;
     private EventLoopGroup eventLoopGroup;
@@ -78,7 +78,7 @@ public class NbdServer implements Managed {
 
     private void sendError(Throwable e) {
         systemdUtil.sendError(1);
-        logger.error("terminated due to exception.", e);
+        LOGGER.error("terminated due to exception.", e);
     }
 
     private void block() {
@@ -87,7 +87,7 @@ public class NbdServer implements Managed {
         } catch (InterruptedException e) {
             //very unexpected
             systemdUtil.sendError(1);
-            logger.info("terminated due to interrupt.", e);
+            LOGGER.info("terminated due to interrupt.", e);
         }
     }
 
@@ -103,29 +103,29 @@ public class NbdServer implements Managed {
 
     private void gracefulShutdown() {
         if (state == SHUTTINGDOWN || state == SHUTDOWN) {
-            logger.error("we have already attempted to shut down to {}, not doing it twice..", state);
+            LOGGER.error("we have already attempted to shut down to {}, not doing it twice..", state);
             return;
         }
         state = SHUTTINGDOWN;
-        logger.info("shutdown detected..");
+        LOGGER.info("shutdown detected..");
         systemdUtil.sendStopping();
         try {
             //                        exportProvider.flush();
             //close also flushes first, so we only do one of them
             exportProvider.close();
-            logger.info("shutting down eventLoops");
+            LOGGER.info("shutting down eventLoops");
             try {
                 eventLoopGroup.shutdownGracefully().sync();
             } catch (InterruptedException e) {
-                logger.info("error shutting down eventLoops");
+                LOGGER.info("error shutting down eventLoops");
             }
-            logger.info("we appear to have shut down gracefully..");
+            LOGGER.info("we appear to have shut down gracefully..");
         } catch (IOException e) {
-            logger.error("unable to flush and close ", e);
+            LOGGER.error("unable to flush and close ", e);
             systemdUtil.sendError(2);
         } finally {
             state = SHUTDOWN;
-            logger.info("shutdown finally complete..");
+            LOGGER.info("shutdown finally complete..");
         }
     }
 
@@ -146,7 +146,7 @@ public class NbdServer implements Managed {
                 });
         final ChannelFuture bind = bootstrap.bind();
         ChannelFuture f = bind.sync();
-        logger.info("started up minebd on port {} ", port);
+        LOGGER.info("started up minebd on port {} ", port);
         final Channel channel = f.channel();
         mainChannelFuture = channel.closeFuture();
         systemdUtil.sendNotify(); //tell systemd we are ready

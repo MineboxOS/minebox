@@ -22,7 +22,7 @@ public class HandshakePhase extends ByteToMessageDecoder {
     private enum State {HS_CLIENT_FLAGS, HS_OPTION_HAGGLING, HS_OPTION_DATA}
 
 
-    private static final Logger logger = LoggerFactory.getLogger(HandshakePhase.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HandshakePhase.class);
 
     private State state;
 
@@ -63,7 +63,7 @@ public class HandshakePhase extends ByteToMessageDecoder {
 
                     String o = processOption(ctx, in);
                     if (o != null) {
-                        logger.info("got option: {}", o);
+                        LOGGER.info("got option: {}", o);
                     }
 
                     state = State.HS_OPTION_HAGGLING;
@@ -78,7 +78,7 @@ public class HandshakePhase extends ByteToMessageDecoder {
                 CharSequence exportName = in.readCharSequence((int) currentOptionLen, Charset.forName("UTF-8"));
 
                 if (!exportProvider.supportsClientFlags(clientFlags)) {
-                    logger.error("client flags {} not supported", clientFlags);
+                    LOGGER.error("client flags {} not supported", clientFlags);
                     ctx.channel().close();
                     break;
                 }
@@ -135,7 +135,7 @@ public class HandshakePhase extends ByteToMessageDecoder {
 
     private void receiveHandshakeClientFlag(ChannelHandlerContext ctx, ByteBuf message) throws IOException {
         clientFlags = message.readInt();
-        logger.info("got client flags {}", clientFlags);
+        LOGGER.info("got client flags {}", clientFlags);
 //
         /*if ((clientFlags & Protocol.NBD_FLAG_FIXED_NEWSTYLE) == 0)
             ctx.channel().close();*/
@@ -152,7 +152,7 @@ public class HandshakePhase extends ByteToMessageDecoder {
 
         currentOption = option;
         currentOptionLen = optionLen;
-        logger.debug("currentOption {} currentOptionLen {}", currentOption, currentOptionLen);
+        LOGGER.debug("currentOption {} currentOptionLen {}", currentOption, currentOptionLen);
         state = State.HS_OPTION_DATA;
     }
 
