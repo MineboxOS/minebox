@@ -31,6 +31,7 @@ Uploading is a multi-step process:
 4. Remove the snapshot(s) of the data subvolume(s).
 
 Questions & tasks:
+
 * Are old files on sia cleaned up or are they just timing out at some point?
 * Do we care to have things on the upper level being snapshotted?
   If so, how do we do that?
