@@ -20,14 +20,15 @@ Takes the same parameter(s) as uploader.sh and forwards that.
 ## Uploader details
 
 Uploading is a multi-step process:
+
 1. Create a read-only snapshot of the data subvolumes on all lower disks.
-1. Initiate uploads for all non-zero-size files in the snapshot(s) whose
+2. Initiate uploads for all non-zero-size files in the snapshot(s) whose
    unique name does not exist in the uploaded sia files yet.
    Create a metadata list of all files belonging to the snapshot(s).
-1. When all uploads are done, save/upload the metadata.
+3. When all uploads are done, save/upload the metadata.
    a) Zip the file list and all sia files into a backup metadata bundle.
    b) Upload that bundle to the metadata storage.
-1. Remove the snapshot(s) of the data subvolume(s).
+4. Remove the snapshot(s) of the data subvolume(s).
 
 Questions & tasks:
 * Are old files on sia cleaned up or are they just timing out at some point?
