@@ -1,9 +1,9 @@
 package io.minebox.nbd;
 
 import io.minebox.nbd.encryption.BitPatternGenerator;
+import io.minebox.nbd.encryption.BitPatternGeneratorTest;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 
 /**
@@ -14,21 +14,20 @@ public class ByteBufferEncryptionBenchmark {
     private static ByteBufferEncryptionTest t = new ByteBufferEncryptionTest();
     private BitPatternGenerator bitPatternGenerator;
 
+    final BitPatternGeneratorTest test = new BitPatternGeneratorTest();
+
     @Benchmark
-    public void testXor() {
-
-        t.testSimpleXor();
-    }
-
-    @Setup
-    public void setup() {
-        bitPatternGenerator = new BitPatternGenerator("secret");
-
+    public void testSecureRandom() throws Exception {
+        test.testSecureRandom();
     }
 
     @Benchmark
-    public void testBitPattern4096() {
-        bitPatternGenerator.createDeterministicPattern(123123);
+    public void testGuava() throws Exception {
+        test.testGuava();
     }
 
+    @Benchmark
+    public void testDigest() throws Exception {
+        test.testMD();
+    }
 }
