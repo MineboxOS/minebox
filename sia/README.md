@@ -32,7 +32,8 @@ Uploading is a multi-step process:
 
 Questions & tasks:
 
-* Are old files on sia cleaned up or are they just timing out at some point?
+* Are old files on sia cleaned up or are they just timing out at some point?  
+  --> We should only keep the most recent finished backup.
 * Do we care to have things on the upper level being snapshotted?
   If so, how do we do that?
 * How/where to actually upload the metadata?  
@@ -53,7 +54,7 @@ Questions & tasks:
   we run multiple forked processes for them, etc.)?  
   --> Right now, needs manually re-starting uploader with the snapshot name
 * How do we get/save the wallet seed?  
-  --> Minebd cares about that
+  --> Minebd takes care of that
 * Are there circumstances where the wallet needs to be unlocked when uploading?  
   --> We need some service to set/manage allowance!
 * Do we wait for full 3x redundancy or may we call or backup "done" earlier?  
@@ -64,13 +65,20 @@ Questions & tasks:
 * Upload can take over all your outgoing bandwidth (and take it for a longer
   time after upload is said to be finished), is this a problem?
 * Can we do some kind of traffic shaping/prioritization of sia to ensure the
-  system can still do other things while uploading?
+  system can still do other things while uploading?  
+  --> We can either use tc in some way, or trickle: http://www.tecmint.com/manage-and-limit-downloadupload-bandwidth-with-trickle-in-linux/3/  
+  --> In any case, we probably need to provide a setting for the user to set
+      available bandwidth and then take e.g. 70% of that for limiting sia.
 * Can we ensure decent upload speeds? With VM traffic shaped to 256 KiB/s
   (~2 MBit/s) I got about 1 MB / minute of actual data uploaded (avg over 3 h).
   If that speed continues over 24 h, that makes ~1.5 GB/day.
-* TODO: Warn/exit if siad is not running
 * TODO: Report when finished (via email?)
 * TODO: Should we also check allowance before uploading?
+* TODO: Delete files from older backups when we are done.
+* TODO: Upload full blocks to demo service.
+* TODO: Upload metadata to first iteration of Minebox metadata service/API.
+* TODO: Add an execution mode that can re-start processes for all backups that
+        died (probably requires us to track our PID).
 
 ## Unlocking wallet
 

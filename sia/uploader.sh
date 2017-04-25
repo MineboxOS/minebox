@@ -11,6 +11,7 @@
 DATADIR_MASK="/mnt/lower*/data"
 METADATA_BASE="/mnt/lower1/mineboxmeta"
 SIA_DIR="/mnt/lower1/sia"
+SIAC="/usr/local/bin/siac"
 
 die() {
     echo -e "$1"
@@ -23,7 +24,7 @@ systemctl status sia > /dev/null
 if [ "$?" != "0" ]; then
   die "ERROR: sia daemon needs to be running for any uploads."
 fi
-siasync=`siac | awk '/^Synced:/ { print $2; }'`
+siasync=`$SIAC | awk '/^Synced:/ { print $2; }'`
 if [ "$siasync" != "Yes" ]; then
   die "ERROR: sia seems not to be synced. Check yourself with |siac| and run again when it's synced."
 fi
@@ -84,9 +85,9 @@ fi
 if [ -e $metadir/files ]; then
   rm $metadir/files
 fi
-uploaded_files=`siac renter list | awk '/.dat$/ { print $3; }'`
-# NOTE: We may have unifinished uploads but this still may not say "uploading". :(
-uploading_files=`siac renter list | awk '/.dat \(uploading/ { print $3; }'`
+uploaded_files=`$SIAC renter list | awk '/.dat$/ { print $3; }'`
+# NOTE: We may have unfinished uploads but this still may not say "uploading". :(
+uploading_files=`$SIAC renter list | awk '/.dat \(uploading/ { print $3; }'`
 # We have a randomly named subdirectory containing the .dat files.
 # As the random string is based on the wallet seed, we can be pretty sure there
 # is only one and we can ignore the risk of catching multiple directories with
@@ -102,7 +103,7 @@ for filepath in $DATADIR_MASK/snapshots/$snapname/*/*.dat; do
       echo "$sia_filename is part of the set but the upload is already in progress."
     else
       echo "$sia_filename has to be uploaded, starting that."
-      timeout 30s siac renter upload $filepath $sia_filename
+      timeout 30s $SIAC renter upload $filepath $sia_filename
       if [ "$?" = "124" ]; then
         die "ERROR: upload command timed out. You may need to restart the sia daemon, see https://github.com/NebulousLabs/Sia/issues/1605 for more information. You can re-start this backup process later by calling |$0 $snapname|."
       elif [ "$?" != "0" ]; then
@@ -131,7 +132,7 @@ calc_remaining() {
   done
   # If we want more details, we may want to use `siac renter list -v` and also
   # take available/redundancy into account.
-  local uploads=`siac renter uploads`
+  local uploads=`$SIAC renter uploads`
   # We replace all dots by escaped dots for a proper regular expression.
   uploads_in_progress=`echo "$uploads" | awk "BEGIN { count=0 } / ($rx) \(uploading/ { count+=1; } END { print count }"`
   # We assume all file sizes are MB (smaller doesn't weigh much, and we never get larger than 40 MB)
