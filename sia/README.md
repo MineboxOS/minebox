@@ -54,7 +54,7 @@ Questions & tasks:
   --> Right now, needs manually re-starting uploader with the snapshot name
 * How do we get/save the wallet seed?  
   --> Minebd cares about that
-* Are there circumstances where the wallet needs to be unlocked when uploading?
+* Are there circumstances where the wallet needs to be unlocked when uploading?  
   --> We need some service to set/manage allowance!
 * Do we wait for full 3x redundancy or may we call or backup "done" earlier?  
   --> Right now, stick with 100% redundancy.
