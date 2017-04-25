@@ -62,7 +62,9 @@ if [ "$mode" = "restart" ]; then
   echo "Re-starting backup $snapname"
 else
   snapname=`date "+%s"`
-  echo "Flushing filesystem caches to make sure user data has been written."
+  echo "Trimming file system to actually remove deleted data from the virtual disk."
+  fstrim /mnt/storage/
+  echo "Flushing file system caches to make sure user data has been written."
   sync
   echo "Creating lower-level data snapshot(s) with name: $snapname"
   # Potentially, we should ensure that those data/ directories are actually subvolumes.
