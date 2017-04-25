@@ -75,6 +75,9 @@ Questions & tasks:
 * TODO: Report when finished (via email?)
 * TODO: Should we also check allowance before uploading?
 * TODO: Delete files from older backups when we are done.
+* TODO: Put scripts into proper places on the (VM) file system.
+* TODO: Add an execution mode that can re-start processes for all backups that
+        died (probably requires us to track our PID).
 
 ## Unlocking wallet
 
