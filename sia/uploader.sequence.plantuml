@@ -24,14 +24,19 @@ else restart backup
 	note over uploader: No special preparations
 end
 
-uploader -> sia: get info about\nuploaded & uploading files
-uploader <-- sia
+uploader -> MineBD: get list of blocks to be uploaded
+uploader <-- MineBD
 
-uploader -> sia: inform about all files to be uploaded
-uploader <-- sia
+uploader --> sia: inform about all files to be uploaded
+activate sia
+
+sia -> lower: get data
+sia <-- lower
+sia -> sia: upload data
 
 uploader -> sia: check progress & wait for upload
 uploader <-- sia
+deactivate sia
 
 uploader -> uploader: bundle all "renter files" (*.sia)\nin a backup.*.zip
 
