@@ -23,7 +23,6 @@ renter)
     # 21.46 MB  minebox_v1_0.1492628694.dat
     #  5.56 MB  minebox_v1_15.1492711080.dat
     # 41.94 MB  minebox_v1_15.1492778280.dat
-    exit 1
     ;;
   upload)
     curl --upload-file $3 ${SERVER_URI}$4

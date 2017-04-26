@@ -17,6 +17,14 @@ Takes the same parameter(s) as uploader.sh and forwards that.
 Run uploader.sh in a screen window (named "uploader"). This is mostly for development.
 Takes the same parameter(s) as uploader.sh and forwards that.
 
+## demosiac.sh
+A small shim script to fake siac for demos without sia working reliably (or fast).
+Can be used in uploader by handing over as an environment variable, e.g.
+```
+SIAC=~/mineblimp_vm/sia/demosiac.sh /usr/lib/minebox/uploader.sh
+
+```
+
 ## Uploader details
 
 Uploading is a multi-step process:

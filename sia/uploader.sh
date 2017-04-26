@@ -11,7 +11,7 @@
 DATADIR_MASK="/mnt/lower*/data"
 METADATA_BASE="/mnt/lower1/mineboxmeta"
 SIA_DIR="/mnt/lower1/sia"
-SIAC="/usr/local/bin/siac"
+SIAC=${SIAC:-"/usr/local/bin/siac"}
 
 die() {
     echo -e "$1"
@@ -20,13 +20,17 @@ die() {
 LANG=C
 
 # Step 0: Check if siad is running.
-systemctl status sia > /dev/null
-if [ "$?" != "0" ]; then
-  die "ERROR: sia daemon needs to be running for any uploads."
-fi
-siasync=`$SIAC | awk '/^Synced:/ { print $2; }'`
-if [ "$siasync" != "Yes" ]; then
-  die "ERROR: sia seems not to be synced. Check yourself with |siac| and run again when it's synced."
+if [ "`basename $SIAC`" = "siac" ]; then
+  # If we fake a siac with a command of a different name (for demo purposes),
+  # we skip these checks.
+  systemctl status sia > /dev/null
+  if [ "$?" != "0" ]; then
+    die "ERROR: sia daemon needs to be running for any uploads."
+  fi
+  siasync=`$SIAC | awk '/^Synced:/ { print $2; }'`
+  if [ "$siasync" != "Yes" ]; then
+    die "ERROR: sia seems not to be synced. Check yourself with |siac| and run again when it's synced."
+  fi
 fi
 
 # Step 1: Create snapshot.
@@ -79,7 +83,7 @@ fi
 
 # Step 2: Initiate needed uploads.
 
-echo "Start downloads."
+echo "Start uploads."
 metadir="$METADATA_BASE/backup.$snapname"
 if [ ! -d $metadir ]; then
   mkdir -p $metadir
@@ -87,9 +91,10 @@ fi
 if [ -e $metadir/files ]; then
   rm $metadir/files
 fi
-uploaded_files=`$SIAC renter list | awk '/.dat$/ { print $3; }'`
+flist=`$SIAC renter list`
+uploaded_files=`echo "$flist" | awk '/.dat$/ { print $3; }'`
 # NOTE: We may have unfinished uploads but this still may not say "uploading". :(
-uploading_files=`$SIAC renter list | awk '/.dat \(uploading/ { print $3; }'`
+uploading_files=`echo "$flist" | awk '/.dat \(uploading/ { print $3; }'`
 # We have a randomly named subdirectory containing the .dat files.
 # As the random string is based on the wallet seed, we can be pretty sure there
 # is only one and we can ignore the risk of catching multiple directories with
