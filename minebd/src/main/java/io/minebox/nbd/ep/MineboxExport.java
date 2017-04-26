@@ -165,7 +165,7 @@ public class MineboxExport implements ExportProvider {
     }
 
     @Override
-    public void trim(long offset, int length) throws IOException {
+    public void trim(long offset, long length) throws IOException {
         logger.debug("trimming {} bytes from offset {} to bucket", length, offset);
         for (Integer bucketNumber : getBuckets(offset, length)) {
             final Bucket bucket = getBucketFromIndex(bucketNumber);
@@ -176,7 +176,7 @@ public class MineboxExport implements ExportProvider {
     }
 
 
-    private List<Integer> getBuckets(long offset, int length) {
+    private List<Integer> getBuckets(long offset, long length) {
         final IntStream intStream = getBucketsStream(offset, length);
         final List<Integer> ret = intStream
                 .boxed()
@@ -187,10 +187,10 @@ public class MineboxExport implements ExportProvider {
         return ret;
     }
 
-    private IntStream getBucketsStream(long offset, int length) {
-        final long startIndex = bucketFromOffset(offset);
-        final long endIndex = bucketFromOffset(offset + length - 1);
-        return IntStream.range((int) startIndex, (int) endIndex + 1);
+    private IntStream getBucketsStream(long offset, long length) {
+        final int startIndex = bucketFromOffset(offset);
+        final int endIndex = bucketFromOffset(offset + length - 1);
+        return IntStream.range(startIndex, endIndex + 1);
     }
 
     @Override

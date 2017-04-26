@@ -38,7 +38,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
     private short cmdType;
     private long cmdHandle;
     private long cmdOffset;
-    private int cmdLength;
+    private long cmdLength;
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
@@ -59,7 +59,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
 
                     //FIXME: this will buffer maybe a lot of bytes?!
                     case TM_RECEIVE_CMD_DATA:
-                        if (cmdType == Protocol.NBD_CMD_WRITE && !hasMin(in, (int) cmdLength))
+                        if (cmdType == Protocol.NBD_CMD_WRITE && !hasMin(in, cmdLength))
                             return;
 
                         processOperation(ctx, in);
@@ -72,7 +72,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
         }
     }
 
-    private static boolean hasMin(ByteBuf in, int wanted) {
+    private static boolean hasMin(ByteBuf in, long wanted) {
         return in.readableBytes() >= wanted;
     }
 
@@ -81,16 +81,17 @@ public class TransmissionPhase extends ByteToMessageDecoder {
         switch (cmdType) {
             case Protocol.NBD_CMD_READ: {
                 final long cmdOffset = this.cmdOffset;
-                final int cmdLength = this.cmdLength;
+                final long cmdLength = this.cmdLength;
                 final long cmdHandle = this.cmdHandle;
                 Runnable operation = () -> {
                     ByteBuf data = null;
                     int err = 0;
                     try {
                         //FIXME: use FUA/sync flag correctly
-                        ByteBuffer bb = exportProvider.read(cmdOffset, cmdLength);
+                        ByteBuffer bb = exportProvider.read(cmdOffset, Ints.checkedCast(cmdLength));
                         data = Unpooled.wrappedBuffer(bb);
                     } catch (Exception e) {
+                        LOGGER.error("error during read", e);
                         err = Error.EIO;
                     } finally {
                         sendTransmissionSimpleReply(ctx, err, cmdHandle, data);
@@ -101,16 +102,24 @@ public class TransmissionPhase extends ByteToMessageDecoder {
             }
             case Protocol.NBD_CMD_WRITE: {
                 final long cmdOffset = this.cmdOffset;
-                final int cmdLength = this.cmdLength;
+                final long cmdLength = this.cmdLength;
                 final long cmdHandle = this.cmdHandle;
-//			System.out.println("cmdLength = " + cmdLength);
-                final ByteBuf buf = in.readBytes(cmdLength);
+
+                final ByteBuf buf;
+                try {
+                    buf = in.readBytes(Ints.checkedCast(cmdLength));
+                } catch (Exception e) {
+                    LOGGER.error("error during preparation of write", e);
+                    sendTransmissionSimpleReply(ctx, Error.EIO, cmdHandle, null);
+                    break;
+                }
                 Runnable operation = () -> {
                     int err = 0;
                     try {
                         //FIXME: use FUA/sync flag correctly
                         exportProvider.write(cmdOffset, buf.nioBuffer(), false);
                     } catch (Exception e) {
+                        LOGGER.error("error during write", e);
                         err = Error.EIO;
                     } finally {
                         sendTransmissionSimpleReply(ctx, err, cmdHandle, null);
@@ -146,7 +155,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
             }
             case Protocol.NBD_CMD_TRIM: {
                 final long cmdOffset = this.cmdOffset;
-                final int cmdLength = this.cmdLength;
+                final long cmdLength = this.cmdLength;
                 final long cmdHandle = this.cmdHandle;
 
                 int err = 0;
@@ -172,8 +181,8 @@ public class TransmissionPhase extends ByteToMessageDecoder {
         cmdFlags = message.readShort();
         cmdType = message.readShort();
         cmdHandle = message.readLong();
-        cmdOffset = message.readLong(); //FIXME: unsigned!
-        cmdLength = Ints.checkedCast(message.readUnsignedInt());
+        cmdOffset = message.readLong();
+        cmdLength = message.readUnsignedInt(); //needs to be treated as long
     }
 
     private static void sendTransmissionSimpleReply(ChannelHandlerContext ctx, int error, long handle, ByteBuf data) {

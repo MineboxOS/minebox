@@ -11,6 +11,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
+import com.google.common.primitives.Ints;
 import com.google.inject.Inject;
 import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.Encryption;
@@ -180,7 +181,7 @@ public class BucketFactory {
         @Override
         public void trim(long offset, long length) throws IOException {
             final long offsetInThisBucket = offsetInThisBucket(offset);
-            final long lengthInThisBucket = calcLengthInThisBucket(offsetInThisBucket, length);
+            final long lengthInThisBucket = calcLengthInThisBucket(offsetInThisBucket, length); //should be always equal to length since it is normalized in MineboxEport
             emptyRange.add(Range.closed(offsetInThisBucket, offsetInThisBucket + lengthInThisBucket));
             if (lengthInThisBucket == size) {
                 synchronized (this) {
@@ -188,8 +189,9 @@ public class BucketFactory {
                     channel.force(true);
                 }
             } else {
-                final ByteBuffer bb = ByteBuffer.allocate((int) length);
-                bb.put(new byte[(int) length]);
+                final int intLen = Ints.checkedCast(length); //buckets can not be bigger than 2GB right now, could be fixed
+                final ByteBuffer bb = ByteBuffer.allocate(intLen);
+                bb.put(new byte[intLen]);
                 bb.flip();
                 putBytes(offset, bb); //sadly, this will encrypt zeroes. we need a workaround
             }
