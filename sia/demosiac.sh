@@ -3,6 +3,7 @@
 # For demo purposes, this is a script to replace siac in uploader.
 
 SERVER_URI=${SERVER_URI:-"http://localhost:8050/v1/demoFile/"}
+SIA_DIR=${SIA_DIR:-"/mnt/lower1/sia"}
 
 case "$1" in
 renter)
@@ -26,6 +27,7 @@ renter)
     ;;
   upload)
     curl --upload-file $3 ${SERVER_URI}$4
+    touch $SIA_DIR/renter/$4.sia
     ;;
   uploads)
     echo "No files are uploading."

@@ -10,8 +10,9 @@
 
 DATADIR_MASK="/mnt/lower*/data"
 METADATA_BASE="/mnt/lower1/mineboxmeta"
-SIA_DIR="/mnt/lower1/sia"
+SIA_DIR=${SIA_DIR:-"/mnt/lower1/sia"}
 SIAC=${SIAC:-"/usr/local/bin/siac"}
+METADATA_URL=${METADATA_URL:-"https://meta.minebox.io/"}
 
 die() {
     echo -e "$1"
@@ -173,7 +174,7 @@ fi
 popd
 # Upload metadata bundle.
 echo "TBD: Upload metadata."
-# TBD
+# curl --upload-file "backup.$snapname.zip" ${METADATA_URL}backup.$snapname.zip
 
 
 # Step 4: Remove snapshot.
