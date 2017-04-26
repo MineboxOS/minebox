@@ -40,7 +40,7 @@ public class PauseResource {
     @Produces("text/plain")
     public String pause() {
         final Instant instant = mineboxExportProvider.get().blockFlushFor1500Millis();
-        return "Not flushing files until " + instant.atZone(ZoneId.systemDefault()).toString();
+        return "Not flushing files until " + instant.atZone(ZoneId.systemDefault()).toString() + "\n";
     }
 
 
