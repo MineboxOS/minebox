@@ -21,7 +21,10 @@ Takes the same parameter(s) as uploader.sh and forwards that.
 A small shim script to fake siac for demos without sia working reliably (or fast).
 Can be used in uploader by handing over as an environment variable, e.g.
 ```
-SIAC=~/mineblimp_vm/sia/demosiac.sh /usr/lib/minebox/uploader.sh
+export SIAC=~/mineblimp_vm/sia/demosiac.sh
+export METADATA_URL="http://localhost:8050/v1/file/"
+export SIA_DIR=~/sia
+/usr/lib/minebox/uploader.sh
 
 ```
 

@@ -2,7 +2,7 @@
 
 # For demo purposes, this is a script to replace siac in uploader.
 
-SERVER_URI=${SERVER_URI:-"http://localhost:8050/v1/demoFile/"}
+SERVER_URI=${SERVER_URI:-"http://localhost:8050/v1/file/"}
 SIA_DIR=${SIA_DIR:-"/mnt/lower1/sia"}
 
 case "$1" in

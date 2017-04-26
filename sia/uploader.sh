@@ -12,7 +12,7 @@ DATADIR_MASK="/mnt/lower*/data"
 METADATA_BASE="/mnt/lower1/mineboxmeta"
 SIA_DIR=${SIA_DIR:-"/mnt/lower1/sia"}
 SIAC=${SIAC:-"/usr/local/bin/siac"}
-METADATA_URL=${METADATA_URL:-"https://meta.minebox.io/"}
+METADATA_URL=${METADATA_URL:-""} # e.g. https://meta.minebox.io/
 
 die() {
     echo -e "$1"
@@ -112,9 +112,10 @@ for filepath in $DATADIR_MASK/snapshots/$snapname/*/*.dat; do
     else
       echo "$sia_filename has to be uploaded, starting that."
       timeout 30s $SIAC renter upload $filepath $sia_filename
-      if [ "$?" = "124" ]; then
+      ret=$?
+      if [ "$ret" = "124" ]; then
         die "ERROR: upload command timed out. You may need to restart the sia daemon, see https://github.com/NebulousLabs/Sia/issues/1605 for more information. You can re-start this backup process later by calling |$0 $snapname|."
-      elif [ "$?" != "0" ]; then
+      elif [ "$ret" != "0" ]; then
         die "ERROR: upload unsuccessful. Please check what the problem is. You can re-start this backup process later by calling |$0 $snapname|."
       fi
     fi
@@ -173,9 +174,12 @@ if [ -e "backup.$snapname.zip" ]; then
 fi
 popd
 # Upload metadata bundle.
-echo "TBD: Upload metadata."
-# curl --upload-file "backup.$snapname.zip" ${METADATA_URL}backup.$snapname.zip
-
+if [ -n "${METADATA_URL}" ]; then
+  echo "Upload metadata."
+  curl --upload-file $METADATA_BASE/"backup.$snapname.zip" ${METADATA_URL}
+else
+  echo "TBD: Upload metadata."
+fi
 
 # Step 4: Remove snapshot.
 echo "Removing lower-level data snapshot(s) with name: $snapname"
