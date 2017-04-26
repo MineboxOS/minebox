@@ -27,7 +27,7 @@ mainClassName = 'io.minebox.MinebdApplication'
 
 run {
     maxHeapSize = "400m"
-    args 'config.yaml'
+    args 'config-dev.yaml'
 }
 
 sourceCompatibility = 1.8
