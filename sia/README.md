@@ -86,10 +86,8 @@ Questions & tasks:
 * TODO: Report when finished (via email?)
 * TODO: Should we also check allowance before uploading?
 * TODO: Delete files from older backups when we are done.
-* TODO: Upload full blocks to demo service.
-* TODO: Upload metadata to first iteration of Minebox metadata service/API.
-* TODO: Add an execution mode that can re-start processes for all backups that
-        died (probably requires us to track our PID).
+* TODO: Set metadata upload to real Minebox metadata service/API (and include
+        authentication).
 
 ## Unlocking wallet
 

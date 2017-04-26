@@ -35,7 +35,30 @@ if [ "`basename $SIAC`" = "siac" ]; then
 fi
 
 # Step 1: Create snapshot.
-if [ -n "$1" ]; then
+if [ "$1" = "restart-all" ]; then
+  openbackups=`(for subvol in $DATADIR_MASK; do btrfs subvolume list $subvol; done) | grep "snapshots/" | sed -e "s/^.*snapshots\///" | uniq | sort`
+  if [ -z "$openbackups" ]; then
+    echo "No backups need to be restarted."
+  else
+    for snapname in $openbackups; do
+      metadir="$METADATA_BASE/backup.$snapname"
+      running=
+      if [ -d "$metadir" -a -e "$metadir/uploader.pid" ]; then
+        pid=`cat $metadir/uploader.pid`
+        psname=`ps -q $pid -o comm=`
+        if [ $psname = `basename $0` ]; then
+          echo "An uploader process for backup $snapname is already running."
+          running=$pid
+        fi
+      fi
+      if [ -z "$running" ]; then
+        $0 $snapname &
+        disown
+      fi
+    done
+  fi
+  exit 0
+elif [ -n "$1" ]; then
   snapname=""
   for subvol in $DATADIR_MASK; do
     if [ -d "$subvol/snapshots/$1" ]; then
@@ -50,6 +73,13 @@ else
   snapname=`date "+%s"`
   mode="new"
 fi
+
+backupname="backup.$snapname"
+metadir="$METADATA_BASE/$backupname"
+if [ ! -d $metadir ]; then
+  mkdir -p $metadir
+fi
+echo $$ > $metadir/uploader.pid
 
 loggeropts=""
 # Detect if we run in the background.
@@ -85,10 +115,6 @@ fi
 # Step 2: Initiate needed uploads.
 
 echo "Start uploads."
-metadir="$METADATA_BASE/backup.$snapname"
-if [ ! -d $metadir ]; then
-  mkdir -p $metadir
-fi
 if [ -e $metadir/files ]; then
   rm $metadir/files
 fi
@@ -161,22 +187,20 @@ for file in $ourfiles; do
     cp $SIA_DIR/renter/$file.sia $metadir/
   fi
 done
-# We don't need the files list there, it's now implied from the list of .sia files.
-rm "$metadir/files"
 # Create a bundle of all metadata for this backup.
 pushd $METADATA_BASE
-if [ -e "backup.$snapname.zip" ]; then
-  rm "backup.$snapname.zip"
+if [ -e "$backupname.zip" ]; then
+  rm "$backupname.zip"
 fi
-zip -r9 "backup.$snapname.zip" "backup.$snapname/"
-if [ -e "backup.$snapname.zip" ]; then
-  rm -rf "backup.$snapname"
+zip -r9 "$backupname.zip" "$backupname/" -x "$backupname/files" "$backupname/uploader.pid"
+if [ -e "$backupname.zip" ]; then
+  rm -rf "$backupname"
 fi
 popd
 # Upload metadata bundle.
 if [ -n "${METADATA_URL}" ]; then
   echo "Upload metadata."
-  curl --upload-file $METADATA_BASE/"backup.$snapname.zip" ${METADATA_URL}
+  curl --upload-file $METADATA_BASE/"$backupname.zip" ${METADATA_URL}
 else
   echo "TBD: Upload metadata."
 fi
@@ -192,7 +216,7 @@ echo "Checking for non-processed snapshots..."
   btrfs subvolume list $subvol
 done) | grep 'snapshots'
 if [ "$?" = "0" ]; then
-  echo "There are snapshots that haven't been fully processed yet. You can finish them with |$0 <timestamp>|."
+  echo "There are snapshots that haven't been fully processed yet. You can finish an individual one with |$0 <timestamp>| or restart them all with |$0 restart-all|."
 fi
 
 echo "Backup $snapname has been uploaded."
