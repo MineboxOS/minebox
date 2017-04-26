@@ -90,7 +90,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                         //FIXME: use FUA/sync flag correctly
                         ByteBuffer bb = exportProvider.read(cmdOffset, cmdLength);
                         data = Unpooled.wrappedBuffer(bb);
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         err = Error.EIO;
                     } finally {
                         sendTransmissionSimpleReply(ctx, err, cmdHandle, data);
@@ -110,7 +110,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                     try {
                         //FIXME: use FUA/sync flag correctly
                         exportProvider.write(cmdOffset, buf.nioBuffer(), false);
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         err = Error.EIO;
                     } finally {
                         sendTransmissionSimpleReply(ctx, err, cmdHandle, null);
@@ -121,7 +121,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 break;
             }
             case Protocol.NBD_CMD_DISC: {
-                ctx.channel().close();
+                ctx.channel().close(); //
                 break;
             }
             case Protocol.NBD_CMD_FLUSH: {
@@ -134,8 +134,14 @@ public class TransmissionPhase extends ByteToMessageDecoder {
             /* we must drain all NBD_CMD_WRITE and NBD_WRITE_TRIM from the queue
              * before processing NBD_CMD_FLUSH
 			 */
-                exportProvider.flush();
-                sendTransmissionSimpleReply(ctx, 0, cmdHandle, null);
+                int err = 0;
+                try {
+                    exportProvider.flush();
+                } catch (Exception e) {
+                    err = Error.EIO;
+                } finally {
+                    sendTransmissionSimpleReply(ctx, err, cmdHandle, null);
+                }
                 break;
             }
             case Protocol.NBD_CMD_TRIM: {
@@ -143,8 +149,14 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 final int cmdLength = this.cmdLength;
                 final long cmdHandle = this.cmdHandle;
 
-                exportProvider.trim(cmdOffset, cmdLength);
-                sendTransmissionSimpleReply(ctx, 0, cmdHandle, null);
+                int err = 0;
+                try {
+                    exportProvider.trim(cmdOffset, cmdLength);
+                } catch (Exception e) {
+                    err = Error.EIO;
+                } finally {
+                    sendTransmissionSimpleReply(ctx, err, cmdHandle, null);
+                }
                 break;
             }
             default:
