@@ -10,12 +10,13 @@ logging:
   level: INFO
   loggers:
     io.minebox: DEBUG
+    io.minebox.nbd.NbdStatsReporter: INFO
 
 #netty-spectific settings of minebd
 minebd:
   nbdPort : 10811
-  maxOpenFiles : 20
+  maxOpenFiles : 1
   parentDir : minedbDat #for dev this is a relative directory to where it was started in. VM/physical should configure absolute path
   reportedSize : 10G
-  encryptionSeed: test123  #to be replaced with seedLocation path which lies on USB
+  encryptionSeed: /etc/minebox/minebox.key
   bucketSize : 40M
