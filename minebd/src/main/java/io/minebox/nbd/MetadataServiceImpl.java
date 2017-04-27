@@ -20,6 +20,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
@@ -38,9 +39,11 @@ public class MetadataServiceImpl implements MetadataService {
     public static final String ROOT_PATH = "http://localhost:8050/v1/file/";
     private final ImmutableMap<String, String> filenameLookup;
 
+    private final String rootPath;
 
     @Inject
-    public MetadataServiceImpl() {
+    public MetadataServiceImpl(@Named("httpMetadata") String rootPath) {
+        this.rootPath = rootPath;
         final ImmutableList<String> metaData = loadMetaData();
         filenameLookup = Maps.uniqueIndex(metaData, input -> {
             final ArrayList<String> segments = Lists.newArrayList(Splitter.on(".").split(input));

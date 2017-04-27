@@ -20,3 +20,4 @@ minebd:
   reportedSize : 10G
   encryptionSeed: /etc/minebox/minebox.key
   bucketSize : 40M
+  httpMetadata: "http://localhost:8050/v1/file/"

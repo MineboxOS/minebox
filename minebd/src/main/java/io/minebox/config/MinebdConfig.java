@@ -13,6 +13,7 @@ public class MinebdConfig {
     public Size reportedSize = Size.gigabytes(4);
     public String encryptionSeed = "to_be_replaced_with_usb";
     public Size bucketSize = Size.megabytes(40);
+    public String httpMetadata;
 
     public MinebdConfig() {
         //explicit non-annotated constructor so guice does not accidentally this class badly
