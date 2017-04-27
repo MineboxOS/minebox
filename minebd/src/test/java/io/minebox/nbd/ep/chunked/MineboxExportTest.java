@@ -8,10 +8,10 @@ import com.codahale.metrics.MetricRegistry;
 import io.dropwizard.util.Size;
 import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.Constants;
-import io.minebox.nbd.MetadataService;
 import io.minebox.nbd.NullEncryption;
 import io.minebox.nbd.ep.BucketFactory;
 import io.minebox.nbd.ep.MineboxExport;
+import io.minebox.nbd.ep.NullMetadataService;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -87,7 +87,7 @@ public class MineboxExportTest {
     }
 
     public static MineboxExport buildMineboxExport(MinebdConfig cfg) {
-        final BucketFactory bucketFactory = new BucketFactory(cfg, new NullEncryption(), new MetadataService());
+        final BucketFactory bucketFactory = new BucketFactory(cfg, new NullEncryption(), new NullMetadataService());
         return new MineboxExport(cfg, new MetricRegistry(), bucketFactory);
     }
 }

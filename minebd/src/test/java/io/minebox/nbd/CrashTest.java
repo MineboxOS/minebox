@@ -9,6 +9,7 @@ import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.encryption.SymmetricEncryption;
 import io.minebox.nbd.ep.BucketFactory;
 import io.minebox.nbd.ep.MineboxExport;
+import io.minebox.nbd.ep.NullMetadataService;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -25,7 +26,7 @@ public class CrashTest {
         cfg.nbdPort = 10811;
         final SymmetricEncryption test123 = new SymmetricEncryption("test123");
 
-        final BucketFactory bucketFactory = new BucketFactory(cfg, test123, new MetadataService());
+        final BucketFactory bucketFactory = new BucketFactory(cfg, test123, new NullMetadataService());
         final NbdServer nbdServer = new NbdServer(new SystemdUtil() {
             @Override
             void sendNotify() {
