@@ -1,6 +1,7 @@
 package io.minebox.nbd;
 
 import java.net.BindException;
+import java.time.temporal.ChronoUnit;
 import java.util.concurrent.CountDownLatch;
 
 import com.codahale.metrics.MetricRegistry;
@@ -8,13 +9,9 @@ import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.encryption.SymmetricEncryption;
 import io.minebox.nbd.ep.BucketFactory;
 import io.minebox.nbd.ep.MineboxExport;
-import javafx.util.Duration;
 import org.junit.Ignore;
 import org.junit.Test;
 
-/**
- * Created by andreas on 19.04.17.
- */
 @Ignore("this requires mountnbd1.sh to be whitelisted with visudo to run correctly ")
 //andreas ALL=(ALL) NOPASSWD: /home/andreas/minebox/mineblimp/minebd/mountnbd1.sh
 public class CrashTest {
@@ -49,9 +46,9 @@ public class CrashTest {
                 .start();
         process.waitFor();
         final long duration = System.currentTimeMillis() - start;
-        final Duration d = Duration.millis(duration);
-        final double MBpS = 2000 / d.toSeconds();
-        System.out.println("read + wrote 1GB  + 1GB in " + d.toSeconds() + " seconds");
+        java.time.Duration d = java.time.Duration.of(duration, ChronoUnit.MILLIS);
+        final double MBpS = 2000 / d.getSeconds();
+        System.out.println("read + wrote 1GB  + 1GB in " + d.getSeconds() + " seconds");
         System.out.println(MBpS + " MB/sec");
         nbdServer.stop();
     }
