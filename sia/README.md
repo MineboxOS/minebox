@@ -25,6 +25,7 @@ Can be used in uploader by handing over as an environment variable, e.g.
 ```
 export SIAC=~/mineblimp_vm/sia/demosiac.sh
 export METADATA_URL="http://localhost:8050/v1/file/"
+export SERVER_URI=$METADATA_URL
 export SIA_DIR=~/sia
 /usr/lib/minebox/uploader.sh
 
