@@ -26,3 +26,15 @@ and `python-babel`, `python-jinja2`, `python-markupsafe` from `base`.
 
 As this installs Flask 0.10.1 (yes, an old version), here's the quickstart docs
 for that version: http://flask.pocoo.org/docs/0.10/quickstart/
+
+We also need the `requests` module to interact with other REST APIs.
+```
+pip install requests
+```
+Or at yum level:
+```
+yum install python-requests
+```
+This results in the following packages being installed:
+`python-requests`, `python-backports`, `python-backports-ssl_match_hostname`,
+`python-chardet`, `python-urllib3` from `base`.
