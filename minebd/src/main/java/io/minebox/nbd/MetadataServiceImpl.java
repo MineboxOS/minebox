@@ -69,8 +69,7 @@ public class MetadataServiceImpl implements MetadataService {
                     b.add(datName);
                 }
             }
-
-
+            LOGGER.info("loaded backup from metadata service");
             return b.build();
         } catch (UnirestException | IOException e) {
             LOGGER.error("unable to load backup from metadata service");
