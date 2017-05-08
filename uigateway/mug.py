@@ -57,9 +57,37 @@ def api_backup_status(backupname):
 
 @app.route("/wallet/status", methods=['GET'])
 def api_wallet_status():
-    walletdata = getFromSia('/wallet')
-    # For now, just return the info from Sia directly.
-    return jsonify(walletdata)
+    response = getFromSia('wallet')
+    if response.status_code == 200:
+      # return a dict generated from the JSON response.
+      walletdata = response.json()
+      # For now, just return the info from Sia directly.
+      return jsonify(walletdata)
+    elif re.match(r'^application/json', response.headers['Content-Type']):
+      # return a dict generated from the JSON response.
+      siadata = response.json()
+      siadata["messagesource"] = "sia"
+      # For now, just return the info from Sia directly.
+      return jsonify(siadata), response.status_code
+    else:
+      return jsonify(error=response.text,messagesource="sia"), response.status_code
+
+@app.route("/wallet/unlock", methods=['POST'])
+def api_wallet_unlock():
+    # Make sure we only hand parameters to siad that it supports.
+    pwd = request.form["encryptionpassword"]
+    response = postToSia('wallet/unlock', {"encryptionpassword": pwd})
+    if response.status_code == 204:
+      # This (No Content) should be the default returned on success.
+      return jsonify(message="Wallet unlocked.")
+    elif re.match(r'^application/json', response.headers['Content-Type']):
+      # return a dict generated from the JSON response.
+      siadata = response.json()
+      siadata["messagesource"] = "sia"
+      # For now, just return the info from Sia directly.
+      return jsonify(siadata), response.status_code
+    else:
+      return jsonify(error=response.text,messagesource="sia"), response.status_code
 
 
 def getFromSia(api):
@@ -68,8 +96,15 @@ def getFromSia(api):
     headers = requests.utils.default_headers()
     headers.update({'User-Agent': 'Sia-Agent'})
     response = requests.get(url, headers=headers)
-    # return a dict generated from the JSON response.
-    return response.json()
+    return response
+
+def postToSia(api, formData):
+    url = SIAD_URL + api
+    # siad requires a specific UA header, so add that to defaults.
+    headers = requests.utils.default_headers()
+    headers.update({'User-Agent': 'Sia-Agent'})
+    response = requests.post(url, data=formData, headers=headers)
+    return response
 
 
 @app.errorhandler(404)
