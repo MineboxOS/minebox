@@ -166,12 +166,12 @@ def postToSia(api, formData):
 @app.errorhandler(404)
 def page_not_found(error):
     app.logger.error('Method not found: %s' % request.url)
-    return jsonify(error="Method not supported."), 404
+    return jsonify(error="Method not supported: "+ str(error)), 404
 
 @app.errorhandler(500)
 def page_not_found(error):
-    app.logger.error('Internal server error @ %s' % request.url)
-    return jsonify(error="Internal server error."), 500
+    app.logger.error('Internal server error @ %s %s' % (request.url , str(error)))
+    return jsonify(error="Internal server error: "+ str(error)), 500
 
 
 if __name__ == "__main__":
