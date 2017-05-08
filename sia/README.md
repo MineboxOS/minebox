@@ -9,7 +9,7 @@ Output is written into syslog, of called from a foreground shell, it also output
 If run without parameter, it creates a new bakup.
 If a snapshot name (timestamp) is handed over, it continues the given backup from where it stopped.
  
-![](https://bitbucket.org/mineboxgmbh/mineblimp/downloads/uploader.sequence.png){width=100%}
+![](https://bitbucket.org/mineboxgmbh/minebox-client-tools/downloads/uploader.sequence.png){width=100%}
 
 ## uploader-bg.sh
 Run uploader.sh in the background, detached from the current shell (can be closed and it will continue to run).
@@ -23,7 +23,7 @@ Takes the same parameter(s) as uploader.sh and forwards that.
 A small shim script to fake siac for demos without sia working reliably (or fast).
 Can be used in uploader by handing over as an environment variable, e.g.
 ```
-export SIAC=~/mineblimp_vm/sia/demosiac.sh
+export SIAC=~/minebox-client-tools_vm/sia/demosiac.sh
 export METADATA_URL="http://localhost:8050/v1/file/"
 export SERVER_URI=$METADATA_URL
 export SIA_DIR=~/sia

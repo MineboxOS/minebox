@@ -14,7 +14,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 @Ignore("this requires mountnbd1.sh to be whitelisted with visudo to run correctly ")
-//andreas ALL=(ALL) NOPASSWD: /home/andreas/minebox/mineblimp/minebd/mountnbd1.sh
+//andreas ALL=(ALL) NOPASSWD: /home/andreas/minebox/minebox-client-tools/minebd/mountnbd1.sh
 public class CrashTest {
 
     @Test(timeout = 100000)
