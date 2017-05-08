@@ -3,6 +3,7 @@
 from flask import Flask, Response, request, jsonify, json
 from os import listdir
 from os.path import isfile, isdir, join
+from glob import glob
 import re
 import urllib
 import requests
@@ -23,11 +24,10 @@ def api_root():
 
 @app.route("/backup/list", methods=['GET'])
 def api_backup_list():
-    metalist = [re.sub(r'backup\.(\d+)(\.zip)?', r'\1', f)
-                for f in listdir(METADATA_BASE)
-                  if f.startswith("backup.") and
-                     ((isfile(join(METADATA_BASE, f)) and f.endswith(".zip")) or
-                      isdir(join(METADATA_BASE, f))) ]
+    metalist = [re.sub(r'.*backup\.(\d+)(\.zip)?', r'\1', f)
+                for f in glob(join(METADATA_BASE, "backup.*"))
+                  if (isfile(join(METADATA_BASE, f)) and f.endswith(".zip")) or
+                     isdir(join(METADATA_BASE, f)) ]
     # Does not work in Flask 0.10 and lower, see http://flask.pocoo.org/docs/0.10/security/#json-security
     #return jsonify(metalist)
     # Work around that so it works even in 0.10.
@@ -39,38 +39,84 @@ def api_backup_status(backupname):
     if not re.match(r'^\d+$', backupname):
         return jsonify(error="Illegal backup name."), 400
     if isfile(join(METADATA_BASE, "backup.%s.zip" % backupname)):
-        progress=100
+        files = -1
+        total_size = -1
+        progress = 100
         status="FINISHED"
     elif isdir(join(METADATA_BASE, "backup.%s" % backupname)):
-        progress=0
-        status="UPLOADING|PENDING|ERROR"
+        flist = join(METADATA_BASE, "backup.%s" % backupname, "files")
+        if isfile(flist):
+            with open(flist) as f:
+                backupfiles = [line.rstrip('\n') for line in f]
+            response = getFromSia('renter/files')
+            if response.status_code == 200:
+                # create a dict generated from the JSON response.
+                filedata = response.json()
+                files = 0
+                total_size = 0
+                pct_size = 0
+                for file in filedata["files"]:
+                   if file["siapath"] in backupfiles:
+                        # For now, report all files.
+                        # We may want to only report files not included in previous backups.
+                        files += 1
+                        total_size += file["filesize"]
+                        pct_size += file["filesize"] * file["uploadprogress"] / 100
+                progress = pct_size / total_size * 100 if total_size else 0
+                status = "UPLOADING" if pct_size else "PENDING"
+            else:
+                files = -1
+                total_size = -1
+                progress = 0
+                status = "ERROR"
+        else:
+            files = -1
+            total_size = -1
+            progress = 0
+            status = "PENDING"
     else:
-        return jsonify(error="No backup known with that name."), 400
+        return jsonify(message="No backup known with that name."), 400
 
     return jsonify(
       progress=progress,
       status=status,
       metadata="TBD",
-      numFiles="TBD"
+      numFiles=files,
+      size=total_size
     )
+
+
+@app.route("/contracts", methods=['GET'])
+def api_contracts():
+    response = getFromSia('renter/contracts')
+    if response.status_code == 200:
+        # create a dict generated from the JSON response.
+        contractdata = response.json()
+        # For now, just return the info from Sia directly.
+        return jsonify(contractdata)
+    elif re.match(r'^application/json', response.headers['Content-Type']):
+        siadata = response.json()
+        siadata["messagesource"] = "sia"
+        return jsonify(siadata), response.status_code
+    else:
+        return jsonify(message=response.text,messagesource="sia"), response.status_code
 
 
 @app.route("/wallet/status", methods=['GET'])
 def api_wallet_status():
     response = getFromSia('wallet')
     if response.status_code == 200:
-      # return a dict generated from the JSON response.
-      walletdata = response.json()
-      # For now, just return the info from Sia directly.
-      return jsonify(walletdata)
+        # create a dict generated from the JSON response.
+        walletdata = response.json()
+        # For now, just return the info from Sia directly.
+        return jsonify(walletdata)
     elif re.match(r'^application/json', response.headers['Content-Type']):
-      # return a dict generated from the JSON response.
-      siadata = response.json()
-      siadata["messagesource"] = "sia"
-      # For now, just return the info from Sia directly.
-      return jsonify(siadata), response.status_code
+        siadata = response.json()
+        siadata["messagesource"] = "sia"
+        return jsonify(siadata), response.status_code
     else:
-      return jsonify(error=response.text,messagesource="sia"), response.status_code
+        return jsonify(message=response.text,messagesource="sia"), response.status_code
+
 
 @app.route("/wallet/unlock", methods=['POST'])
 def api_wallet_unlock():
@@ -78,16 +124,14 @@ def api_wallet_unlock():
     pwd = request.form["encryptionpassword"]
     response = postToSia('wallet/unlock', {"encryptionpassword": pwd})
     if response.status_code == 204:
-      # This (No Content) should be the default returned on success.
-      return jsonify(message="Wallet unlocked.")
+        # This (No Content) should be the default returned on success.
+        return jsonify(message="Wallet unlocked.")
     elif re.match(r'^application/json', response.headers['Content-Type']):
-      # return a dict generated from the JSON response.
-      siadata = response.json()
-      siadata["messagesource"] = "sia"
-      # For now, just return the info from Sia directly.
-      return jsonify(siadata), response.status_code
+        siadata = response.json()
+        siadata["messagesource"] = "sia"
+        return jsonify(siadata), response.status_code
     else:
-      return jsonify(error=response.text,messagesource="sia"), response.status_code
+        return jsonify(message=response.text,messagesource="sia"), response.status_code
 
 
 def getFromSia(api):
@@ -95,7 +139,13 @@ def getFromSia(api):
     # siad requires a specific UA header, so add that to defaults.
     headers = requests.utils.default_headers()
     headers.update({'User-Agent': 'Sia-Agent'})
-    response = requests.get(url, headers=headers)
+    try:
+        response = requests.get(url, headers=headers)
+    except requests.exceptions.RequestException as e:
+        # Generate a fake response to return.
+        response = requests.Response
+        response.status_code = 500
+        response.text = str(e)
     return response
 
 def postToSia(api, formData):
@@ -103,7 +153,13 @@ def postToSia(api, formData):
     # siad requires a specific UA header, so add that to defaults.
     headers = requests.utils.default_headers()
     headers.update({'User-Agent': 'Sia-Agent'})
-    response = requests.post(url, data=formData, headers=headers)
+    try:
+        response = requests.post(url, data=formData, headers=headers)
+    except requests.exceptions.RequestException as e:
+        # Generate a fake response to return.
+        response = requests.Response
+        response.status_code = 500
+        response.text = str(e)
     return response
 
 
