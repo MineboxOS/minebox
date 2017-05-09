@@ -56,12 +56,10 @@ def api_backup_status(backupname):
                 with open(flist) as f:
                     backupfiles = [line.rstrip('\n') for line in f]
 
-        app.logger.error('Backupfiles: %s' % backupfiles)
         if backupfiles is not None:
-            response = getFromSia('renter/files')
-            if response.status_code == 200:
+            filedata, status_code = getFromSia('renter/files')
+            if status_code == 200:
                 # create a dict generated from the JSON response.
-                filedata = response.json()
                 files = 0
                 total_size = 0
                 pct_size = 0
@@ -108,50 +106,28 @@ def api_backup_status(backupname):
 
 @app.route("/contracts", methods=['GET'])
 def api_contracts():
-    response = getFromSia('renter/contracts')
-    if response.status_code == 200:
-        # create a dict generated from the JSON response.
-        contractdata = response.json()
-        # For now, just return the info from Sia directly.
-        return jsonify(contractdata)
-    elif re.match(r'^application/json', response.headers['Content-Type']):
-        siadata = response.json()
-        siadata["messagesource"] = "sia"
-        return jsonify(siadata), response.status_code
-    else:
-        return jsonify(message=response.text,messagesource="sia"), response.status_code
+    siadata, status_code = getFromSia('renter/contracts')
+    # For now, just return the info from Sia directly.
+    return jsonify(siadata), status_code
 
 
 @app.route("/wallet/status", methods=['GET'])
 def api_wallet_status():
-    response = getFromSia('wallet')
-    if response.status_code == 200:
-        # create a dict generated from the JSON response.
-        walletdata = response.json()
-        # For now, just return the info from Sia directly.
-        return jsonify(walletdata)
-    elif re.match(r'^application/json', response.headers['Content-Type']):
-        siadata = response.json()
-        siadata["messagesource"] = "sia"
-        return jsonify(siadata), response.status_code
-    else:
-        return jsonify(message=response.text,messagesource="sia"), response.status_code
+    walletdata, status_code = getFromSia('wallet')
+    # For now, just return the info from Sia directly.
+    return jsonify(walletdata), status_code
 
 
 @app.route("/wallet/unlock", methods=['POST'])
 def api_wallet_unlock():
     # Make sure we only hand parameters to siad that it supports.
     pwd = request.form["encryptionpassword"]
-    response = postToSia('wallet/unlock', {"encryptionpassword": pwd})
-    if response.status_code == 204:
+    siadata, status_code = postToSia('wallet/unlock', {"encryptionpassword": pwd})
+    if status_code == 204:
         # This (No Content) should be the default returned on success.
         return jsonify(message="Wallet unlocked.")
-    elif re.match(r'^application/json', response.headers['Content-Type']):
-        siadata = response.json()
-        siadata["messagesource"] = "sia"
-        return jsonify(siadata), response.status_code
     else:
-        return jsonify(message=response.text,messagesource="sia"), response.status_code
+        return jsonify(siadata), status_code
 
 
 def getFromSia(api):
@@ -161,12 +137,18 @@ def getFromSia(api):
     headers.update({'User-Agent': 'Sia-Agent'})
     try:
         response = requests.get(url, headers=headers)
+        if re.match(r'^application/json', response.headers['Content-Type']):
+            # create a dict generated from the JSON response.
+            siadata = response.json()
+            if response.status_code >= 400:
+                # For error-ish codes, tell that they are from Sia.
+                siadata["messagesource"] = "sia"
+            return siadata, response.status_code
+        else:
+            return {"message": response.text, "messagesource": "sia"}, response.status_code
     except requests.exceptions.RequestException as e:
-        # Generate a fake response to return.
-        response = requests.Response
-        response.status_code = 500
-        response.text = str(e)
-    return response
+        return {"message": str(e)}, 500
+
 
 def postToSia(api, formData):
     url = SIAD_URL + api
@@ -175,12 +157,17 @@ def postToSia(api, formData):
     headers.update({'User-Agent': 'Sia-Agent'})
     try:
         response = requests.post(url, data=formData, headers=headers)
+        if re.match(r'^application/json', response.headers['Content-Type']):
+            # create a dict generated from the JSON response.
+            siadata = response.json()
+            if response.status_code >= 400:
+                # For error-ish codes, tell that they are from Sia.
+                siadata["messagesource"] = "sia"
+            return siadata, response.status_code
+        else:
+            return {"message": response.text, "messagesource": "sia"}, response.status_code
     except requests.exceptions.RequestException as e:
-        # Generate a fake response to return.
-        response = requests.Response
-        response.status_code = 500
-        response.text = str(e)
-    return response
+        return {"message": str(e)}, 500
 
 
 @app.errorhandler(404)
