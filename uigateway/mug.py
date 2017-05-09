@@ -4,6 +4,7 @@ from flask import Flask, Response, request, jsonify, json
 from os import listdir
 from os.path import isfile, isdir, join
 from glob import glob
+from zipfile import ZipFile
 import re
 import urllib
 import requests
@@ -38,16 +39,22 @@ def api_backup_list():
 def api_backup_status(backupname):
     if not re.match(r'^\d+$', backupname):
         return jsonify(error="Illegal backup name."), 400
-    if isfile(join(METADATA_BASE, "backup.%s.zip" % backupname)):
-        files = -1
-        total_size = -1
-        progress = 100
-        status="FINISHED"
-    elif isdir(join(METADATA_BASE, "backup.%s" % backupname)):
-        flist = join(METADATA_BASE, "backup.%s" % backupname, "files")
-        if isfile(flist):
-            with open(flist) as f:
-                backupfiles = [line.rstrip('\n') for line in f]
+    zipname = join(METADATA_BASE, "backup.%s.zip" % backupname)
+    dirname = join(METADATA_BASE, "backup.%s" % backupname)
+    if isfile(zipname) or isdir(dirname):
+        backupfiles = None
+        if isfile(zipname):
+            with ZipFile(zipname, 'r') as backupzip:
+                backupfiles = [re.sub(r'.*backup\.\d+\/(.*)\.sia$', r'\1', f)
+                               for f in backupzip.namelist()]
+        elif isdir(dirname):
+            flist = join(dirname, "files")
+            if isfile(flist):
+                with open(flist) as f:
+                    backupfiles = [line.rstrip('\n') for line in f]
+
+        app.logger.error('Backupfiles: %s' % backupfiles)
+        if backupfiles is not None:
             response = getFromSia('renter/files')
             if response.status_code == 200:
                 # create a dict generated from the JSON response.
@@ -56,14 +63,19 @@ def api_backup_status(backupname):
                 total_size = 0
                 pct_size = 0
                 for file in filedata["files"]:
-                   if file["siapath"] in backupfiles:
+                    if file["siapath"] in backupfiles:
                         # For now, report all files.
                         # We may want to only report files not included in previous backups.
                         files += 1
                         total_size += file["filesize"]
                         pct_size += file["filesize"] * file["uploadprogress"] / 100
                 progress = pct_size / total_size * 100 if total_size else 0
-                status = "UPLOADING" if pct_size else "PENDING"
+                if isfile(zipname):
+                    status = "FINISHED"
+                elif pct_size:
+                    status = "UPLOADING"
+                else:
+                    status = "PENDING"
             else:
                 files = -1
                 total_size = -1
