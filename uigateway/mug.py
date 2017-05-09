@@ -30,10 +30,7 @@ def api_root():
 def api_backup_list():
     if not checkLogin():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    metalist = [re.sub(r'.*backup\.(\d+)(\.zip)?', r'\1', f)
-                for f in glob(join(METADATA_BASE, "backup.*"))
-                  if (isfile(join(METADATA_BASE, f)) and f.endswith(".zip")) or
-                     isdir(join(METADATA_BASE, f)) ]
+    metalist = getBackupList()
     # Does not work in Flask 0.10 and lower, see http://flask.pocoo.org/docs/0.10/security/#json-security
     #return jsonify(metalist)
     # Work around that so it works even in 0.10.
@@ -46,58 +43,49 @@ def api_backup_status(backupname):
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     if not re.match(r'^\d+$', backupname):
         return jsonify(error="Illegal backup name."), 400
-    zipname = join(METADATA_BASE, "backup.%s.zip" % backupname)
-    dirname = join(METADATA_BASE, "backup.%s" % backupname)
-    if isfile(zipname) or isdir(dirname):
-        backupfiles = None
-        if isfile(zipname):
-            with ZipFile(zipname, 'r') as backupzip:
-                backupfiles = [re.sub(r'.*backup\.\d+\/(.*)\.sia$', r'\1', f)
-                               for f in backupzip.namelist()]
-        elif isdir(dirname):
-            flist = join(dirname, "files")
-            if isfile(flist):
-                with open(flist) as f:
-                    backupfiles = [line.rstrip('\n') for line in f]
 
-        if backupfiles is not None:
-            filedata, status_code = getFromSia('renter/files')
-            if status_code == 200:
-                # create a dict generated from the JSON response.
-                files = 0
-                total_size = 0
-                pct_size = 0
-                fully_available = True
-                for file in filedata["files"]:
-                    if file["siapath"] in backupfiles:
-                        # For now, report all files.
-                        # We may want to only report files not included in previous backups.
-                        files += 1
-                        total_size += file["filesize"]
-                        pct_size += file["filesize"] * file["uploadprogress"] / 100
-                        if not file["available"]:
-                            fully_available = False
-                progress = pct_size / total_size * 100 if total_size else 0
-                if isfile(zipname) and fully_available:
-                    status = "FINISHED"
-                elif pct_size:
-                    status = "UPLOADING"
-                else:
-                    status = "PENDING"
+    backupfiles, backup_found, is_finished = getBackupFiles(backupname)
+    if not backup_found:
+        return jsonify(message="No backup known with that name."), 400
+
+    if backupfiles is None:
+        # Before uploads are scheduled, we find a backup but no files.
+        files = -1
+        total_size = -1
+        progress = 0
+        status = "PENDING"
+        fully_available = False
+    else:
+        filedata, status_code = getFromSia('renter/files')
+        if status_code == 200:
+            # create a dict generated from the JSON response.
+            files = 0
+            total_size = 0
+            pct_size = 0
+            fully_available = True
+            for file in filedata["files"]:
+                if file["siapath"] in backupfiles:
+                    # For now, report all files.
+                    # We may want to only report files not included in previous backups.
+                    files += 1
+                    total_size += file["filesize"]
+                    pct_size += file["filesize"] * file["uploadprogress"] / 100
+                    if not file["available"]:
+                        fully_available = False
+            progress = pct_size / total_size * 100 if total_size else 0
+            if is_finished and fully_available:
+                status = "FINISHED"
+            elif pct_size:
+                status = "UPLOADING"
             else:
-                files = -1
-                total_size = -1
-                progress = 0
-                status = "ERROR"
-                fully_available = False
+                status = "PENDING"
         else:
+            app.logger.error("Error %s getting Sia files: %s" % (status_code, str(filedata)))
             files = -1
             total_size = -1
             progress = 0
-            status = "PENDING"
+            status = "ERROR"
             fully_available = False
-    else:
-        return jsonify(message="No backup known with that name."), 400
 
     return jsonify(
       progress=progress,
@@ -200,8 +188,37 @@ def checkLogin():
           app.logger.warn('No valid login found: %s' % response.text)
           return False
     except requests.exceptions.RequestException as e:
-        app.logger.error('Error chhecking login: %s' % str(e))
+        app.logger.error('Error checking login: %s' % str(e))
         return False
+
+
+def getBackupList():
+    return [re.sub(r'.*backup\.(\d+)(\.zip)?', r'\1', f)
+            for f in glob(join(METADATA_BASE, "backup.*"))
+              if (isfile(f) and f.endswith(".zip")) or
+                 isdir(f) ]
+
+
+def getBackupFiles(backupname):
+    backupfiles = None
+    backup_found = False
+    is_finished = None
+    zipname = join(METADATA_BASE, "backup.%s.zip" % backupname)
+    dirname = join(METADATA_BASE, "backup.%s" % backupname)
+    if isfile(zipname):
+        backup_found = True
+        is_finished = True
+        with ZipFile(zipname, 'r') as backupzip:
+            backupfiles = [re.sub(r'.*backup\.\d+\/(.*)\.sia$', r'\1', f)
+                           for f in backupzip.namelist()]
+    elif isdir(dirname):
+        backup_found = True
+        is_finished = False
+        flist = join(dirname, "files")
+        if isfile(flist):
+            with open(flist) as f:
+                backupfiles = [line.rstrip('\n') for line in f]
+    return backupfiles, backup_found, is_finished
 
 
 @app.errorhandler(404)
