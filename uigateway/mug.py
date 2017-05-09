@@ -28,6 +28,8 @@ def api_root():
 
 @app.route("/backup/list", methods=['GET'])
 def api_backup_list():
+    if not checkLogin():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
     metalist = [re.sub(r'.*backup\.(\d+)(\.zip)?', r'\1', f)
                 for f in glob(join(METADATA_BASE, "backup.*"))
                   if (isfile(join(METADATA_BASE, f)) and f.endswith(".zip")) or
@@ -40,6 +42,8 @@ def api_backup_list():
 
 @app.route("/backup/<backupname>/status", methods=['GET'])
 def api_backup_status(backupname):
+    if not checkLogin():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
     if not re.match(r'^\d+$', backupname):
         return jsonify(error="Illegal backup name."), 400
     zipname = join(METADATA_BASE, "backup.%s.zip" % backupname)
@@ -106,6 +110,8 @@ def api_backup_status(backupname):
 
 @app.route("/contracts", methods=['GET'])
 def api_contracts():
+    if not checkLogin():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
     siadata, status_code = getFromSia('renter/contracts')
     # For now, just return the info from Sia directly.
     return jsonify(siadata), status_code
@@ -113,6 +119,8 @@ def api_contracts():
 
 @app.route("/wallet/status", methods=['GET'])
 def api_wallet_status():
+    if not checkLogin():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
     walletdata, status_code = getFromSia('wallet')
     # For now, just return the info from Sia directly.
     return jsonify(walletdata), status_code
@@ -120,6 +128,8 @@ def api_wallet_status():
 
 @app.route("/wallet/unlock", methods=['POST'])
 def api_wallet_unlock():
+    if not checkLogin():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
     # Make sure we only hand parameters to siad that it supports.
     pwd = request.form["encryptionpassword"]
     siadata, status_code = postToSia('wallet/unlock', {"encryptionpassword": pwd})
@@ -168,6 +178,30 @@ def postToSia(api, formData):
             return {"message": response.text, "messagesource": "sia"}, response.status_code
     except requests.exceptions.RequestException as e:
         return {"message": str(e)}, 500
+
+
+def checkLogin():
+    csrftoken = request.cookies.get('csrftoken')
+    sessionid = request.cookies.get('sessionid')
+    user_api = "https://localhost/api/commands/current-user"
+    referer = "https://localhost/"
+
+    headers = requests.utils.default_headers()
+    headers.update({'X-CSRFToken': csrftoken, 'referer': referer})
+    cookiejar = requests.cookies.RequestsCookieJar()
+    cookiejar.set('csrftoken', csrftoken)
+    cookiejar.set('sessionid', sessionid)
+    try:
+        # Given that we call localhost, the cert will be wrong, so don't verify.
+        response = requests.post(user_api, data=[], headers=headers, cookies=cookiejar, verify=False)
+        if response.status_code == 200:
+          return True
+        else:
+          app.logger.warn('No valid login found: %s' % response.text)
+          return False
+    except requests.exceptions.RequestException as e:
+        app.logger.error('Error chhecking login: %s' % str(e))
+        return False
 
 
 @app.errorhandler(404)
