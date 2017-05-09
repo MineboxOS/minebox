@@ -18,9 +18,12 @@ SIAD_URL="http://localhost:9980/"
 
 @app.route("/")
 def api_root():
-    return jsonify(
-      info="Hello World!"
-    )
+    links = []
+    for rule in app.url_map.iter_rules():
+        # Flask has a default route for serving static files, let's exclude it.
+        if rule.endpoint != "static":
+            links.append({"url": rule.rule, "methods": ','.join(rule.methods)})
+    return jsonify(supported_urls=sorted(links, key=lambda rule: rule["url"]))
 
 
 @app.route("/backup/list", methods=['GET'])
@@ -62,6 +65,7 @@ def api_backup_status(backupname):
                 files = 0
                 total_size = 0
                 pct_size = 0
+                fully_available = True
                 for file in filedata["files"]:
                     if file["siapath"] in backupfiles:
                         # For now, report all files.
@@ -69,8 +73,10 @@ def api_backup_status(backupname):
                         files += 1
                         total_size += file["filesize"]
                         pct_size += file["filesize"] * file["uploadprogress"] / 100
+                        if not file["available"]:
+                            fully_available = False
                 progress = pct_size / total_size * 100 if total_size else 0
-                if isfile(zipname):
+                if isfile(zipname) and fully_available:
                     status = "FINISHED"
                 elif pct_size:
                     status = "UPLOADING"
@@ -81,11 +87,13 @@ def api_backup_status(backupname):
                 total_size = -1
                 progress = 0
                 status = "ERROR"
+                fully_available = False
         else:
             files = -1
             total_size = -1
             progress = 0
             status = "PENDING"
+            fully_available = False
     else:
         return jsonify(message="No backup known with that name."), 400
 
