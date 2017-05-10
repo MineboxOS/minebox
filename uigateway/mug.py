@@ -6,6 +6,7 @@ from os.path import isfile, isdir, join
 from glob import glob
 from zipfile import ZipFile
 import re
+import logging
 import urllib
 import requests
 app = Flask(__name__)
@@ -256,4 +257,8 @@ def page_not_found(error):
 
 if __name__ == "__main__":
     #app.debug = True
+    if not app.debug:
+        # In production mode, add log handler to sys.stderr.
+        app.logger.addHandler(logging.StreamHandler())
+        app.logger.setLevel(logging.INFO)
     app.run(host='0.0.0.0', port=REST_PORT)
