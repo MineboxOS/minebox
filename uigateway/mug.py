@@ -47,8 +47,9 @@ def api_backup_status(backupname):
 
     backupfiles, is_finished = getBackupFiles(backupname)
     if backupfiles is None:
-        return jsonify(message="No backup known with that name."), 400
+        return jsonify(message="No backup known with that name."), 404
 
+    status_code = 200
     if len(backupfiles) < 1:
         # Before uploads are scheduled, we find a backup but no files.
         files = -1
@@ -65,8 +66,8 @@ def api_backup_status(backupname):
             prev_backupfiles, prev_finished = getBackupFiles(backuplist[currentidx - 1])
         else:
             prev_backupfiles = None
-        filedata, status_code = getFromSia('renter/files')
-        if status_code == 200:
+        sia_filedata, sia_status_code = getFromSia('renter/files')
+        if sia_status_code == 200:
             # create a dict generated from the JSON response.
             files = 0
             total_size = 0
@@ -74,7 +75,7 @@ def api_backup_status(backupname):
             rel_size = 0
             rel_pct_size = 0
             fully_available = True
-            for file in filedata["files"]:
+            for file in sia_filedata["files"]:
                 if file["siapath"] in backupfiles:
                     # For now, report all files.
                     # We may want to only report files not included in previous backups.
@@ -98,7 +99,7 @@ def api_backup_status(backupname):
             else:
                 status = "PENDING"
         else:
-            app.logger.error("Error %s getting Sia files: %s" % (status_code, str(filedata)))
+            app.logger.error("Error %s getting Sia files: %s", status_code, str(sia_filedata))
             files = -1
             total_size = -1
             rel_size = -1
@@ -106,6 +107,7 @@ def api_backup_status(backupname):
             rel_progress = 0
             status = "ERROR"
             fully_available = False
+            status_code = 503
 
     return jsonify(
       progress=progress,
@@ -115,7 +117,7 @@ def api_backup_status(backupname):
       numFiles=files,
       size=total_size,
       relative_size=rel_size
-    )
+    ), status_code
 
 
 @app.route("/contracts", methods=['GET'])
