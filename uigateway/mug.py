@@ -84,18 +84,26 @@ def getBackupStatus(backupname):
             rel_size = 0
             rel_pct_size = 0
             fully_available = True
-            for file in sia_filedata["files"]:
-                if file["siapath"] in backupfiles:
+            sia_map = dict((d["siapath"], index) for (index, d) in enumerate(sia_filedata["files"]))
+            for fname in backupfiles:
+                if fname in sia_map:
+                    files += 1
+                    fdata = sia_filedata["files"][sia_map[fname]]
                     # For now, report all files.
                     # We may want to only report files not included in previous backups.
-                    files += 1
-                    total_size += file["filesize"]
-                    total_pct_size += file["filesize"] * file["uploadprogress"] / 100
-                    if prev_backupfiles is None or not file["siapath"] in prev_backupfiles:
-                        rel_size += file["filesize"]
-                        rel_pct_size += file["filesize"] * file["uploadprogress"] / 100
-                    if not file["available"]:
+                    total_size += fdata["filesize"]
+                    total_pct_size += fdata["filesize"] * fdata["uploadprogress"] / 100
+                    if prev_backupfiles is None or not fdata["siapath"] in prev_backupfiles:
+                        rel_size += fdata["filesize"]
+                        rel_pct_size += fdata["filesize"] * fdata["uploadprogress"] / 100
+                    if not fdata["available"]:
                         fully_available = False
+                elif re.match(r'.*\.dat$', fname):
+                    files += 1
+                    fully_available = False
+                    app.logger.warn('File %s not found on Sia!', fname)
+                else:
+                    app.logger.debug('File "%s" not on Sia and not matching watched names.', fname)
             # If size is 0, we report 100% progress.
             # This is really needed for relative as otherwise a backup with no
             # difference to the previous would never go to 100%.
@@ -105,6 +113,8 @@ def getBackupStatus(backupname):
             metadata = "PENDING"
             if is_finished and fully_available:
                 status = "FINISHED"
+            elif is_finished and not fully_available:
+                status = "DAMAGED"
             elif total_pct_size:
                 status = "UPLOADING"
             else:
@@ -137,7 +147,18 @@ def api_backup_all_status():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backupallstatus
     if not checkLogin():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    return jsonify(message="Not yet implemented."), 501
+    backuplist = getBackupList()
+
+    statuslist = []
+    for backupname in backuplist:
+        backupstatus, status_code = getBackupStatus(backupname)
+        backupstatus["name"] = backupname
+        statuslist.append(backupstatus)
+
+    # Does not work in Flask 0.10 and lower, see http://flask.pocoo.org/docs/0.10/security/#json-security
+    #return jsonify(statuslist)
+    # Work around that so it works even in 0.10.
+    return Response(json.dumps(statuslist),  mimetype='application/json')
 
 
 @app.route("/key/status", methods=['GET'])
