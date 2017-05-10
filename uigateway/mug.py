@@ -7,6 +7,8 @@ from glob import glob
 from zipfile import ZipFile
 import re
 import logging
+import time
+import subprocess
 import urllib
 import requests
 app = Flask(__name__)
@@ -15,6 +17,8 @@ REST_PORT=5000
 DATADIR_MASK="/mnt/lower*/data"
 METADATA_BASE="/mnt/lower1/mineboxmeta"
 SIAD_URL="http://localhost:9980/"
+MINEBD_URL="http://localhost:8080/v1/"
+UPLOADER_CMD="/usr/lib/minebox/uploader-bg.sh"
 
 
 @app.route("/")
@@ -166,6 +170,29 @@ def api_backup_all_status():
     return Response(json.dumps(statuslist),  mimetype='application/json')
 
 
+@app.route("/backup/start", methods=['POST'])
+def api_backup_start():
+    # Doc: *** TBD - not documented yet***
+    if not checkLogin():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+    # See if the consensus is synced as we know that uploader requires that.
+    siadata, sia_status_code = getFromSia('consensus')
+    if sia_status_code >= 400:
+        return jsonify(siadata), sia_status_code
+    if not siadata["synced"]:
+        return jsonify(message="Sia consensus is not fully synced, try again later."), 503
+    # Make uploader start a new upload.
+    starttime = time.time()
+    subprocess.call([UPLOADER_CMD])
+    # A metadata directory with the pidfile should exist very soon after starting the uploader.
+    time.sleep(10)
+    lastbackup = getBackupList().pop()
+    if starttime < lastbackup:
+        return jsonify(message="Backup started.", name=lastbackup)
+    else:
+        return jsonify(message="Error starting backup."), 500
+
+
 @app.route("/key/status", methods=['GET'])
 def api_key_status():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-keystatus
@@ -204,6 +231,16 @@ def api_key_post():
     if not checkLogin():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     return jsonify(message="Not yet implemented."), 501
+
+
+@app.route("/consensus", methods=['GET'])
+def api_consensus():
+    # Doc: *** TBD - not documented yet***
+    if not checkLogin():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+    siadata, status_code = getFromSia('consensus')
+    # For now, just return the info from Sia directly.
+    return jsonify(siadata), status_code
 
 
 @app.route("/contracts", methods=['GET'])
