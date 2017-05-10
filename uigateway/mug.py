@@ -257,7 +257,9 @@ def getFromSia(api):
             return siadata, response.status_code
         else:
             return {"message": response.text, "messagesource": "sia"}, response.status_code
-    except requests.exceptions.RequestException as e:
+    except requests.ConnectionError as e:
+        return {"message": str(e)}, 503
+    except requests.RequestException as e:
         return {"message": str(e)}, 500
 
 
@@ -277,7 +279,9 @@ def postToSia(api, formData):
             return siadata, response.status_code
         else:
             return {"message": response.text, "messagesource": "sia"}, response.status_code
-    except requests.exceptions.RequestException as e:
+    except requests.ConnectionError as e:
+        return {"message": str(e)}, 503
+    except requests.RequestException as e:
         return {"message": str(e)}, 500
 
 
