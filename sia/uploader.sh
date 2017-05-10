@@ -13,6 +13,8 @@ METADATA_BASE="/mnt/lower1/mineboxmeta"
 SIA_DIR=${SIA_DIR:-"/mnt/lower1/sia"}
 SIAC=${SIAC:-"/usr/local/bin/siac"}
 METADATA_URL=${METADATA_URL:-""} # e.g. https://meta.minebox.io/
+  # To see all possible REST commands of MineDB, see http://localhost:8080/v1/swagger
+MINEBD_URL=${MINEBD_URL:-"http://localhost:8080/v1/"}
 
 die() {
     echo -e "$1"
@@ -108,8 +110,7 @@ else
     btrfs subvolume snapshot -r $subvol $subvol/snapshots/$snapname
   done
   echo "Telling MineBD to pause (for 1.5s) to make sure no modified blocks exist with the same timestamp as in our snapshots."
-  # To see all possible REST commands of MineDB, see http://localhost:8080/v1/swagger
-  curl -X PUT --header 'Content-Type: application/json' --header 'Accept: text/plain' 'http://localhost:8080/v1/pause'
+  curl -X PUT --header 'Content-Type: application/json' --header 'Accept: text/plain' "${MINEBD_URL}pause"
 fi
 
 # Step 2: Initiate needed uploads.
