@@ -60,6 +60,7 @@ def api_backup_status(backupname):
         progress = 0
         rel_progress = 0
         status = "PENDING"
+        metadata = "PENDING"
         fully_available = False
     else:
         backuplist = getBackupList()
@@ -94,6 +95,8 @@ def api_backup_status(backupname):
             # difference to the previous would never go to 100%.
             progress = total_pct_size / total_size * 100 if total_size else 100
             rel_progress = rel_pct_size / rel_size * 100 if rel_size else 100
+            # We don't upload metadata atm, so always flag it as pending.
+            metadata = "PENDING"
             if is_finished and fully_available:
                 status = "FINISHED"
             elif total_pct_size:
@@ -108,6 +111,7 @@ def api_backup_status(backupname):
             progress = 0
             rel_progress = 0
             status = "ERROR"
+            metadata = "ERROR"
             fully_available = False
             status_code = 503
 
@@ -115,7 +119,7 @@ def api_backup_status(backupname):
       progress=progress,
       relative_progress=rel_progress,
       status=status,
-      metadata="TBD",
+      metadata=metadata,
       numFiles=files,
       size=total_size,
       relative_size=rel_size
