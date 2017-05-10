@@ -29,6 +29,7 @@ def api_root():
 
 @app.route("/backup/list", methods=['GET'])
 def api_backup_list():
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backuplist
     if not checkLogin():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     metalist = getBackupList()
@@ -40,6 +41,7 @@ def api_backup_list():
 
 @app.route("/backup/<backupname>/status", methods=['GET'])
 def api_backup_status(backupname):
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backup1493807150status
     if not checkLogin():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     if not re.match(r'^\d+$', backupname):
@@ -120,8 +122,57 @@ def api_backup_status(backupname):
     ), status_code
 
 
+@app.route("/backup/all/status", methods=['GET'])
+def api_backup_all_status():
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backupallstatus
+    if not checkLogin():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+    return jsonify(message="Not yet implemented."), 501
+
+
+@app.route("/key/status", methods=['GET'])
+def api_key_status():
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-keystatus
+    if not checkLogin():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+    return jsonify(message="Not yet implemented."), 501
+
+
+@app.route("/key/generate", methods=['GET'])
+def api_key_generate():
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-keygenerate
+    if not checkLogin():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+    return jsonify(message="Not yet implemented."), 501
+
+
+@app.route("/key/verify", methods=['POST'])
+def api_key_verify():
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-post-keyverify
+    if not checkLogin():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+    return jsonify(message="Not yet implemented."), 501
+
+
+@app.route("/key", methods=['PUT'])
+def api_key_put():
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-put-key
+    if not checkLogin():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+    return jsonify(message="Not yet implemented."), 501
+
+
+@app.route("/key", methods=['POST'])
+def api_key_post():
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-post-key
+    if not checkLogin():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+    return jsonify(message="Not yet implemented."), 501
+
+
 @app.route("/contracts", methods=['GET'])
 def api_contracts():
+    # Doc: *** not documented yet***
     if not checkLogin():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     siadata, status_code = getFromSia('renter/contracts')
@@ -131,6 +182,7 @@ def api_contracts():
 
 @app.route("/wallet/status", methods=['GET'])
 def api_wallet_status():
+    # Doc: *** not documented yet***
     if not checkLogin():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     walletdata, status_code = getFromSia('wallet')
@@ -140,6 +192,7 @@ def api_wallet_status():
 
 @app.route("/wallet/unlock", methods=['POST'])
 def api_wallet_unlock():
+    # Doc: *** not documented yet***
     if not checkLogin():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     # Make sure we only hand parameters to siad that it supports.
