@@ -47,9 +47,15 @@ def api_backup_status(backupname):
     if not re.match(r'^\d+$', backupname):
         return jsonify(error="Illegal backup name."), 400
 
+    backupstatus, status_code = getBackupStatus(backupname)
+
+    return jsonify(backupstatus), status_code
+
+
+def getBackupStatus(backupname):
     backupfiles, is_finished = getBackupFiles(backupname)
     if backupfiles is None:
-        return jsonify(message="No backup known with that name."), 404
+        return {"message": "No backup found with that name."}, 404
 
     status_code = 200
     if len(backupfiles) < 1:
@@ -105,6 +111,7 @@ def api_backup_status(backupname):
                 status = "PENDING"
         else:
             app.logger.error("Error %s getting Sia files: %s", status_code, str(sia_filedata))
+            status_code = 503
             files = -1
             total_size = -1
             rel_size = -1
@@ -113,17 +120,16 @@ def api_backup_status(backupname):
             status = "ERROR"
             metadata = "ERROR"
             fully_available = False
-            status_code = 503
 
-    return jsonify(
-      progress=progress,
-      relative_progress=rel_progress,
-      status=status,
-      metadata=metadata,
-      numFiles=files,
-      size=total_size,
-      relative_size=rel_size
-    ), status_code
+    return {
+      "status": status,
+      "metadata": metadata,
+      "numFiles": files,
+      "size": total_size,
+      "progress": progress,
+      "relative_size": rel_size,
+      "relative_progress": rel_progress,
+    }, status_code
 
 
 @app.route("/backup/all/status", methods=['GET'])
