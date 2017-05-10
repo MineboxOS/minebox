@@ -44,7 +44,11 @@ def api_backup_status(backupname):
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backup1493807150status
     if not checkLogin():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    if not re.match(r'^\d+$', backupname):
+    if backupname == "last":
+        backuplist = getBackupList()
+        if len(backuplist):
+            backupname = backuplist.pop()
+    elif not re.match(r'^\d+$', backupname):
         return jsonify(error="Illegal backup name."), 400
 
     backupstatus, status_code = getBackupStatus(backupname)
@@ -132,6 +136,8 @@ def getBackupStatus(backupname):
             fully_available = False
 
     return {
+      "name": backupname,
+      "time_snapshot": backupname,
       "status": status,
       "metadata": metadata,
       "numFiles": files,
@@ -152,7 +158,6 @@ def api_backup_all_status():
     statuslist = []
     for backupname in backuplist:
         backupstatus, status_code = getBackupStatus(backupname)
-        backupstatus["name"] = backupname
         statuslist.append(backupstatus)
 
     # Does not work in Flask 0.10 and lower, see http://flask.pocoo.org/docs/0.10/security/#json-security

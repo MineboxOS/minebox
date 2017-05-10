@@ -47,7 +47,7 @@ returns the status of a single snapshot
 ```json
 {
   "progress": 44.3,
-  "status": "UPLOADING|PENDING|FINISHED|ERROR",
+  "status": "UPLOADING|PENDING|FINISHED|DAMAGED|ERROR",
   "metadata": "UPLOADING|PENDING|FINISHED|ERROR",
   "numFiles": 23
 }
