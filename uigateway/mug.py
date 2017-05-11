@@ -181,6 +181,7 @@ def api_backup_start():
         return jsonify(siadata), sia_status_code
     if not siadata["synced"]:
         return jsonify(message="Sia consensus is not fully synced, try again later."), 503
+    # TBD: Make sure MineBD is not running a restore.
     # Make uploader start a new upload.
     starttime = time.time()
     subprocess.call([UPLOADER_CMD])

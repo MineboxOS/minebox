@@ -22,7 +22,7 @@ die() {
 }
 LANG=C
 
-# Step 0: Check if siad is running.
+# Step 0: Check if prerequisites are met to make backups.
 if [ "`basename $SIAC`" = "siac" ]; then
   # If we fake a siac with a command of a different name (for demo purposes),
   # we skip these checks.
@@ -35,6 +35,7 @@ if [ "`basename $SIAC`" = "siac" ]; then
     die "ERROR: sia seems not to be synced. Check yourself with |siac| and run again when it's synced."
   fi
 fi
+# TBD: Make sure MineBD is not running a restore.
 
 # Step 1: Create snapshot.
 if [ "$1" = "restart-all" ]; then
