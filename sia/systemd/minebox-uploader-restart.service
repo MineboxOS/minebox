@@ -1,0 +1,11 @@
+[Unit]
+Description=Restart all stalled Minebox uploader tasks
+Requires=sia.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/minebox/uploader.sh restart-all
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
