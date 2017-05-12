@@ -3,6 +3,7 @@ package io.minebox.resource;
 import java.time.Instant;
 import java.time.ZoneId;
 
+import javax.annotation.security.PermitAll;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -38,6 +39,7 @@ public class PauseResource {
             response = String.class)
 
     @Produces("text/plain")
+    @PermitAll
     public String pause() {
         final Instant instant = mineboxExportProvider.get().blockFlushFor1500Millis();
         return "Not flushing files until " + instant.atZone(ZoneId.systemDefault()).toString() + "\n";

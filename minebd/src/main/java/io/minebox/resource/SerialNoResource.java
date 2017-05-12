@@ -1,5 +1,6 @@
 package io.minebox.resource;
 
+import javax.annotation.security.PermitAll;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -32,6 +33,7 @@ public class SerialNoResource {
     @GET
     @Path("/")
     @Produces("text/plain")
+    @PermitAll
     public String getSerialNumber() {
         return encryption.getPublicIdentifier();
     }
