@@ -13,8 +13,15 @@ METADATA_BASE="/mnt/lower1/mineboxmeta"
 SIA_DIR=${SIA_DIR:-"/mnt/lower1/sia"}
 SIAC=${SIAC:-"/usr/local/bin/siac"}
 METADATA_URL=${METADATA_URL:-""} # e.g. https://meta.minebox.io/
-  # To see all possible REST commands of MineDB, see http://localhost:8080/v1/swagger
+# To see all possible REST commands of MineDB, see http://localhost:8080/v1/swagger
 MINEBD_URL=${MINEBD_URL:-"http://localhost:8080/v1/"}
+MINEBD_AUTH_PWD=`cat /etc/minebox/local-auth.key`
+MINEBD_AUTH_USER="user"
+
+# Remove leading whitespace characters.
+MINEBD_AUTH_PWD="${MINEBD_AUTH_PWD#"${MINEBD_AUTH_PWD%%[![:space:]]*}"}"
+# Remove trailing whitespace characters.
+MINEBD_AUTH_PWD="${MINEBD_AUTH_PWD%"${MINEBD_AUTH_PWD##*[![:space:]]}"}"
 
 die() {
     echo -e "$1"
@@ -111,7 +118,9 @@ else
     btrfs subvolume snapshot -r $subvol $subvol/snapshots/$snapname
   done
   echo "Telling MineBD to pause (for 1.5s) to make sure no modified blocks exist with the same timestamp as in our snapshots."
-  curl -X PUT --header 'Content-Type: application/json' --header 'Accept: text/plain' "${MINEBD_URL}pause"
+  curl -u $MINEBD_AUTH_USER:$MINEBD_AUTH_PWD -X PUT \
+       --header 'Content-Type: application/json' --header 'Accept: text/plain' \
+       "${MINEBD_URL}pause"
 fi
 
 # Step 2: Initiate needed uploads.
