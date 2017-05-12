@@ -27,7 +27,8 @@ def api_root():
     for rule in app.url_map.iter_rules():
         # Flask has a default route for serving static files, let's exclude it.
         if rule.endpoint != "static":
-            links.append({"url": rule.rule, "methods": ','.join(rule.methods)})
+            links.append({"url": rule.rule,
+                          "methods": ','.join([x for x in rule.methods if x not in ["OPTIONS","HEAD"]])})
     return jsonify(supported_urls=sorted(links, key=lambda rule: rule["url"]))
 
 
@@ -254,6 +255,39 @@ def api_contracts():
     return jsonify(siadata), status_code
 
 
+@app.route("/status", methods=['GET'])
+def api_status():
+    # Doc: *** TBD - not documented yet***
+    username = checkLogin()
+    outdata = {}
+    if username:
+        outdata["logged_in"] = True
+        outdata["user"] = username
+    else:
+        outdata["logged_in"] = False
+        outdata["user"] = None
+    outdata["backup_type"] = "sia"
+    consdata, cons_status_code = getFromSia('consensus')
+    if cons_status_code == 200:
+        outdata["sia_daemon_running"] = True
+        outdata["consensus_height"] = consdata["height"]
+        outdata["consensus_synced"] = consdata["synced"]
+    else:
+        outdata["sia_daemon_running"] = False
+        outdata["consensus_height"] = None
+        outdata["consensus_synced"] = None
+    walletdata, wallet_status_code = getFromSia('wallet')
+    if username and wallet_status_code == 200:
+        outdata["wallet_unlocked"] = walletdata["unlocked"]
+        outdata["wallet_encrypted"] = walletdata["encrypted"]
+        outdata["wallet_confirmed_balance"] = walletdata["confirmedsiacoinbalance"]
+    else:
+        outdata["wallet_unlocked"] = None
+        outdata["wallet_encrypted"] = None
+        outdata["wallet_confirmed_balance"] = None
+    return jsonify(outdata)
+
+
 @app.route("/wallet/status", methods=['GET'])
 def api_wallet_status():
     # Doc: *** not documented yet***
@@ -338,7 +372,7 @@ def checkLogin():
         # Given that we call localhost, the cert will be wrong, so don't verify.
         response = requests.post(user_api, data=[], headers=headers, cookies=cookiejar, verify=False)
         if response.status_code == 200:
-          return True
+          return response.json()
         else:
           app.logger.warn('No valid login found: %s' % response.text)
           return False

@@ -22,3 +22,4 @@ minebd:
   authFile: /etc/minebox/local-auth.key
   bucketSize : 40M
   httpMetadata: "http://localhost:8050/v1/file/"
+  ignoreMissingPaths: true

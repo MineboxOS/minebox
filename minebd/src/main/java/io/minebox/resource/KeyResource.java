@@ -45,7 +45,6 @@ public class KeyResource {
     @PermitAll
     public String currentKey() {
         return Joiner.on(" ").join(getSeedWords());
-
     }
 
     @GET
