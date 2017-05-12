@@ -27,7 +27,8 @@ def api_root():
     for rule in app.url_map.iter_rules():
         # Flask has a default route for serving static files, let's exclude it.
         if rule.endpoint != "static":
-            links.append({"url": rule.rule, "methods": ','.join(rule.methods)})
+            links.append({"url": rule.rule,
+                          "methods": ','.join([x for x in rule.methods if x not in ["OPTIONS","HEAD"]])})
     return jsonify(supported_urls=sorted(links, key=lambda rule: rule["url"]))
 
 
