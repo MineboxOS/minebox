@@ -19,5 +19,7 @@ minebd:
   parentDir : minedbDat #for dev this is a relative directory to where it was started in. VM/physical should configure absolute path
   reportedSize : 10G
   encryptionSeed: /etc/minebox/minebox.key
+  authFile: /etc/minebox/local-auth.key
   bucketSize : 40M
   httpMetadata: "http://localhost:8050/v1/file/"
+  ignoreMissingPaths: true

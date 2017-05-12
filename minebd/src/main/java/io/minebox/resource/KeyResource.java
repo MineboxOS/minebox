@@ -3,6 +3,7 @@ package io.minebox.resource;
 import com.google.common.base.Joiner;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.dropwizard.auth.Auth;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.bitcoinj.crypto.MnemonicCode;
@@ -10,6 +11,7 @@ import org.bitcoinj.crypto.MnemonicException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.security.PermitAll;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -40,6 +42,7 @@ public class KeyResource {
     @ApiOperation(value = "just a dummy  lists all WS classes",
             response = String.class)
     @Produces("text/plain")
+    @PermitAll
     public String currentKey() {
         return Joiner.on(" ").join(getSeedWords());
 
@@ -50,6 +53,7 @@ public class KeyResource {
     @ApiOperation(value = "just a dummy  lists all WS classes",
             response = List.class)
     @Produces("application/json")
+    @PermitAll
     public Response jsonKey() {
         return Response.ok(getSeedWords()).build();
 

@@ -2,6 +2,7 @@ package io.minebox;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.security.Principal;
 import java.util.Collection;
 import java.util.EnumSet;
 
@@ -15,6 +16,8 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.hubspot.dropwizard.guice.GuiceBundle;
 import io.dropwizard.Application;
+import io.dropwizard.auth.AuthDynamicFeature;
+import io.dropwizard.auth.basic.BasicCredentialAuthFilter;
 import io.dropwizard.jersey.errors.EarlyEofExceptionMapper;
 import io.dropwizard.jersey.errors.LoggingExceptionMapper;
 import io.dropwizard.jersey.jackson.JsonProcessingExceptionMapper;
@@ -29,7 +32,9 @@ import io.minebox.config.ApiConfig;
 import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.NbdModule;
 import io.minebox.util.GlobalErrorHandler;
+import io.minebox.util.TrivialAuthenticator;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
+import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,6 +90,16 @@ public class MinebdApplication extends Application<ApiConfig> {
         });
         jersey.register(new JsonProcessingExceptionMapper(true));
         jersey.register(new EarlyEofExceptionMapper());
+
+
+        final TrivialAuthenticator instance = injector.getInstance(TrivialAuthenticator.class);
+        environment.jersey().register(new AuthDynamicFeature(
+                new BasicCredentialAuthFilter.Builder<Principal>()
+                        .setAuthenticator(instance)
+                        .setAuthorizer((principal, role) -> false)
+                        .buildAuthFilter()));
+        environment.jersey().register(RolesAllowedDynamicFeature.class);
+
     }
 
     private void register(LifecycleEnvironment lifecycle, Collection<Class<? extends Managed>> managed) {
