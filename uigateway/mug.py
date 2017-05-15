@@ -250,9 +250,28 @@ def api_contracts():
     # Doc: *** not documented yet***
     if not checkLogin():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    siadata, status_code = getFromSia('renter/contracts')
-    # For now, just return the info from Sia directly.
-    return jsonify(siadata), status_code
+    siadata, sia_status_code = getFromSia('renter/contracts')
+    if sia_status_code >= 400:
+        return jsonify(siadata), sia_status_code
+    # Create a summary similar to what `siac renter contracts` presents.
+    # We could expose the full details of a contract in a different route, e.g. /contract/<id>.
+    contractlist = []
+    for contract in siadata["contracts"]:
+        contractlist.append({
+          "id": contract["id"],
+          "host": contract["netaddress"],
+          "funds_remaining": contract["renterfunds"],
+          "funds_spent": str(int(contract["StorageSpending"]) +
+                             int(contract["uploadspending"]) +
+                             int(contract["downloadspending"])),
+          "fees_spent": contract["fees"],
+          "data_size": contract["size"],
+          "height_end": contract["endheight"],
+        })
+    # Does not work in Flask 0.10 and lower, see http://flask.pocoo.org/docs/0.10/security/#json-security
+    #return jsonify(statuslist)
+    # Work around that so it works even in 0.10.
+    return Response(json.dumps(contractlist),  mimetype='application/json')
 
 
 @app.route("/status", methods=['GET'])
