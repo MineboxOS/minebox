@@ -7,6 +7,7 @@
 # 2) Initiate uploads to sia where needed.
 # 3) Wait for finished uploads and, save/upload the metadata.
 # 4) Remove the snapshot(s).
+# 5) Remove backups if they are older than the last finished and fully available one.
 
 DATADIR_MASK="/mnt/lower*/data"
 METADATA_BASE="/mnt/lower1/mineboxmeta"
@@ -222,6 +223,62 @@ for snap in $DATADIR_MASK/snapshots/$snapname; do
   btrfs subvolume delete $snap
 done
 
+# Step 5: Remove files from sia that belong to old backups.
+# The rule is to only keep the last finished and available backup, plus anything newer.
+echo "Clean up old backups (only most recent fully done backup and anything newer will be kept)"
+allbackupnames=`ls -1d $METADATA_BASE/backup.* | awk '/\/backup\./ { print gensub(/.*backup\.([0-9]+)(\.zip)?/, "\\\\1", ""); }' | sort -r`
+availablefiles=`siac renter list -v | awk '$3 == "Yes" { print $NF }'`
+allsiafiles=`siac renter list | awk '/ minebox_.*\.dat$/ { print $NF }'`
+keepfiles=""
+keepset_complete=
+for bname in $allbackupnames; do
+  if [ -z "$keepset_complete" ]; then
+    # We don't have all files to keep yet, see if this is our "golden" backup.
+    if [ -f "$METADATA_BASE/backup.$bname.zip" ]; then
+      # We should be complete, get the files and see if they're all available.
+      echo "Keeping finished backup $bname"
+      bfiles=`unzip -Z1 $METADATA_BASE/backup.$bname.zip | awk '/.dat.sia$/ { print gensub(/backup\.[0-9]+\/(.+)\.sia/, "\\\\1", ""); }'`
+      unavailable=""
+      for bfile in $bfiles; do
+        if [[ ! $availablefiles =~ (^|[[:space:]])"$bfile"($|[[:space:]]) ]]; then
+          unavailable="$unavailable $bfile"
+        fi
+      done
+      keepfiles=$keepfiles$'\n'$bfiles
+      if [ -z "$unavailable" ]; then
+        # Yay! A finished backup with all files available!
+        # Keep this and everything we already collected, but that's it.
+        keepset_complete=1;
+      fi
+    else
+      # We are not complete, preserve the files in the list.
+      echo "Keeping incomplete backup $bname"
+      if [ -f "$METADATA_BASE/backup.$bname/files" ]; then
+        bfiles=`cat $METADATA_BASE/backup.$bname/files`
+        keepfiles=$keepfiles$'\n'$bfiles
+      fi
+    fi
+  else
+    # We already have all files to keep, any older backup can be discarded.
+    echo "Discard old backup $bname"
+    if [ -f "$METADATA_BASE/backup.$bname.zip" ]; then
+      mv "$METADATA_BASE/backup.$bname.zip" "$METADATA_BASE/old.backup.$bname.zip"
+    else
+      mv "$METADATA_BASE/backup.$bname" "$METADATA_BASE/old.backup.$bname"
+    fi
+  fi
+done
+keepfiles=`echo "$keepfiles" | sort | uniq`
+if [ -n "$keepfiles" -a -n "$allsiafiles" ]; then
+  echo "Removing unneeded files from Sia network"
+  for siafile in $allsiafiles; do
+    if [[ ! $keepfiles =~ (^|[[:space:]])"$siafile"($|[[:space:]]) ]]; then
+      siac renter delete $siafile
+    fi
+  done
+fi
+
+# Step "End": Note if there are still snapshots around that need to be processed into finished backups.
 echo "Checking for non-processed snapshots..."
 (for subvol in $DATADIR_MASK; do
   btrfs subvolume list $subvol
