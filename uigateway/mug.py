@@ -19,6 +19,7 @@ METADATA_BASE="/mnt/lower1/mineboxmeta"
 SIAD_URL="http://localhost:9980/"
 MINEBD_URL="http://localhost:8080/v1/"
 UPLOADER_CMD="/usr/lib/minebox/uploader-bg.sh"
+H_PER_SC=1e24 # hastings per siacoin
 
 
 @app.route("/")
@@ -260,11 +261,11 @@ def api_contracts():
         contractlist.append({
           "id": contract["id"],
           "host": contract["netaddress"],
-          "funds_remaining": contract["renterfunds"],
-          "funds_spent": str(int(contract["StorageSpending"]) +
+          "funds_remaining_sc": int(contract["renterfunds"]) / H_PER_SC,
+          "funds_spent_sc": (int(contract["StorageSpending"]) +
                              int(contract["uploadspending"]) +
-                             int(contract["downloadspending"])),
-          "fees_spent": contract["fees"],
+                             int(contract["downloadspending"])) / H_PER_SC,
+          "fees_spent_sc": int(contract["fees"]) / H_PER_SC,
           "data_size": contract["size"],
           "height_end": contract["endheight"],
         })
@@ -299,7 +300,10 @@ def api_status():
     if username and wallet_status_code == 200:
         outdata["wallet_unlocked"] = walletdata["unlocked"]
         outdata["wallet_encrypted"] = walletdata["encrypted"]
-        outdata["wallet_confirmed_balance"] = walletdata["confirmedsiacoinbalance"]
+        outdata["wallet_confirmed_balance_sc"] = int(walletdata["confirmedsiacoinbalance"]) / H_PER_SC
+        outdata["wallet_unconfirmed_delta_sc"] = (int(walletdata["unconfirmedincomingsiacoins"]) -
+                                                  int(walletdata["unconfirmedoutgoingsiacoins"])) / H_PER_SC
+
     else:
         outdata["wallet_unlocked"] = None
         outdata["wallet_encrypted"] = None
@@ -312,9 +316,25 @@ def api_wallet_status():
     # Doc: *** not documented yet***
     if not checkLogin():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    walletdata, status_code = getFromSia('wallet')
+    siadata, sia_status_code = getFromSia('wallet')
+    if sia_status_code >= 400:
+        return jsonify(siadata), sia_status_code
+    walletdata = {
+      "encrypted": siadata["encrypted"],
+      "unlocked": siadata["unlocked"],
+      "confirmedsiacoinbalance": siadata["confirmedsiacoinbalance"],
+      "confirmedsiacoinbalance_sc": int(siadata["confirmedsiacoinbalance"]) / H_PER_SC,
+      "unconfirmedincomingsiacoins": siadata["unconfirmedincomingsiacoins"],
+      "unconfirmedincomingsiacoins_sc": int(siadata["unconfirmedincomingsiacoins"]) / H_PER_SC,
+      "unconfirmedoutgoingsiacoins": siadata["unconfirmedoutgoingsiacoins"],
+      "unconfirmedoutgoingsiacoins_sc": int(siadata["unconfirmedoutgoingsiacoins"]) / H_PER_SC,
+      "siacoinclaimbalance": siadata["siacoinclaimbalance"],
+      "siacoinclaimbalance_sc": int(siadata["siacoinclaimbalance"]) / H_PER_SC,
+      "siafundbalance": siadata["siafundbalance"],
+      "siafundbalance_sc": int(siadata["siafundbalance"]) / H_PER_SC,
+    }
     # For now, just return the info from Sia directly.
-    return jsonify(walletdata), status_code
+    return jsonify(walletdata)
 
 
 @app.route("/wallet/unlock", methods=['POST'])
