@@ -307,7 +307,8 @@ def api_status():
     else:
         outdata["wallet_unlocked"] = None
         outdata["wallet_encrypted"] = None
-        outdata["wallet_confirmed_balance"] = None
+        outdata["wallet_confirmed_balance_sc"] = None
+        outdata["wallet_unconfirmed_delta_sc"] = None
     return jsonify(outdata)
 
 
