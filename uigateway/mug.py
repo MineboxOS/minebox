@@ -23,7 +23,8 @@ METADATA_BASE="/mnt/lower1/mineboxmeta"
 SIAD_URL="http://localhost:9980/"
 MINEBD_URL="http://localhost:8080/v1/"
 UPLOADER_CMD="/usr/lib/minebox/uploader-bg.sh"
-ADDHEADERS={"Access-Control-Allow-Origin": "*"} # TODO: we probably do not want "*" there.
+ADDHEADERS={"Access-Control-Allow-Origin": "*", # TODO: we probably do not want "*" there.
+            "Access-Control-Allow-Credentials": "true"}
 H_PER_SC=1e24 # hastings per siacoin
 
 
