@@ -20,7 +20,7 @@ public class TrivialAuthenticator implements Authenticator<BasicCredentials, Pri
 
     @Inject
     public TrivialAuthenticator(MinebdConfig config) {
-        password = FileUtil.readPassword(config.authFile, config.ignoreMissingPaths, "123");
+        password = FileUtil.readLocalAuth(config.authFile, config.ignoreMissingPaths, "123");
     }
 
     @Override

@@ -24,7 +24,7 @@ public class BucketFactory {
     private final long size;
     private final Encryption encryption;
     private final MetadataService metadataService;
-    private final File parentFolder;
+    private File parentFolder;
 
     @Inject
     public BucketFactory(MinebdConfig config, Encryption encryption, MetadataService metadataService) {
@@ -32,8 +32,15 @@ public class BucketFactory {
         this.size = config.bucketSize.toBytes();
         this.encryption = encryption;
         this.metadataService = metadataService;
-        parentFolder = new File(parentDir, encryption.getPublicIdentifier());
-        parentFolder.mkdirs();
+    }
+
+    private File createParentFolder(Encryption encryption) {
+        if (this.parentFolder == null) {
+            parentFolder = new File(parentDir, encryption.getPublicIdentifier());
+            parentFolder.mkdirs();
+        }
+        return parentFolder;
+
     }
 
     public Bucket create(Integer bucketIndex) {
@@ -61,7 +68,7 @@ public class BucketFactory {
             baseOffset = bucketNumber * size;
             upperBound = baseOffset + size - 1;
             filename = "minebox_v1_" + bucketNumber + ".dat";
-
+            final File parentFolder = createParentFolder(encryption);
             final File file = new File(parentFolder, filename);
             LOGGER.debug("starting to monitor bucket {} with file {}", bucketNumber, file.getAbsolutePath());
             ensureFileExists(file);
