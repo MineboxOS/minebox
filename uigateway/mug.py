@@ -23,6 +23,7 @@ METADATA_BASE="/mnt/lower1/mineboxmeta"
 SIAD_URL="http://localhost:9980/"
 MINEBD_URL="http://localhost:8080/v1/"
 UPLOADER_CMD="/usr/lib/minebox/uploader-bg.sh"
+ADDHEADERS={"Access-Control-Allow-Origin": "*"} # TODO: we probably do not want "*" there.
 H_PER_SC=1e24 # hastings per siacoin
 
 
@@ -34,42 +35,42 @@ def api_root():
         if rule.endpoint != "static":
             links.append({"url": rule.rule,
                           "methods": ','.join([x for x in rule.methods if x not in ["OPTIONS","HEAD"]])})
-    return jsonify(supported_urls=sorted(links, key=lambda rule: rule["url"]))
+    return jsonify(supported_urls=sorted(links, key=lambda rule: rule["url"])), 200, ADDHEADERS
 
 
 @app.route("/backup/list", methods=['GET'])
 def api_backup_list():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backuplist
     if not checkLogin():
-        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401, ADDHEADERS
     metalist = getBackupList()
     # Does not work in Flask 0.10 and lower, see http://flask.pocoo.org/docs/0.10/security/#json-security
     #return jsonify(metalist)
     # Work around that so it works even in 0.10.
-    return Response(json.dumps(metalist),  mimetype='application/json')
+    return Response(json.dumps(metalist),  mimetype='application/json'), 200, ADDHEADERS
 
 
 @app.route("/backup/<backupname>/status", methods=['GET'])
 def api_backup_status(backupname):
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backup1493807150status
     if not checkLogin():
-        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401, ADDHEADERS
     if backupname == "last":
         backuplist = getBackupList()
         if len(backuplist):
             backupname = backuplist.pop()
     elif not re.match(r'^\d+$', backupname):
-        return jsonify(error="Illegal backup name."), 400
+        return jsonify(error="Illegal backup name."), 400, ADDHEADERS
 
     backupstatus, status_code = getBackupStatus(backupname)
 
-    return jsonify(backupstatus), status_code
+    return jsonify(backupstatus), status_code, ADDHEADERS
 
 
 def getBackupStatus(backupname):
     backupfiles, is_finished = getBackupFiles(backupname)
     if backupfiles is None:
-        return {"message": "No backup found with that name."}, 404
+        return {"message": "No backup found with that name."}, 404, ADDHEADERS
 
     status_code = 200
     if len(backupfiles) < 1:
@@ -155,14 +156,14 @@ def getBackupStatus(backupname):
       "progress": progress,
       "relative_size": rel_size,
       "relative_progress": rel_progress,
-    }, status_code
+    }, status_code, ADDHEADERS
 
 
 @app.route("/backup/all/status", methods=['GET'])
 def api_backup_all_status():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backupallstatus
     if not checkLogin():
-        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401, ADDHEADERS
     backuplist = getBackupList()
 
     statuslist = []
@@ -173,20 +174,20 @@ def api_backup_all_status():
     # Does not work in Flask 0.10 and lower, see http://flask.pocoo.org/docs/0.10/security/#json-security
     #return jsonify(statuslist)
     # Work around that so it works even in 0.10.
-    return Response(json.dumps(statuslist),  mimetype='application/json')
+    return Response(json.dumps(statuslist),  mimetype='application/json'), ADDHEADERS
 
 
 @app.route("/backup/start", methods=['POST'])
 def api_backup_start():
     # Doc: *** TBD - not documented yet***
     if not checkLogin():
-        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401, ADDHEADERS
     # See if the consensus is synced as we know that uploader requires that.
     siadata, sia_status_code = getFromSia('consensus')
     if sia_status_code >= 400:
-        return jsonify(siadata), sia_status_code
+        return jsonify(siadata), sia_status_code, ADDHEADERS
     if not siadata["synced"]:
-        return jsonify(message="Sia consensus is not fully synced, try again later."), 503
+        return jsonify(message="Sia consensus is not fully synced, try again later."), 503, ADDHEADERS
     # TBD: Make sure MineBD is not running a restore.
     # Make uploader start a new upload.
     starttime = time.time()
@@ -195,69 +196,69 @@ def api_backup_start():
     time.sleep(10)
     lastbackup = getBackupList().pop()
     if starttime < lastbackup:
-        return jsonify(message="Backup started.", name=lastbackup)
+        return jsonify(message="Backup started.", name=lastbackup), 200, ADDHEADERS
     else:
-        return jsonify(message="Error starting backup."), 500
+        return jsonify(message="Error starting backup."), 500, ADDHEADERS
 
 
 @app.route("/key/status", methods=['GET'])
 def api_key_status():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-keystatus
     if not checkLogin():
-        return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    return jsonify(message="Not yet implemented."), 501
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401, ADDHEADERS
+    return jsonify(message="Not yet implemented."), 501, ADDHEADERS
 
 
 @app.route("/key/generate", methods=['GET'])
 def api_key_generate():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-keygenerate
     if not checkLogin():
-        return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    return jsonify(message="Not yet implemented."), 501
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401, ADDHEADERS
+    return jsonify(message="Not yet implemented."), 501, ADDHEADERS
 
 
 @app.route("/key/verify", methods=['POST'])
 def api_key_verify():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-post-keyverify
     if not checkLogin():
-        return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    return jsonify(message="Not yet implemented."), 501
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401, ADDHEADERS
+    return jsonify(message="Not yet implemented."), 501, ADDHEADERS
 
 
 @app.route("/key", methods=['PUT'])
 def api_key_put():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-put-key
     if not checkLogin():
-        return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    return jsonify(message="Not yet implemented."), 501
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401, ADDHEADERS
+    return jsonify(message="Not yet implemented."), 501, ADDHEADERS
 
 
 @app.route("/key", methods=['POST'])
 def api_key_post():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-post-key
     if not checkLogin():
-        return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    return jsonify(message="Not yet implemented."), 501
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401, ADDHEADERS
+    return jsonify(message="Not yet implemented."), 501, ADDHEADERS
 
 
 @app.route("/consensus", methods=['GET'])
 def api_consensus():
     # Doc: *** TBD - not documented yet***
     if not checkLogin():
-        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401, ADDHEADERS
     siadata, status_code = getFromSia('consensus')
     # For now, just return the info from Sia directly.
-    return jsonify(siadata), status_code
+    return jsonify(siadata), status_code, ADDHEADERS
 
 
 @app.route("/contracts", methods=['GET'])
 def api_contracts():
     # Doc: *** not documented yet***
     if not checkLogin():
-        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401, ADDHEADERS
     siadata, sia_status_code = getFromSia('renter/contracts')
     if sia_status_code >= 400:
-        return jsonify(siadata), sia_status_code
+        return jsonify(siadata), sia_status_code, ADDHEADERS
     # Create a summary similar to what `siac renter contracts` presents.
     # We could expose the full details of a contract in a different route, e.g. /contract/<id>.
     contractlist = []
@@ -276,7 +277,7 @@ def api_contracts():
     # Does not work in Flask 0.10 and lower, see http://flask.pocoo.org/docs/0.10/security/#json-security
     #return jsonify(statuslist)
     # Work around that so it works even in 0.10.
-    return Response(json.dumps(contractlist),  mimetype='application/json')
+    return Response(json.dumps(contractlist),  mimetype='application/json'), ADDHEADERS
 
 
 @app.route("/status", methods=['GET'])
@@ -313,17 +314,17 @@ def api_status():
         outdata["wallet_encrypted"] = None
         outdata["wallet_confirmed_balance_sc"] = None
         outdata["wallet_unconfirmed_delta_sc"] = None
-    return jsonify(outdata)
+    return jsonify(outdata), 200, ADDHEADERS
 
 
 @app.route("/wallet/status", methods=['GET'])
 def api_wallet_status():
     # Doc: *** not documented yet***
     if not checkLogin():
-        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401, ADDHEADERS
     siadata, sia_status_code = getFromSia('wallet')
     if sia_status_code >= 400:
-        return jsonify(siadata), sia_status_code
+        return jsonify(siadata), sia_status_code, ADDHEADERS
     walletdata = {
       "encrypted": siadata["encrypted"],
       "unlocked": siadata["unlocked"],
@@ -339,22 +340,22 @@ def api_wallet_status():
       "siafundbalance_sc": int(siadata["siafundbalance"]) / H_PER_SC,
     }
     # For now, just return the info from Sia directly.
-    return jsonify(walletdata)
+    return jsonify(walletdata), 200, ADDHEADERS
 
 
 @app.route("/wallet/unlock", methods=['POST'])
 def api_wallet_unlock():
     # Doc: *** not documented yet***
     if not checkLogin():
-        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401, ADDHEADERS
     # Make sure we only hand parameters to siad that it supports.
     pwd = request.form["encryptionpassword"]
     siadata, status_code = postToSia('wallet/unlock', {"encryptionpassword": pwd})
     if status_code == 204:
         # This (No Content) should be the default returned on success.
-        return jsonify(message="Wallet unlocked.")
+        return jsonify(message="Wallet unlocked."), 200, ADDHEADERS
     else:
-        return jsonify(siadata), status_code
+        return jsonify(siadata), status_code, ADDHEADERS
 
 
 def getFromSia(api):
@@ -458,16 +459,16 @@ def getBackupFiles(backupname):
 @app.errorhandler(404)
 def page_not_found(error):
     app.logger.error('Method not found: %s' % request.url)
-    return jsonify(error="Method not supported: "+ str(error)), 404
+    return jsonify(error="Method not supported: "+ str(error)), 404, ADDHEADERS
 
 @app.errorhandler(500)
 def page_not_found(error):
     app.logger.error('Internal server error @ %s %s' % (request.url , str(error)))
-    return jsonify(error="Internal server error: "+ str(error)), 500
+    return jsonify(error="Internal server error: "+ str(error)), 500, ADDHEADERS
 
 
 if __name__ == "__main__":
-    app.debug = True
+    #app.debug = True
     if not app.debug:
         # In production mode, add log handler to sys.stderr.
         app.logger.addHandler(logging.StreamHandler())
