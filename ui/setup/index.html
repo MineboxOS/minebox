@@ -4,18 +4,15 @@
 	<head>
 		<meta charset="utf_8" />
 
-		<base href="http://localhost:8888/minebox-client-tools/ui/" />
-
 		<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css" />
-		<link href="css/bootstrap.min.css" type="text/css" rel="stylesheet" />
+		<link href="../css/bootstrap.min.css" type="text/css" rel="stylesheet" />
+		<link href="../css/base.css" type="text/css" rel="stylesheet" />
+		<link href="../css/type.css" type="text/css" rel="stylesheet" />
+		<link href="../css/form.css" type="text/css" rel="stylesheet" />
+		<link href="../css/instascan.css" type="text/css" rel="stylesheet" />
+		<link href="../css/setup.css" type="text/css" rel="stylesheet" />
 
-		<link href="css/base.css" type="text/css" rel="stylesheet" />
-		<link href="css/type.css" type="text/css" rel="stylesheet" />
-		<link href="css/form.css" type="text/css" rel="stylesheet" />
-		<link href="css/instascan.css" type="text/css" rel="stylesheet" />
-		<link href="css/setup.css" type="text/css" rel="stylesheet" />
-
-		<link href="css/colors-theme-geek-blue.css" type="text/css" rel="stylesheet" />
+		<link href="../css/colors-theme-geek-blue.css" type="text/css" rel="stylesheet" />
 
 		<title>Minebox Setup</title>
 	</head>
@@ -25,7 +22,7 @@
 
 		<section class="welcome-section">
 			<div class="container">
-				<img src="assets/images/logo/minebox-logo-white.png" class="logo" />
+				<img src="../assets/images/logo/minebox-logo-white.png" class="logo" />
 				<p>Welcome to your Minebox device</p>
 				<div class="choices row">
 					<div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
@@ -47,7 +44,7 @@
 
 		<section class="register-section">
 			<div class="container">
-				<img src="assets/images/logo/minebox-logo-white.png" class="logo" />
+				<img src="../assets/images/logo/minebox-logo-white.png" class="logo" />
 				<p>Please provide the following information for setting up your device</p>
 
 				<div class="form clearfix">
@@ -164,7 +161,7 @@
 
 		<section class="recover-section">
 			<div class="container">
-				<img src="assets/images/logo/minebox-logo-white.png" class="logo" />
+				<img src="../assets/images/logo/minebox-logo-white.png" class="logo" />
 				<p>Restore your data from your Minebox device</p>
 
 				<div class="form clearfix">
@@ -250,17 +247,18 @@
 
 
 		<section class="progress-section">
-			<img src="assets/images/minebox-device/minebox-device.png" id="minebox-device" />
+			<div id="loading-space"></div>
+			<img src="../assets/images/minebox-device/minebox-device.png" id="minebox-device" />
 			<h1>Your Minebox is being set up</h1>
 			<p>Please be patient as it might take several minutes.</p>
 			<div id="progress-bar-box">
 				<div id="progress-bar"></div>
 			</div>
 			<ul id="boot-log">
-				<li><input type="checkbox" />Installing Rockstor</li>
-				<li><input type="checkbox" />Restoring your backup</li>
-				<li><input type="checkbox" />Installing Rockons</li>
-				<li><input type="checkbox" />Logging you in</li>
+				<li><input type="checkbox" disabled />Installing Rockstor</li>
+				<li><input type="checkbox" disabled />Restoring your backup</li>
+				<li><input type="checkbox" disabled />Installing Rockons</li>
+				<li><input type="checkbox" disabled />Logging you in</li>
 			</ul>
 			<div id="result">
 				<!-- Filled via js -->
@@ -282,11 +280,11 @@
 
 
 
-		<script type="text/javascript" src="js/jquery.2.2.4.min.js"></script>
-		<script type="text/javascript" src="js/func.lib.js"></script>
-		<script type="text/javascript" src="js/setup.js"></script>
-		<script type="text/javascript" src="js/instascan.min.js"></script>
-		<script type="text/javascript" src="js/instascan.js"></script>
+		<script type="text/javascript" src="../js/jquery.2.2.4.min.js"></script>
+		<script type="text/javascript" src="../js/func.lib.js"></script>
+		<script type="text/javascript" src="../js/setup.js"></script>
+		<script type="text/javascript" src="../js/instascan.min.js"></script>
+		<script type="text/javascript" src="../js/instascan.js"></script>
 
 	</body>
 
