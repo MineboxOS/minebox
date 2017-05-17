@@ -5,6 +5,7 @@ from os import listdir
 from os.path import isfile, isdir, join
 from glob import glob
 from zipfile import ZipFile
+from OpenSSL import SSL
 import re
 import logging
 import time
@@ -14,6 +15,9 @@ import requests
 app = Flask(__name__)
 
 REST_PORT=5000
+# TODO: The Rockstor certs are at a different location in production!
+SSL_CERT="/root/rockstor-core_vm/certs/rockstor.cert"
+SSL_KEY="/root/rockstor-core_vm/certs/rockstor.key"
 DATADIR_MASK="/mnt/lower*/data"
 METADATA_BASE="/mnt/lower1/mineboxmeta"
 SIAD_URL="http://localhost:9980/"
@@ -463,9 +467,15 @@ def page_not_found(error):
 
 
 if __name__ == "__main__":
-    #app.debug = True
+    app.debug = True
     if not app.debug:
         # In production mode, add log handler to sys.stderr.
         app.logger.addHandler(logging.StreamHandler())
         app.logger.setLevel(logging.INFO)
-    app.run(host='0.0.0.0', port=REST_PORT)
+    # With Werkzeug 0.10+, SSL would even be easier,
+    # see http://stackoverflow.com/a/28590266/682515
+    # Also, using TLS 1.0 instead of TLS is not really secure!
+    context = SSL.Context(SSL.TLSv1_METHOD)
+    context.use_privatekey_file(SSL_KEY)
+    context.use_certificate_file(SSL_CERT)
+    app.run(host='0.0.0.0', port=REST_PORT, ssl_context=context, threaded=True)
