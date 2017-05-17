@@ -1,4 +1,4 @@
-var mug_url = "https://127.0.0.13:5000/";
+var mug_url = "https://" + location.hostname + ":5000/";
 
 window.onload = function() {
   fetchMUG("status", "GET", null,
