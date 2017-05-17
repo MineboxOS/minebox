@@ -431,8 +431,12 @@ def getHeaders():
     # Note that credentials only work if -Origin is not "*".
     # Use host we are running on but respect port of requsting origin, so port forwarders work.
     myurlparts = urlparse(request.url_root)
-    originparts = urlparse(request.headers.get("Origin", "https://m.io:443"))
-    return {"Access-Control-Allow-Origin": "https://%s:%s" % (myurlparts.hostname, originparts.port),
+    originport = urlparse(request.headers.get("Origin")).port
+    if originport is None:
+        origin = "https://%s" % (myurlparts.hostname)
+    else:
+        origin = "https://%s:%s" % (myurlparts.hostname, originport)
+    return {"Access-Control-Allow-Origin": origin,
             "Access-Control-Allow-Credentials": "true",
             "Vary": "Origin"}
 
