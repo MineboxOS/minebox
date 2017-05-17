@@ -1,0 +1,260 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Minebox private key for </title>
+
+		<style>
+			body {
+				font-family: Helvetica, Arial, Sans-serif;
+				font-size: 12px;
+				background-color: #efefef;
+				color: #666;
+				font-weight: 100;
+				text-align: center;
+			}
+			.small {
+				font-size: 0.8em;
+			}
+			#wrapper {
+				width: 80%;
+				max-width: 600px;
+				margin: 30px auto;
+			}
+			#paper-wallet {
+				width: 90%;
+				max-width: 200px;
+				padding: 0 30px;
+				position: relative;
+				margin: 30px auto;
+				background-color: #fff;
+				box-shadow: 0 0 130px #bbb;
+				border: 1px solid #fff;
+			}
+			.folding-section {
+				position: relative;
+				width: 100%;
+				padding-bottom: 100%;
+			}
+			.folding-section:after {
+				content: '';
+				position: absolute;
+				top: 0;
+				left: 40%;
+				width: 20%;
+				height: 1px;
+				background-color: #ddd;
+			}
+			.folding-section:first-child:after {
+				display: none;
+			}
+			#minebox-tag {
+				padding: 20px 0;
+			}
+			#minebox-tag>p {
+				margin-top: 5px;
+				margin-bottom: 0;
+			}
+			#minebox-logo {
+				max-width: 60%;
+			}
+			#qr-code {
+				position: absolute;
+				top: 7px;
+				left: 10%;
+				width: 80%;
+				height: 80%;
+			}
+			#qr-code img {
+				width: 100%;
+			}
+			#words {
+				margin-top: 0;
+				font-size: 9px;
+				position: absolute;
+				bottom: 8px;
+				margin: 0;
+			}
+			.security-flop {
+				position: absolute;
+				top: -1px;
+				width: 80px;
+				height: 80px;
+				background-color: #fff;
+				z-index: 100;
+			}
+			.security-flop:before {
+				content: '';
+				position: absolute;
+				top: 40%;
+				width: 1px;
+				height: 20%;
+				background-color: #ddd;
+			}
+			.security-flop.left {
+				left: 0;
+				margin-left: -111px;
+				border-top: 1px solid #fff;
+				border-left: 1px solid #fff;
+				border-bottom: 1px solid #fff;
+			}
+			.security-flop.left:before {
+				right: 0;
+			}
+			.security-flop.right {
+				right: 0;
+				margin-right: -111px;
+				border-top: 1px solid #fff;
+				border-right: 1px solid #fff;
+				border-bottom: 1px solid #fff;
+			}
+
+			.security-flop.right:before {
+				left: 0;
+			}
+			#pattern-section-one,
+			#pattern-section-two {
+				padding-bottom: 100.5%;
+			}
+			.pattern-inner {
+				position: absolute;
+				top: 3%;
+				left: 3%;
+				width: 94%;
+				height: 94%;
+				background: #fff url(../assets/images/chessmat.svg) repeat;
+				overflow: hidden;
+			}
+			.minebox-private-key-instructions-image {
+				margin: 40px auto 0;
+				max-width: 540px;
+			}
+			.minebox-private-key-instructions-image + .minebox-private-key-instructions-image {
+				margin-top: 10px;
+			}
+			.button {
+				display: inline-block;
+				background-color: #24acce;
+				text-transform: uppercase;
+				color: #fff;
+				text-align: center;
+				width: 120px;
+				line-height: 30px;
+				height: 30px;
+				cursor: pointer;
+				margin: 10px 0;
+			}
+			@media print {
+				body {
+					background-color: #fff;
+				}
+				.dont-print {
+					display: none;
+				}
+				#qr-code {
+					margin: 5px auto;
+				}
+				.security-flop {
+					top: 0;
+				}
+				#paper-wallet {
+					box-shadow: 0 0 0 transparent;
+					border: 1px dotted #ccc;
+				}
+				.security-flop.left {
+					border-top: 1px dotted #ccc;
+					border-left: 1px dotted #ccc;
+					border-bottom: 1px dotted #ccc;
+				}
+				.security-flop.right {
+					border-top: 1px dotted #ccc;
+					border-right: 1px dotted #ccc;
+					border-bottom: 1px dotted #ccc;
+				}
+			}
+		</style>
+		<script type="text/javascript" src="../js/jquery.2.2.4.min.js"></script>
+		<script type="text/javascript" src="../js/qrcode.min.js"></script>
+		<script type="text/javascript" src="../js/func.lib.js"></script>
+	</head>
+
+	<body>
+		<div id="wrapper">
+			<div class="dont-print">
+				<h1>Your private key</h1>
+				<p>This QR code stores your private key. It is highly recommended to keep it on a safe place. This code grants access to all of your files and funds, <strong>if you get it stolen, all of your files and funds will be at risk</strong>.</p>
+				<p>Do not use your smartphone app to read this QR code as it might expose it to third parties. Instead, scan the code during the Minebox restore process.</p>
+				<span class="button" id="print-button">Print</span>
+				<p class="small">Remember to enable background graphics in the printing dialog. We recommend to print on portrait A4 and 100% scale.</p>
+			</div>
+
+			<div id="paper-wallet">
+				<section id="minebox-tag" class="folding-section">
+					<img src="../assets/images/logo/minebox-logo-black.png" id="minebox-logo" />
+					<p><span id="hostname"></span>.minebox.io</p>
+					<div class="security-flop right"></div>
+					<div class="security-flop left"></div>
+				</section>
+				<section id="pattern-section-one" class="folding-section">
+					<div class="pattern-inner"></div>
+				</section>
+				<section id="pattern-section-two" class="folding-section">
+					<div class="pattern-inner"></div>
+				</section>
+				<section id="qr-code-section" class="folding-section">
+					<div id="qr-code"></div>
+					<p id="words"></p>
+				</section>
+			</div>
+
+			<div class="dont-print">
+				<h1>How to properly bend your private key</h1>
+				<p>Follow this simple instructions to protect your private key agains any sight.</p>
+				<img src="../assets/images/private-key-instructions/Minebox-Private-Key-Instructions-01.jpg" class="minebox-private-key-instructions-image" />
+				<img src="../assets/images/private-key-instructions/Minebox-Private-Key-Instructions-02.jpg" class="minebox-private-key-instructions-image" />
+				<img src="../assets/images/private-key-instructions/Minebox-Private-Key-Instructions-03.jpg" class="minebox-private-key-instructions-image" />
+				<img src="../assets/images/private-key-instructions/Minebox-Private-Key-Instructions-04.jpg" class="minebox-private-key-instructions-image" />
+			</div>
+		</div>
+
+		<script type="text/javascript">
+			var parent_window = window.opener;
+			var data = parent_window.register;
+			var qrCodeHandler = new QRCode('qr-code');
+
+			function fillPaperWallet() {
+				$('#words').html(data.seed);
+				$('#hostname').html(data.hostname);
+				qrCodeHandler.makeCode(data.seed);
+				var title = $('title').html();
+				$('title').html( title + data.hostname + '.minebox.io' );
+			}
+
+			$(document).ready(function() {
+				fillPaperWallet();
+				randomArtGenerator( $('#pattern-section-one .pattern-inner') );
+				randomArtGenerator( $('#pattern-section-two .pattern-inner') );
+			});
+
+			function randomArtGenerator( $element ) {
+				var count = getRandomInt(200, 300);
+				var props = {};
+
+				for ( var n = 0; n < count; n++ ) {
+					props.width = getRandomInt(5,25) + '%';
+					props.height = getRandomInt(5,25) + '%';
+					props.top = getRandomInt(-20,100) + '%';
+					props.left = getRandomInt(-20,100) + '%';
+					props.round = getRandomInt(0,50) + '%';
+					props.opacity = getRandomInt(10,50) / 100;
+
+					$element.append('<span style="position:absolute;width:' + props.width + ';height:' + props.height + ';top:' + props.top + ';left:' + props.left + ';border-radius:' + props.round + ';background-color:#000;opacity:' + props.opacity + ';"></span>');
+				}
+			}
+
+			$('#print-button').on('click', function() {
+				window.print();
+			});
+		</script>
+	</body>
+</html>
