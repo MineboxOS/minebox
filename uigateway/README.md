@@ -38,3 +38,14 @@ yum install python-requests
 This results in the following packages being installed:
 `python-requests`, `python-backports`, `python-backports-ssl_match_hostname`,
 `python-chardet`, `python-urllib3` from `base`.
+
+For using SSL, we need the `OpenSSL` module in python (with `werkzeug` 0.10+
+this may not be required, but CentOS 7 has 0.91)
+```
+pip install pyopenssl
+```
+Or at yum level:
+```
+yum install pyOpenSSL
+```
+This adds no dependencies to the above.
