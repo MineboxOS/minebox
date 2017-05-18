@@ -11,6 +11,7 @@ import re
 import logging
 import time
 import subprocess
+import pwd
 import urllib
 import requests
 app = Flask(__name__)
@@ -317,6 +318,12 @@ def api_status():
         outdata["minebd_encrypted"] = None
         outdata["minebd_storage_mounted"] = False
         outdata["minebd_serialnumber"] = None
+
+    hasusers = False
+    for user in pwd.getpwall():
+        if user.pw_uid >= 1000 and user.pw_uid < 65500 and user.pw_name != "sia":
+            hasusers = True
+    outdata["users_created"] = hasusers
 
     outdata["backup_type"] = "sia"
     consdata, cons_status_code = getFromSia('consensus')
