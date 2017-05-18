@@ -18,7 +18,7 @@ minebd:
   maxOpenFiles : 20
   parentDir : /mnt/lower1/data/
   reportedSize : 10G
-  encryptionSeed: /etc/minebox/minebox.key
+  encryptionKeyPath: /etc/minebox/minebox.key
   authFile: /etc/minebox/local-auth.key
   bucketSize : 40M
   httpMetadata: "http://localhost:8050/v1/file/"

@@ -2,7 +2,7 @@
 
 from flask import Flask, Response, request, jsonify, json
 from os import listdir
-from os.path import isfile, isdir, join
+from os.path import isfile, isdir, ismount, join
 from glob import glob
 from zipfile import ZipFile
 from urlparse import urlparse
@@ -11,6 +11,7 @@ import re
 import logging
 import time
 import subprocess
+import pwd
 import urllib
 import requests
 app = Flask(__name__)
@@ -23,6 +24,8 @@ DATADIR_MASK="/mnt/lower*/data"
 METADATA_BASE="/mnt/lower1/mineboxmeta"
 SIAD_URL="http://localhost:9980/"
 MINEBD_URL="http://localhost:8080/v1/"
+MINEBD_AUTH_KEY_FILE="/etc/minebox/local-auth.key"
+MINEBD_STORAGE_PATH="/mnt/storage"
 UPLOADER_CMD="/usr/lib/minebox/uploader-bg.sh"
 H_PER_SC=1e24 # hastings per siacoin
 
@@ -174,7 +177,7 @@ def api_backup_all_status():
     # Does not work in Flask 0.10 and lower, see http://flask.pocoo.org/docs/0.10/security/#json-security
     #return jsonify(statuslist)
     # Work around that so it works even in 0.10.
-    return Response(json.dumps(statuslist),  mimetype='application/json'), getHeaders()
+    return Response(json.dumps(statuslist),  mimetype='application/json'), 200, getHeaders()
 
 
 @app.route("/backup/start", methods=['POST'])
@@ -212,9 +215,13 @@ def api_key_status():
 @app.route("/key/generate", methods=['GET'])
 def api_key_generate():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-keygenerate
-    if not checkLogin():
-        return jsonify(message="Unauthorized access, please log into the main UI."), 401, getHeaders()
-    return jsonify(message="Not yet implemented."), 501, getHeaders()
+    mbdata, mb_status_code = getFromMineBD('keys/asJson')
+    # For the moment, just blindly hand over the result from MineBD.
+    if isinstance(mbdata, list):
+        # jsonify cannot deal with lists in Flask <0.10
+        return Response(json.dumps(mbdata),  mimetype='application/json'), mb_status_code, getHeaders()
+    else:
+        return jsonify(mbdata), mb_status_code, getHeaders()
 
 
 @app.route("/key/verify", methods=['POST'])
@@ -277,7 +284,7 @@ def api_contracts():
     # Does not work in Flask 0.10 and lower, see http://flask.pocoo.org/docs/0.10/security/#json-security
     #return jsonify(statuslist)
     # Work around that so it works even in 0.10.
-    return Response(json.dumps(contractlist),  mimetype='application/json'), getHeaders()
+    return Response(json.dumps(contractlist),  mimetype='application/json'), 200, getHeaders()
 
 
 @app.route("/status", methods=['GET'])
@@ -291,6 +298,33 @@ def api_status():
     else:
         outdata["logged_in"] = False
         outdata["user"] = None
+
+    mbdata, mb_status_code = getFromMineBD('serialnumber')
+    if mb_status_code == 200:
+        outdata["minebd_running"] = True
+        outdata["minebd_encrypted"] = True
+        outdata["minebd_storage_mounted"] = ismount(MINEBD_STORAGE_PATH)
+        if username:
+            outdata["minebd_serialnumber"] = mbdata["message"]
+        else:
+            outdata["minebd_serialnumber"] = None
+    elif "messagesource" in mbdata and mbdata["messagesource"] == "MineBD":
+        outdata["minebd_running"] = True
+        outdata["minebd_encrypted"] = False
+        outdata["minebd_storage_mounted"] = False
+        outdata["minebd_serialnumber"] = None
+    else:
+        outdata["minebd_running"] = False
+        outdata["minebd_encrypted"] = None
+        outdata["minebd_storage_mounted"] = False
+        outdata["minebd_serialnumber"] = None
+
+    hasusers = False
+    for user in pwd.getpwall():
+        if user.pw_uid >= 1000 and user.pw_uid < 65500 and user.pw_name != "sia":
+            hasusers = True
+    outdata["users_created"] = hasusers
+
     outdata["backup_type"] = "sia"
     consdata, cons_status_code = getFromSia('consensus')
     if cons_status_code == 200:
@@ -396,6 +430,28 @@ def postToSia(api, formData):
             return siadata, response.status_code
         else:
             return {"message": response.text, "messagesource": "sia"}, response.status_code
+    except requests.ConnectionError as e:
+        return {"message": str(e)}, 503
+    except requests.RequestException as e:
+        return {"message": str(e)}, 500
+
+
+def getFromMineBD(api):
+    url = MINEBD_URL + api
+    # siad requires a specific UA header, so add that to defaults.
+    with open(MINEBD_AUTH_KEY_FILE) as f:
+        local_key = f.read().rstrip()
+    try:
+        response = requests.get(url, auth=("user", local_key))
+        if re.match(r'^application/json', response.headers['Content-Type']):
+            # create a dict generated from the JSON response.
+            mbdata = response.json()
+            if response.status_code >= 400:
+                # For error-ish codes, tell that they are from MineBD.
+                mbdata["messagesource"] = "MineBD"
+            return mbdata, response.status_code
+        else:
+            return {"message": response.text, "messagesource": "MineBD"}, response.status_code
     except requests.ConnectionError as e:
         return {"message": str(e)}, 503
     except requests.RequestException as e:

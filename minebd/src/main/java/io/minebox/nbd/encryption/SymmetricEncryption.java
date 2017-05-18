@@ -5,21 +5,19 @@ import java.nio.ByteBuffer;
 import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import io.minebox.nbd.Encryption;
-import io.minebox.nbd.NbdModule;
 
 /**
  * Created by andreas on 11.04.17.
  */
 public class SymmetricEncryption implements Encryption {
+    private final EncyptionKeyProvider encyptionKeyProvider;
     private BitPatternGenerator bitPatternGenerator;
-    private final String publicId;
+    private String publicId;
 
     @Inject
-    public SymmetricEncryption(@Named(NbdModule.ENCRYPTION_KEY) String key) {
-        publicId = buildPubId(key);
-        bitPatternGenerator = new BitPatternGenerator(key);
+    public SymmetricEncryption(EncyptionKeyProvider encyptionKeyProvider) {
+        this.encyptionKeyProvider = encyptionKeyProvider;
     }
 
     public String buildPubId(String key) {
@@ -33,6 +31,9 @@ public class SymmetricEncryption implements Encryption {
 
     @Override
     public String getPublicIdentifier() {
+        if (publicId == null) {
+            publicId = buildPubId(encyptionKeyProvider.getImmediatePassword());
+        }
         return publicId;
     }
 
@@ -59,6 +60,9 @@ public class SymmetricEncryption implements Encryption {
     }
 
     private byte[] createBlockXor(long blockNumber) {
+        if (bitPatternGenerator == null) {
+            bitPatternGenerator = new BitPatternGenerator(encyptionKeyProvider.getImmediatePassword());
+        }
         return bitPatternGenerator.createDeterministicPattern(blockNumber);
     }
 }

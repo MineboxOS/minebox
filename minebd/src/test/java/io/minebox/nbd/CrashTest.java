@@ -1,6 +1,5 @@
 package io.minebox.nbd;
 
-import java.net.BindException;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.CountDownLatch;
 
@@ -13,6 +12,8 @@ import io.minebox.nbd.ep.NullMetadataService;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import static org.junit.Assert.fail;
+
 @Ignore("this requires mountnbd1.sh to be whitelisted with visudo to run correctly ")
 //andreas ALL=(ALL) NOPASSWD: /home/andreas/minebox/minebox-client-tools/minebd/mountnbd1.sh
 public class CrashTest {
@@ -21,25 +22,20 @@ public class CrashTest {
 
     public void testCrash() throws Exception {
         CountDownLatch started = new CountDownLatch(1);
-        final MinebdConfig cfg = TestUtil.createSampleConfig();
-        cfg.encryptionSeed = "testDD";
-        cfg.nbdPort = 10811;
-        final SymmetricEncryption test123 = new SymmetricEncryption("test123");
+
+        final StaticEncyptionKeyProvider keyProvider = new StaticEncyptionKeyProvider("test123");
+        final SymmetricEncryption test123 = new SymmetricEncryption(keyProvider);
+        MinebdConfig cfg = TestUtil.createSampleConfig();
 
         final BucketFactory bucketFactory = new BucketFactory(cfg, test123, new NullMetadataService());
-        final NbdServer nbdServer = new NbdServer(new SystemdUtil() {
+        final SystemdUtil mockSystemD = new SystemdUtil() {
             @Override
             void sendNotify() {
                 started.countDown();
             }
-        }, cfg, new MineboxExport(cfg, new MetricRegistry(), bucketFactory));
-        new Thread(() -> {
-            try {
-                nbdServer.start();
-            } catch (BindException | InterruptedException e) {
-                e.printStackTrace();
-            }
-        }).start();
+        };
+        final NbdServer nbdServer = new NbdServer(10811, mockSystemD, new MineboxExport(cfg, new MetricRegistry(), bucketFactory), keyProvider);
+        new Thread(nbdServer::start).start();
         started.await();
         final long start = System.currentTimeMillis();
         final Process process = new ProcessBuilder("sudo", "./mountnbd1.sh")
@@ -48,9 +44,14 @@ public class CrashTest {
         process.waitFor();
         final long duration = System.currentTimeMillis() - start;
         java.time.Duration d = java.time.Duration.of(duration, ChronoUnit.MILLIS);
-        final double MBpS = 2000 / d.getSeconds();
-        System.out.println("read + wrote 1GB  + 1GB in " + d.getSeconds() + " seconds");
+        final long seconds = d.getSeconds();
+        if (seconds == 0){
+            fail();
+        }
+        final double MBpS = 2000 / seconds;
+        System.out.println("read + wrote 1GB  + 1GB in " + seconds + " seconds");
         System.out.println(MBpS + " MB/sec");
         nbdServer.stop();
     }
+
 }

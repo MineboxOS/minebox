@@ -1,13 +1,18 @@
 package io.minebox.nbd;
 
 import java.io.IOException;
-import java.net.BindException;
 import java.net.InetSocketAddress;
 
+import javax.annotation.Nullable;
+
 import com.google.common.annotations.VisibleForTesting;
-import com.google.inject.*;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import io.dropwizard.lifecycle.Managed;
-import io.minebox.config.MinebdConfig;
+import io.minebox.nbd.encryption.EncyptionKeyProvider;
 import io.minebox.nbd.ep.ExportProvider;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -29,89 +34,38 @@ public class NbdServer implements Managed {
     private final int port;
     private final SystemdUtil systemdUtil;
     private static final Logger LOGGER = LoggerFactory.getLogger(NbdServer.class);
-    private final MinebdConfig config;
     private final ExportProvider exportProvider;
+    private final EncyptionKeyProvider encyptionKeyProvider;
     private EventLoopGroup eventLoopGroup;
-    private ChannelFuture mainChannelFuture;
-    private State state = IDLE;
+    private volatile State state = IDLE;
 
     enum State {
-        IDLE, STARTING, STARTED, SHUTTINGDOWN, SHUTDOWN;
+        IDLE, STARTING, KEY_DETECTED, STARTED, SHUTTINGDOWN, SHUTDOWN;
     }
 
     @VisibleForTesting
     @Inject
-    public NbdServer(SystemdUtil systemdUtil, MinebdConfig config, ExportProvider exportProvider) {
-        this.port = config.nbdPort;
+    public NbdServer(@Named("nbdPort") Integer nbdPort, SystemdUtil systemdUtil, ExportProvider exportProvider, EncyptionKeyProvider encyptionKeyProvider) {
+        this.port = nbdPort;
         this.systemdUtil = systemdUtil;
-        this.config = config;
         this.exportProvider = exportProvider;
+        this.encyptionKeyProvider = encyptionKeyProvider;
     }
 
-    /*
-    this is provided to allow starting of the server in "light" mode, without any rest apis. eventually its going to be deleted.
-     */
-    public static void main(String... args) {
-        final Injector injector = Guice.createInjector(new NbdModule() {
-            @Provides
-            public MinebdConfig getConfig() {
-                return createDefaultConfig();
-            }
-        });
-        NbdServer s;
-        s = injector.getInstance(NbdServer.class);
-        s.addShutownHook();
-        try {
-            s.start();
-        } catch (BindException | InterruptedException e) {
-            s.sendError(e);
-            System.exit(1);
-        }
-        s.block();
-        try {
-            s.stop();
-        } catch (Exception e) {
-            s.sendError(e);
-            System.exit(1);
-        }
-    }
-
-    private void sendError(Throwable e) {
-        systemdUtil.sendError(1);
-        LOGGER.error("terminated due to exception.", e);
-    }
-
-    private void block() {
-        try {
-            mainChannelFuture.sync();
-        } catch (InterruptedException e) {
-            //very unexpected
-            systemdUtil.sendError(1);
-            LOGGER.info("terminated due to interrupt.", e);
-        }
-    }
-
-    private static MinebdConfig createDefaultConfig() {
-        final MinebdConfig config = new MinebdConfig();
-        config.parentDir = "minedbDat";
-        return config;
-    }
-
-    private void addShutownHook() {
-        Runtime.getRuntime().addShutdownHook(new Thread(this::gracefulShutdown));
-    }
-
-    private void gracefulShutdown() {
+    @Override
+    public void stop() {
         if (state == SHUTTINGDOWN || state == SHUTDOWN) {
             LOGGER.error("we have already attempted to shut down to {}, not doing it twice..", state);
+            return;
+        }
+        if (state != STARTED) {
+            LOGGER.info("we were not started completely, unable to shut down cleanly..", state);
             return;
         }
         state = SHUTTINGDOWN;
         LOGGER.info("shutdown detected..");
         systemdUtil.sendStopping();
         try {
-            //                        exportProvider.flush();
-            //close also flushes first, so we only do one of them
             exportProvider.close();
             LOGGER.info("shutting down eventLoops");
             try {
@@ -131,30 +85,45 @@ public class NbdServer implements Managed {
 
     @VisibleForTesting
     @Override
-    public void start() throws BindException, InterruptedException {
+    public void start() {
         state = STARTING;
-        eventLoopGroup = new NioEventLoopGroup();
-        ServerBootstrap bootstrap = new ServerBootstrap();
-        bootstrap.group(eventLoopGroup)
-                .channel(NioServerSocketChannel.class)
-                .localAddress(new InetSocketAddress(port))
-                .childHandler(new ChannelInitializer<SocketChannel>() {
-                    @Override
-                    protected void initChannel(SocketChannel ch) throws Exception {
-                        ch.pipeline().addLast(new HandshakePhase(exportProvider));
-                    }
-                });
-        final ChannelFuture bind = bootstrap.bind();
-        ChannelFuture f = bind.sync();
-        LOGGER.info("started up minebd on port {} ", port);
-        final Channel channel = f.channel();
-        mainChannelFuture = channel.closeFuture();
-        systemdUtil.sendNotify(); //tell systemd we are ready
-        state = STARTED;
-    }
+        //we want to delay the initialisation until the master password is ready
+        LOGGER.info("starting up NBD service , waiting for encryption key to be present until we expose the port...");
+        Futures.addCallback(encyptionKeyProvider.getMasterPassword(), new FutureCallback<String>() {
+            @Override
+            public void onSuccess(@Nullable String result) {
+                if (state != STARTING) {
+                    throw new IllegalStateException("i expected to be starting");
+                }
+                state = KEY_DETECTED;
+                eventLoopGroup = new NioEventLoopGroup();
+                ServerBootstrap bootstrap = new ServerBootstrap();
+                bootstrap.group(eventLoopGroup)
+                        .channel(NioServerSocketChannel.class)
+                        .localAddress(new InetSocketAddress(port))
+                        .childHandler(new ChannelInitializer<SocketChannel>() {
+                            @Override
+                            protected void initChannel(SocketChannel ch) throws Exception {
+                                ch.pipeline().addLast(new HandshakePhase(exportProvider));
+                            }
+                        });
+                final ChannelFuture bind = bootstrap.bind();
+                ChannelFuture f;
+                try {
+                    f = bind.sync();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException("unable to start without being interrupted...", e);
+                }
+                LOGGER.info("started up minebd on port {} ", port);
+                final Channel channel = f.channel();
+                systemdUtil.sendNotify(); //tell systemd we are ready
+                state = STARTED;
+            }
 
-    @Override
-    public void stop() {
-        gracefulShutdown();
+            @Override
+            public void onFailure(Throwable t) {
+                LOGGER.error("something went wrong trying to wait for the encryption key...", t);
+            }
+        });
     }
 }

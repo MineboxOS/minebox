@@ -12,7 +12,6 @@ import javax.ws.rs.Path;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Injector;
-import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.hubspot.dropwizard.guice.GuiceBundle;
 import io.dropwizard.Application;
@@ -29,8 +28,7 @@ import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import io.minebox.config.ApiConfig;
-import io.minebox.config.MinebdConfig;
-import io.minebox.nbd.NbdModule;
+import io.minebox.nbd.MineBdModule;
 import io.minebox.util.GlobalErrorHandler;
 import io.minebox.util.TrivialAuthenticator;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
@@ -70,7 +68,8 @@ public class MinebdApplication extends Application<ApiConfig> {
         LOGGER.info("api started up");
         injector = guiceBundle.getInjector();
         JerseyEnvironment jersey = environment.jersey();
-        register(environment.lifecycle(), REFLECTIONS.getSubTypesOf(Managed.class));
+        register(environment.lifecycle(), REFLECTIONS.getSubTypesOf(Managed.class)); // registers NbdServer
+
 
 //        injector.getInstance(SessionFactory.class); //init DB
         installCorsFilter(environment);
@@ -129,24 +128,16 @@ public class MinebdApplication extends Application<ApiConfig> {
 
         guiceBundle = GuiceBundle.<ApiConfig>newBuilder()
                 .setConfigClass(ApiConfig.class)
-                .addModule(new NbdModule() {
-                    @Provides
-                    public MinebdConfig getConfig(ApiConfig apiConfig) {
-                        return apiConfig.minebd;
-                    }
-                })
+                .addModule(new MineBdModule())
                 .build();
 
         bootstrap.addBundle(guiceBundle);
-
-
         SwaggerBundle<ApiConfig> swagger = new SwaggerBundle<ApiConfig>() {
             @Override
             protected SwaggerBundleConfiguration getSwaggerBundleConfiguration(ApiConfig configuration) {
                 return configuration.swagger;
             }
         };
-
         bootstrap.addBundle(swagger);
     }
 }

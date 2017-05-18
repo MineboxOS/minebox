@@ -23,9 +23,8 @@ public class ByteBufferEncryptionTest {
     public ByteBuffer testFor(long offset, int msgSize) {
         final byte[] plaintext = new byte[msgSize];
         final ByteBuffer plainBuffer = ByteBuffer.wrap(plaintext);
-        final Encryption encryption = new SymmetricEncryption("keyForTesting");
-        final ByteBuffer result = encryption.encrypt(offset, plainBuffer);
-        return result;
+        final Encryption encryption = new SymmetricEncryption(new StaticEncyptionKeyProvider("keyForTesting"));
+        return encryption.encrypt(offset, plainBuffer);
     }
 
 
