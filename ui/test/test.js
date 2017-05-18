@@ -4,7 +4,22 @@ window.onload = function() {
   fetchMUG("status", "GET", null,
      function(aResult) {
         if (aResult["consensus_height"]) {
-          document.getElementById("status").textContent = "Active";
+          var status = document.getElementById("status");
+          if (aResult["minebd_storage_mounted"] && aResult["users_created"]) {
+            status.textContent = "Active";
+          }
+          else if (aResult["minebd_storage_mounted"]) {
+            status.textContent = "Minebox storage ready, but no users have been set up.";
+          }
+          else if (!aResult["minebd_running"]) {
+            status.textContent = "Storage inactive, call support!";
+          }
+          else if (aResult["minebd_encrypted"]) {
+            status.textContent = "Encryption set up, getting ready for use...";
+          }
+          else {
+            status.textContent = "No encryption key yet, please proceed to setup.";
+          }
           document.getElementById("cheight").textContent = aResult["consensus_height"];
           document.getElementById("csync").textContent = aResult["consensus_synced"] ? "Yes" : "No";
           document.getElementById("user").textContent = aResult["logged_in"] ? aResult["user"] : "Not logged in";
@@ -13,7 +28,7 @@ window.onload = function() {
           document.getElementById("siad").textContent = aResult["sia_daemon_running"] ? "active" : "stopped";
         }
         else {
-          document.getElementById("status").textContent = "Unknown (Server issue?)"
+          status.textContent = "Unknown (Server issue?)"
           console.log(aResult);
         }
       },
