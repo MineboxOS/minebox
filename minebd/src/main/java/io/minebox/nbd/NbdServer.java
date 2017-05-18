@@ -10,8 +10,8 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import io.dropwizard.lifecycle.Managed;
-import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.encryption.EncyptionKeyProvider;
 import io.minebox.nbd.ep.ExportProvider;
 import io.netty.bootstrap.ServerBootstrap;
@@ -45,8 +45,8 @@ public class NbdServer implements Managed {
 
     @VisibleForTesting
     @Inject
-    public NbdServer(SystemdUtil systemdUtil, MinebdConfig config, ExportProvider exportProvider, EncyptionKeyProvider encyptionKeyProvider) {
-        this.port = config.nbdPort;
+    public NbdServer(@Named("nbdPort") Integer nbdPort, SystemdUtil systemdUtil, ExportProvider exportProvider, EncyptionKeyProvider encyptionKeyProvider) {
+        this.port = nbdPort;
         this.systemdUtil = systemdUtil;
         this.exportProvider = exportProvider;
         this.encyptionKeyProvider = encyptionKeyProvider;

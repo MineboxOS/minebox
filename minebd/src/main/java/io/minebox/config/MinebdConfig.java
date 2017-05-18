@@ -1,5 +1,6 @@
 package io.minebox.config;
 
+import com.google.inject.name.Named;
 import io.dropwizard.util.Size;
 
 /**
@@ -11,7 +12,7 @@ public class MinebdConfig {
     public Integer maxOpenFiles = 10;
     public String parentDir;
     public Size reportedSize = Size.gigabytes(4);
-    public String encryptionSeed;
+    public String encryptionKeyPath;
     public String authFile;
     public Size bucketSize = Size.megabytes(40);
     public String httpMetadata;
