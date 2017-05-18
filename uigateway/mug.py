@@ -2,7 +2,7 @@
 
 from flask import Flask, Response, request, jsonify, json
 from os import listdir
-from os.path import isfile, isdir, join
+from os.path import isfile, isdir, ismount, join
 from glob import glob
 from zipfile import ZipFile
 from urlparse import urlparse
@@ -24,6 +24,7 @@ METADATA_BASE="/mnt/lower1/mineboxmeta"
 SIAD_URL="http://localhost:9980/"
 MINEBD_URL="http://localhost:8080/v1/"
 MINEBD_AUTH_KEY_FILE="/etc/minebox/local-auth.key"
+MINEBD_STORAGE_PATH="/mnt/storage"
 UPLOADER_CMD="/usr/lib/minebox/uploader-bg.sh"
 H_PER_SC=1e24 # hastings per siacoin
 
@@ -296,6 +297,27 @@ def api_status():
     else:
         outdata["logged_in"] = False
         outdata["user"] = None
+
+    mbdata, mb_status_code = getFromMineBD('serialnumber')
+    if mb_status_code == 200:
+        outdata["minebd_running"] = True
+        outdata["minebd_encrypted"] = True
+        outdata["minebd_storage_mounted"] = ismount(MINEBD_STORAGE_PATH)
+        if username:
+            outdata["minebd_serialnumber"] = mbdata["message"]
+        else:
+            outdata["minebd_serialnumber"] = None
+    elif "messagesource" in mbdata and mbdata["messagesource"] == "MineBD":
+        outdata["minebd_running"] = True
+        outdata["minebd_encrypted"] = False
+        outdata["minebd_storage_mounted"] = False
+        outdata["minebd_serialnumber"] = None
+    else:
+        outdata["minebd_running"] = False
+        outdata["minebd_encrypted"] = None
+        outdata["minebd_storage_mounted"] = False
+        outdata["minebd_serialnumber"] = None
+
     outdata["backup_type"] = "sia"
     consdata, cons_status_code = getFromSia('consensus')
     if cons_status_code == 200:
@@ -413,8 +435,6 @@ def getFromMineBD(api):
     with open(MINEBD_AUTH_KEY_FILE) as f:
         local_key = f.read().rstrip()
     try:
-        from httplib import HTTPConnection
-        HTTPConnection.debuglevel = 1
         response = requests.get(url, auth=("user", local_key))
         if re.match(r'^application/json', response.headers['Content-Type']):
             # create a dict generated from the JSON response.
