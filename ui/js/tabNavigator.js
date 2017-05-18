@@ -6,7 +6,6 @@ function TabNavigator( data ) {
 		//buttons DOM selection
 		//tabs DOM selection
 		//defaultTab string id
-		//halting list. an array of strings that will halt the system and make it ignore hash changes in the url
 
 	var $buttons = data.buttons;
 	var $tabs = data.tabs;
@@ -15,11 +14,13 @@ function TabNavigator( data ) {
 
 	//vars
 	var CONFIG = {
-		event: null,
+		events: {
+			tabShown: {
+				name: 'tabShown'
+			}
+		},
 		animationDuration: 600,
-		defaultTab: data.defaultTab,
-		halt: false, //when this var is set to OK, showTab() function won't work
-		haltingOn: data.haltingOn
+		defaultTab: data.defaultTab
 	};
 
 
@@ -28,18 +29,6 @@ function TabNavigator( data ) {
 	function go( string ) {
 		//write hash
 		hashManager.write(string);
-		halt(string);
-	}
-
-
-	function halt( string ) {
-		//this fnc checks if the requested tag is on the halting list
-		for ( var n = 0; n < CONFIG.haltingOn.length; n++ ) {
-			if ( string == CONFIG.haltingOn[n] ) {
-				CONFIG.halt = true;
-				console.log('halted!');
-			}
-		}
 	}
 
 
@@ -57,23 +46,29 @@ function TabNavigator( data ) {
 
 
 	function showTab($tab,cb) {
-		if ( !CONFIG.halt ) {
-			//hidding all tabs
-			hideAll(function() {
-				$tab.fadeIn(CONFIG.animationDuration, function() {
-					if (cb) {cb();}
-				});
+		//hidding all tabs
+		hideAll(function() {
+			$tab.trigger(CONFIG.events.tabShown.name)
+				.fadeIn(CONFIG.animationDuration, function() {
+				if (cb) {cb();}
 			});
-		} else {
-			alert('You can\'t go back at this point.');
-		}
+		});
+	}
+
+
+
+
+	function disable() {
+		$(CONFIG.events.hash.target).unbind(CONFIG.events.hash.name);
 	}
 
 
 
 
 	$buttons.on('click', function() {
-		go( $(this).attr('data-go') );
+		if ( !$(this).attr('disabled') ) {
+			go( $(this).attr('data-go') );
+		}
 	});
 
 
@@ -84,12 +79,12 @@ function TabNavigator( data ) {
 		//read hash
 		var hash = hashManager.read();
 
-		//sets CONFIG.event configuration inherited from hashManager
-		CONFIG.event = hashManager.eventConfig();
+		//sets CONFIG.events.hash configuration inherited from hashManager
+		CONFIG.events.hash = hashManager.eventConfig();
 
 		//binding events
 		//changed hash
-		$(CONFIG.event.target).bind(CONFIG.event.name, function() {
+		$(CONFIG.events.hash.target).bind(CONFIG.events.hash.name, function() {
 			//reading hash again
 			hash = hashManager.read();
 			//finding the tab
@@ -116,7 +111,9 @@ function TabNavigator( data ) {
 	});
 
 	return {
-		go: go
+		go: go,
+		hideAll: hideAll,
+		disable: disable
 	}
 
 }

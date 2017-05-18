@@ -146,7 +146,7 @@
 
 						<fieldset>
 							<span class="button back-button navigation-button" data-go="welcome">Cancel</span>
-							<span class="button progress-button navigation-button" data-go="progress">Initialize my Minebox</span>
+							<span id="register-minebox-button" class="button progress-button">Initialize my Minebox</span>
 						</fieldset>
 					</div>
 				</div>
@@ -167,73 +167,77 @@
 				<div class="form clearfix">
 					<div class="col-xs-12 col-sm-8 col-md-6 col-lg-6 col-sm-offset-2 col-md-offset-3 col-lg-offset-3">
 
-						<fieldset class="restore-encryption-key">
-							<h4>Insert your encryption key</h4>
-							<p>When you first configured your Minebox, you got a collection of twelve words which were the seed of your encryption key. Please fill the following fields with your seed. The order is important.</p>
-							<p>If your device has a camera and you have your seed's QR code, you can also <span class="go-to-scan-button in-text-button">scan it</span>.</p>
-
-							<div class="row insert-keys-block">
-								<div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3 encryption-box">
-									<label class="encryption-word-number">1.</label>
-									<input type="text" class="encryption-word encryption-word-one" placeholder="Enter word number one" />
-								</div>
-								<div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3 encryption-box">
-									<label class="encryption-word-number">2.</label>
-									<input type="text" class="encryption-word encryption-word-two" placeholder="Enter word number two" />
-								</div>
-								<div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3 encryption-box">
-									<label class="encryption-word-number">3.</label>
-									<input type="text" class="encryption-word encryption-word-three" placeholder="Enter word number three" />
-								</div>
-								<div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3 encryption-box">
-									<label class="encryption-word-number">4.</label>
-									<input type="text" class="encryption-word encryption-word-four" placeholder="Enter word number four" />
-								</div>
-								<div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3 encryption-box">
-									<label class="encryption-word-number">5.</label>
-									<input type="text" class="encryption-word encryption-word-five" placeholder="Enter word number five" />
-								</div>
-								<div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3 encryption-box">
-									<label class="encryption-word-number">6.</label>
-									<input type="text" class="encryption-word encryption-word-six" placeholder="Enter word number six" />
-								</div>
-								<div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3 encryption-box">
-									<label class="encryption-word-number">7.</label>
-									<input type="text" class="encryption-word encryption-word-seven" placeholder="Enter word number seven" />
-								</div>
-								<div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3 encryption-box">
-									<label class="encryption-word-number">8.</label>
-									<input type="text" class="encryption-word encryption-word-eight" placeholder="Enter word number eight" />
-								</div>
-								<div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3 encryption-box">
-									<label class="encryption-word-number">9.</label>
-									<input type="text" class="encryption-word encryption-word-nine" placeholder="Enter word number nine" />
-								</div>
-								<div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3 encryption-box">
-									<label class="encryption-word-number">10.</label>
-									<input type="text" class="encryption-word encryption-word-ten" placeholder="Enter word number ten" />
-								</div>
-								<div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3 encryption-box">
-									<label class="encryption-word-number">11.</label>
-									<input type="text" class="encryption-word encryption-word-eleven" placeholder="Enter word number eleven" />
-								</div>
-								<div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3 encryption-box">
-									<label class="encryption-word-number">12.</label>
-									<input type="text" class="encryption-word encryption-word-twelve" placeholder="Enter word number twelve" />
-								</div>
-							</div>
+						<fieldset class="caption">
+							<h4>Provide your encryption key</h4>
+							<p>If your device has a camera and you still have your encryption key's QR code, you can scan it. Otherwise you should provide manually your encryption key.</p>
+							<span id="scan-encryption-key-qr-code-button" class="webcam-access-button button">Scan QR code</span>
+							<span id="type-encryption-key" class="button">Type encryption key</span>
 						</fieldset>
 
-						<fieldset class="capture-qr-code-encryption-key">
-							<h4>Scan your encryption key's QR code</h4>
-							<p>If your device has a camera and you still have your encryption key's QR code, you can scan it. Just press in the following button and allow the browser to access your camera.</p>
-							<span id="scan-encryption-key-qr-code-button" class="webcam-access-button button">Scan QR code</span>
+						<fieldset class="restore-encryption-key" style="display:none">
+							<h4>Insert your encryption key</h4>
+							<p>When you first configured your Minebox, you got a collection of twelve words which were the seed of your encryption key. Please fill the following fields with your seed. The order is important.</p>
+
+							<div class="row insert-keys-block">
+								<div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3">
+									<div class="encryption-box">
+										<label class="encryption-word-number">1.</label>
+										<input type="text" class="encryption-word encryption-word-one" placeholder="Enter word number one" />
+									</div>
+									<div class="encryption-box">
+										<label class="encryption-word-number">2.</label>
+										<input type="text" class="encryption-word encryption-word-two" placeholder="Enter word number two" />
+									</div>
+									<div class="encryption-box">
+										<label class="encryption-word-number">3.</label>
+										<input type="text" class="encryption-word encryption-word-three" placeholder="Enter word number three" />
+									</div>
+									<div class="encryption-box">
+										<label class="encryption-word-number">4.</label>
+										<input type="text" class="encryption-word encryption-word-four" placeholder="Enter word number four" />
+									</div>
+									<div class="encryption-box">
+										<label class="encryption-word-number">5.</label>
+										<input type="text" class="encryption-word encryption-word-five" placeholder="Enter word number five" />
+									</div>
+									<div class="encryption-box">
+										<label class="encryption-word-number">6.</label>
+										<input type="text" class="encryption-word encryption-word-six" placeholder="Enter word number six" />
+									</div>
+									<div class="encryption-box">
+										<label class="encryption-word-number">7.</label>
+										<input type="text" class="encryption-word encryption-word-seven" placeholder="Enter word number seven" />
+									</div>
+									<div class="encryption-box">
+										<label class="encryption-word-number">8.</label>
+										<input type="text" class="encryption-word encryption-word-eight" placeholder="Enter word number eight" />
+									</div>
+									<div class="encryption-box">
+										<label class="encryption-word-number">9.</label>
+										<input type="text" class="encryption-word encryption-word-nine" placeholder="Enter word number nine" />
+									</div>
+									<div class="encryption-box">
+										<label class="encryption-word-number">10.</label>
+										<input type="text" class="encryption-word encryption-word-ten" placeholder="Enter word number ten" />
+									</div>
+									<div class="encryption-box">
+										<label class="encryption-word-number">11.</label>
+										<input type="text" class="encryption-word encryption-word-eleven" placeholder="Enter word number eleven" />
+									</div>
+									<div class="encryption-box">
+										<label class="encryption-word-number">12.</label>
+										<input type="text" class="encryption-word encryption-word-twelve" placeholder="Enter word number twelve" />
+									</div>
+									<p id="encryption-key-validation-response"></p>
+								</div>
+							</div>
+
 						</fieldset>
 
 
 						<fieldset>
 							<span class="button back-button navigation-button" data-go="welcome">Cancel</span>
-							<span class="button progress-button navigation-button" data-go="progress">Restore my Minebox</span>
+							<span id="restore-minebox-button" class="button progress-button" disabled>Restore my Minebox</span>
 						</fieldset>
 					</div>
 				</div>
@@ -246,7 +250,7 @@
 
 
 
-		<section class="progress-section navigation-tab" data-tab="progress">
+		<div id="progress-screen">
 			<div id="loading-space"></div>
 			<img src="../assets/images/minebox-device/minebox-device.png" id="minebox-device" />
 			<h1>Your Minebox is being set up</h1>
@@ -263,7 +267,7 @@
 			<div id="result">
 				<!-- Filled via js -->
 			</div>
-		</section>
+		</div>
 
 
 
@@ -285,12 +289,16 @@
 
 		<script type="text/javascript" src="../js/jquery.2.2.4.min.js"></script>
 		<script type="text/javascript" src="../js/func.lib.js"></script>
+		<script type="text/javascript" src="../js/config.js"></script>
+		<script type="text/javascript" src="../js/jquery.requester.js"></script>
 		<script type="text/javascript" src="../js/hashManager.js"></script>
 		<script type="text/javascript" src="../js/tabNavigator.js"></script>
+		<script type="text/javascript" src="../js/loadingSpaceAnimation.js"></script>
 		<script type="text/javascript" src="../js/setup.js"></script>
 		<script type="text/javascript" src="../js/instascan.min.js"></script>
 		<script type="text/javascript" src="../js/instascan.js"></script>
 		<script type="text/javascript">
+			var register = {};
 			Setup();
 		</script>
 	</body>

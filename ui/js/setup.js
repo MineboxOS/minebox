@@ -1,14 +1,10 @@
 function Setup() {
-	var register = {};
-
-
 
 	//tav navigation
 	var tabNavigatorData = {
 		buttons: $('.navigation-button'),
 		tabs: $('.navigation-tab'),
-		defaultTab: 'welcome',
-		haltingOn: ['progress']
+		defaultTab: 'welcome'
 	};
 	var tabNavigator = new TabNavigator(tabNavigatorData);
 
@@ -16,184 +12,270 @@ function Setup() {
 
 
 
-	//generate private key
-	(function encryptionKeyGenerator() {
-		var words = ["beautiful","knee","stupid","question","flashy","tub","curvy","cheat","screw","testy","electric","bath","behavior","abiding","tall","royal","hurt","door","kindly","bent","pin","vanish","mindless","defeated","admire","argument","keen","tickle","box","ready","wish","ambitious","yarn","sable","spiffy","busy","snore","guarantee","north","jumbled","selection","bag","sweet","scribble","brash","merciful","miss","dead","number","married","dime","insidious","vulgar","overconfident","achiever","mushy","pointless","sniff","wail","nerv"],
-			$encryptionField = $('.register-section .encryption-word'),
-			$encryptionKeyStringInput = $('#encryption-key-string');
 
-		function gen() {
-			var encryptionKeyString = '';
-			var word;
-			for ( var n = 0; n < $encryptionField.length; n++ ) {
-				word = words[ getRandomInt(0, words.length - 1) ];
-				$($encryptionField[n]).val( word );
-				encryptionKeyString += word + ' ';
+
+
+
+	//handle recover functions
+	function recover() {
+
+		//handle visibility of fieldset.restore-encryption-key
+		var $restoreEncryptionKey = $('.recover-section fieldset.restore-encryption-key'),
+			$typeEncryptionKeyButton = $('#type-encryption-key');
+
+		function handleEncryptionKeyInputsVisibility() {
+			if ( $restoreEncryptionKey.is(':visible') ) {
+				$restoreEncryptionKey.fadeOut(300);
+			} else {
+				showEncryptionKeyInputs();
 			}
-			$encryptionKeyStringInput.val(encryptionKeyString);
 		}
 
-		$('body').on('click', '.key-generator', gen);
-
-		$(document).ready(gen);
-	})();
-
-
-
-
-
-	(function passwordValidation() {
-		var $passwordInput = $('.register-section .register-password'),
-			$passwordStrength = $('.register-section .password-strength'),
-			$passwordStrengthBar = $('.register-section .password-strength-bar');
-
-		$passwordInput.on('keyup', function() {
-			var strength = measurePasswordStrength()
-
-			if ( !strength ) {
-				$passwordStrength.html('Low');
-			} else if ( strength == 1 ) {
-				$passwordStrength.html('Medium');
-			} else {
-				$passwordStrength.html('High');
-			}
-			$passwordStrengthBar.css('width', ($passwordInput.val().length * 10) + '%');
-		});
-
-		function measurePasswordStrength() {
-			var pw = $passwordInput.val();
-
-			if ( pw.length <= 3 ) {
-				return 0;
-			} else if ( pw.length <= 8 ) {
-				return 1;
-			} else {
-				return 2;
-			}
+		function showEncryptionKeyInputs() {
+			$restoreEncryptionKey.fadeIn(300);
 		}
-	})();
+
+		$typeEncryptionKeyButton.on('click', handleEncryptionKeyInputsVisibility);
 
 
 
 
 
-	//go to scan qr code button
-	$('body').on('click', '.go-to-scan-button', function() {
-		$('html, body').animate({
-				scrollTop: $('.capture-qr-code-encryption-key').offset().top - 40,
-		}, 300);
-	});
+		//validates 12 words of private key
+		var $encryptionKeyInputs = $('.recover-section input.encryption-word');
+		var $restoreMineboxButton = $('#restore-minebox-button');
 
-
-
-	//qr code reader
-	$('body').on('click', '.webcam-access-button', function() {
-		instascanManager.show();
-		instascanManager.scan(function(data) {
-			$('html, body').animate({ scrollTop: 0 }, 100);
-			var qrcodewords = data.split(' ');
-			var $encryptionWordInputs = $('.recover-section .encryption-word');
-			var n = 0;
-			var interval = setInterval(function() {
-
-				$($encryptionWordInputs[n]).val( qrcodewords[n] );
-
-				n++;
-				if ( n >= $encryptionWordInputs.length ) {
-					clearInterval(interval);
+		function validateInputs() {
+			//this function validates that the twelve inputs contains something in order to enable de "continue" button
+			for ( var n = 0; n < $encryptionKeyInputs.length; n++ ) {
+				if ( $($encryptionKeyInputs[n]).val() == '' ) {
+					return false;
 				}
-			}, 150);
+			}
+			return true;
+		}
+
+		//when user is typing its private key
+		$encryptionKeyInputs.on('keyup', function() {
+			if ( validateInputs() ) {
+				$restoreMineboxButton.removeAttr('disabled');
+			}
 		});
-	});
-	$('body').on('click', '#close-instascan-button', function() {
-		instascanManager.hide();
-	});
-
-
-	//print qr code
-	$('body').on('click', '#print-encryption-key-qr-code', function() {
-		window.open('setup/print-qr-code.html');
-
-		register.hostname = $('#setup-page .register-section .register-hostname').val()
-		register.seed = $('#encryption-key-string').val();
-	});
 
 
 
-	(function loadingSpace() {
-		var $loadingSpace = $('#loading-space');
-		var $stars;
 
-		function generateStars() {
-			var count = getRandomInt(10,20);
-			for ( var n = 0; n < count; n++ ) {
-				$loadingSpace.append( '<span class="star" id="' + getRandomString(10) + '"></span>' );
-			}
-			$stars = $('.star');
+		//webcam manager
+		//requires instascan, $encryptionKeyInputs, showEncryptionKeyInputs()
+		var $webcamButton = $('.webcam-access-button'),
+			$closeWebcamButton = $('#close-instascan-button');
+		//qr code reader
+		$webcamButton.on('click', function() {
+			//show camera window
+			instascanManager.show();
+			//init camera
+			instascanManager.scan(function(data) {
+				//when scans a QR code returns data
+				//scroll to the top
+				$('html, body').animate({ scrollTop: 0 }, 100);
+				//forcing display encryption key fields
+				showEncryptionKeyInputs();
+				//filling inputs with a interval time in between
+				var qrcodewords = data.split(' ');
+				var n = 0;
+				var interval = setInterval(function() {
+					//filling input with current word
+					$($encryptionKeyInputs[n]).val( qrcodewords[n] );
+					n++;
+					if ( n >= $encryptionKeyInputs.length ) {
+						//all fields filled
+						//trigger keyup in the first input to activate validation process
+						$($encryptionKeyInputs[0]).trigger('keyup');
+						//stopping interval
+						clearInterval(interval);
+					}
+				}, 150);
+			});
+		});
+
+		//close webcam view
+		$closeWebcamButton.on('click', function() {
+			instascanManager.hide();
+		});
+
+
+
+
+
+
+		//when user clicks on "continue button"
+		$restoreMineboxButton.on('click', function() {
+			privateKeyValidation(function() {
+				//once the server has validated the words and they are correct
+				//take the user to the progress screen
+				progressScreen.open();
+			});
+		});
+
+		function privateKeyValidation(cb) {
+			//this function sends the twelve words to the server so they can be validated
+			//currently faking the result with "true" with a timeout
+			//when the server returns true, execute the callback cb();
+			setTimeout(function() {
+				if ( true && cb ) {
+					cb();
+				}
+			}, 10000);
 		}
 
-		function init() {
-			generateStars();
-			for ( var n = 0; n < $stars.length; n++ ) {
-				animateStars( $($stars[n]) );
-			}
+	}
+	//executing the function when the tab is opened for first time
+	$('.recover-section.navigation-tab').bind('tabShown', function() {
+		if ( $(this).attr('data-services') != 'on' ) {
+			recover();
+			$(this).attr('data-services', 'on');
 		}
+	});
 
-		function animateStars( $element ) {
-			var props = {};
-			var timeout;
-			var choice;
-			//invert direction
-			if ( $element.attr('data-position') == 'left' ) {
-				//move to right
-				props.left = '1000%';
-				$element.attr('data-position', 'right');
-			} else if ( $element.attr('data-position') == 'right' ) {
-				//move to left
-				props.left = '-1000%';
-				$element.attr('data-position', 'left');
-			} else {
-				//left has not been set yet, moving to random
-				choice = getRandomInt(0,1);
 
-				if ( !choice ) {
-					//move to left
-					props.left = '-1000%';
-					$element.attr('data-position', 'left');
+
+
+
+
+
+
+
+
+	function register() {
+		//generate private key
+		(function encryptionKeyGenerator() {
+			var words = ["beautiful","knee","stupid","question","flashy","tub","curvy","cheat","screw","testy","electric","bath","behavior","abiding","tall","royal","hurt","door","kindly","bent","pin","vanish","mindless","defeated","admire","argument","keen","tickle","box","ready","wish","ambitious","yarn","sable","spiffy","busy","snore","guarantee","north","jumbled","selection","bag","sweet","scribble","brash","merciful","miss","dead","number","married","dime","insidious","vulgar","overconfident","achiever","mushy","pointless","sniff","wail","nerv"],
+				$encryptionField = $('.register-section .encryption-word'),
+				$encryptionKeyStringInput = $('#encryption-key-string');
+
+			function gen(array) {
+
+				//if array is not passed by, creating one with random words
+				if ( !array ) {
+					array = [];
+					for ( var n = 0; n < $encryptionField.length; n++ ) {
+						array.push( words[ getRandomInt(0, words.length - 1) ] );
+					}
+				}
+
+				//print words either created or passed by ajax request
+				for ( var n = 0; n < $encryptionField.length; n++ ) {
+					//filling inputs
+					$($encryptionField[n]).val( array[n] );
+				}
+				//writting sentence
+				$encryptionKeyStringInput.val( array.join(' ') );
+			}
+
+			$('body').on('click', '.key-generator', gen);
+
+			$(document).ready(function() {
+				var r = new Requester();
+				r.setURL( config.mug.url + 'key/generate' );
+				r.setMethod('GET');
+				r.run(function( response ) {
+					gen(response);
+				}, function( error ) {
+					//error;
+				});
+			});
+		})();
+
+
+
+
+		//password validation
+		(function passwordValidation() {
+			var $passwordInput = $('.register-section .register-password'),
+				$passwordStrength = $('.register-section .password-strength'),
+				$passwordStrengthBar = $('.register-section .password-strength-bar');
+
+			$passwordInput.on('keyup', function() {
+				var strength = measurePasswordStrength()
+
+				if ( !strength ) {
+					$passwordStrength.html('Low');
+				} else if ( strength == 1 ) {
+					$passwordStrength.html('Medium');
 				} else {
-					//move to right
-					props.left = '1000%';
-					$element.attr('data-position', 'right');
+					$passwordStrength.html('High');
 				}
-			}
-
-			props.top = getRandomInt(10, 90) + '%';
-			props.width = getRandomInt(80,200);
-			props.height = props.width / getRandomInt(20,30); //a fraction of its width so it is stylized horizontally
-			props.duration = getRandomInt(8,50) / 10;
-
-			$element.css({
-				'width': props.width,
-				'height': props.height,
-				'top': props.top,
-				'transform': 'translateX(' + props.left + ')',
-				'transition': 'transform ' + props.duration + 's ease, margin-left ' + props.duration + 's ease'
+				$passwordStrengthBar.css('width', ($passwordInput.val().length * 10) + '%');
 			});
 
-			timeout = setTimeout(function() {
-				reanimateStars( $element );
-			}, (props.duration * 1000) + 10);
+			function measurePasswordStrength() {
+				var pw = $passwordInput.val();
 
+				if ( pw.length <= 3 ) {
+					return 0;
+				} else if ( pw.length <= 8 ) {
+					return 1;
+				} else {
+					return 2;
+				}
+			}
+		})();
+
+
+
+		//print qr code
+		$('body').on('click', '#print-encryption-key-qr-code', function() {
+			window.open('print-qr-code.html');
+
+			register.hostname = $('#setup-page .register-section .register-hostname').val()
+			register.seed = $('#encryption-key-string').val();
+		});
+	}
+	//executing the function when the tab is opened for first time
+	$('.register-section.navigation-tab').bind('tabShown', function() {
+		if ( $(this).attr('data-services') != 'on' ) {
+			register();
+			$(this).attr('data-services', 'on');
+		}
+	});
+
+
+
+
+
+
+
+
+
+	//requires tabNavigator & hashManager
+	function ProgressScreen() {
+
+		var $progressScreenElement = $('#progress-screen');
+		var loadingSpace = LoadingSpace();
+
+		function open() {
+			//init loading space animation
+			loadingSpace.init();
+			//change hash
+			hashManager.write('running');
+			//hide all views
+			tabNavigator.hideAll(function() {
+				//disable tabNavigator 
+				tabNavigator.disable();
+				//display progress screen
+				$progressScreenElement.fadeIn(300);
+			});
 		}
 
-		function reanimateStars( $element ) {
-			animateStars($element);
+
+		return {
+			open: open
 		}
 
+	}
+	var progressScreen = ProgressScreen();
 
-		init();
-
-	})();
+	
 }
 
 	
