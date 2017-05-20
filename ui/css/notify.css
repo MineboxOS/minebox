@@ -1,0 +1,121 @@
+.notify-window {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  z-index: 1000000;
+}
+.notify-window .obfuscation-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,.8);
+  cursor: pointer;
+  z-index: 99;
+}
+.notify-window .window {
+  position: fixed;
+  z-index: 100;
+  width: 500px;
+  padding: 40px;
+  min-height: 200px;
+  top: 50%;
+  left: 50%;
+  margin-left: -250px;
+  margin-top: -200px;
+  background-color: #fff;
+}
+.notify-window .logo {
+  height: 20px;
+  display: block;
+  margin: 0 auto 10px;
+}
+.notify-window .close-btn {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  top: -20px;
+  right: -20px;
+  cursor: pointer;
+}
+.notify-window .close-btn:after,
+.notify-window .close-btn:before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 2px;
+  margin-top: -1px;
+  margin-left: -5px;
+  background-color: #fff;
+}
+.notify-window .close-btn:before {
+  transform: rotate(-45deg);
+}
+.notify-window .close-btn:after {
+  transform: rotate(45deg);
+}
+.notify-window .text {
+  text-align: center;
+}
+.notify-window .buttons {
+  margin-top: 15px;
+  text-align: center;
+}
+.notify-window button {
+}
+.notify-window button.accept {
+  background-color: #24acce;
+}
+.notify-window button.cancel {
+  background-color: #101010;
+}
+.notify-window button + button {
+  margin-right: 15px;
+}
+
+@media ( max-width: 500px ) {
+  .notify-window .window {
+    position: absolute;
+    left: 0;
+    max-width: 100%;
+    max-height: 100%;
+    margin-left: 0;
+  }
+  .notify-window .close-btn {
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+  }
+  .notify-window .close-btn:after,
+  .notify-window .close-btn:before {
+    background-color: #101010;
+    width: 30px;
+    margin-left: -15px;
+  }
+}
+
+@media ( max-height: 560px ) {
+  .notify-window .window {
+    position: absolute;
+    top: 0;
+    max-width: 100%;
+    max-height: 100%;
+    overflow: scroll;
+    margin-top: 0;
+  }
+  .notify-window .close-btn {
+    top: 10px;
+    right: 10px;
+  }
+  .notify-window .close-btn:after,
+  .notify-window .close-btn:before {
+    background-color: #101010;
+  }
+}
