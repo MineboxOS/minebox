@@ -27,7 +27,8 @@
   left: 50%;
   margin-left: -250px;
   margin-top: -200px;
-  background-color: #fff;
+  background-color: #001;
+  border: 1px solid #24acce;
 }
 .notify-window .logo {
   height: 20px;
@@ -36,10 +37,10 @@
 }
 .notify-window .close-btn {
   position: absolute;
-  width: 10px;
-  height: 10px;
-  top: -20px;
-  right: -20px;
+  width: 20px;
+  height: 20px;
+  top: -30px;
+  right: -30px;
   cursor: pointer;
 }
 .notify-window .close-btn:after,
@@ -48,10 +49,10 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 10px;
-  height: 2px;
-  margin-top: -1px;
-  margin-left: -5px;
+  width: 20px;
+  height: 1px;
+  margin-top: -0.5px;
+  margin-left: -10px;
   background-color: #fff;
 }
 .notify-window .close-btn:before {
@@ -104,11 +105,11 @@
 @media ( max-height: 560px ) {
   .notify-window .window {
     position: absolute;
-    top: 0;
+    top: 30%;
     max-width: 100%;
     max-height: 100%;
     overflow: scroll;
-    margin-top: 0;
+    margin-top: -120px;
   }
   .notify-window .close-btn {
     top: 10px;
@@ -116,6 +117,6 @@
   }
   .notify-window .close-btn:after,
   .notify-window .close-btn:before {
-    background-color: #101010;
+    background-color: #24acce;
   }
 }
