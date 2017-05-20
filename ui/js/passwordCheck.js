@@ -71,7 +71,7 @@ function PasswordCheck(data) {
 
         //checking if numeric chars
         if ( CONFIG.requirements.numbers ) {
-            if ( !containsNumbers(password) ) {
+            if ( !containsNumber(password) ) {
                 response.numbers = {
                     validated: false,
                     message: CONFIG.messages.numbers
@@ -97,21 +97,23 @@ function PasswordCheck(data) {
             }
         }
 
-        //checking if strength chars
+        //checking strength score
         if ( CONFIG.requirements.strength ) {
             if ( scorePassword(password) < CONFIG.requirements.strength ) {
                 response.strength = {
                     validated: false,
                     message: CONFIG.messages.strength,
-                    strength: scorePassword(password)
+                    score: scorePassword(password)
                 }
             } else {
                 response.strength = {
                     validated: true,
-                    strength: scorePassword(password)
+                    score: scorePassword(password)
                 }
             }
         }
+
+        return response;
     }
 
 

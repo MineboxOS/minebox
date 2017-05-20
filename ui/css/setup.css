@@ -30,11 +30,38 @@
 #setup-page .register-section fieldset {
 	margin-top: 50px;
 }
+#setup-page .register-section .group {
+	position: relative;
+}
+#setup-page .password-validation-checker {
+	position: absolute;
+	top: 24px;
+	left: 100%;
+	width: 40px;
+	height: 42px;
+	text-align: center;
+}
+#setup-page .password-validation-checker>span.oi {
+	display: none;
+	line-height: 42px;
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	text-align: center;
+	left: 0;
+	top: 0;
+}
+.register-section .oi.validated {
+	color: #00ff76;
+}
+.register-section .oi.not-validated {
+	color: #ff0072;
+}
 #setup-page .register-section .group + .group {
 	margin-top: 10px;
 }
 #setup-page .register-section .password-resume {
-	
+	margin-top: 20px;
 }
 #setup-page .register-section .password-strength {
 	
@@ -57,6 +84,31 @@
 	-webkit-transition: all ease .3s;
 	-moz-transition: all ease .3s;
 	-o-transition: all ease .3s;
+}
+.password-resume .password-requirements {
+	margin: 10px 0;
+	padding: 0;
+	list-style: none;
+}
+.password-resume .password-requirements-validation {
+	display: inline-block;
+	vertical-align: middle;
+	width: 20px;
+	height: 24px;
+	margin-right: 5px;
+	position: relative;
+	line-height: inherit;
+}
+.password-resume .password-requirements-validation>.oi {
+	display: none;
+	position: absolute;
+	width: 100%;
+	height: 24px;
+	text-align: center;
+	line-height: inherit;
+}
+.password-resume .password-requirements-validation>.oi.not-validated {
+	display: block;
 }
 #setup-page .register-section .encryption input {
 	margin: 15px 0;
