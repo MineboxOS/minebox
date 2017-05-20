@@ -2,3 +2,20 @@ html, body {
 	background-color: #000;
 	color: #fff;
 }
+
+@keyframes loadSpinner {
+	0%   { transform: rotate(0deg); }
+	100% { transform: rotate(359deg); }
+}
+@-webkit-keyframes loadSpinner {
+	0%   { -webkit-transform: rotate(0deg); }
+	100% { -webkit-transform: rotate(359deg); }
+}
+@-moz-keyframes loadSpinner {
+	0%   { -moz-transform: rotate(0deg); }
+	100% { -moz-transform: rotate(359deg); }
+}
+@-o-keyframes loadSpinner {
+	0%   { -o-transform: rotate(0deg); }
+	100% { -o-transform: rotate(359deg); }
+}
