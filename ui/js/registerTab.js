@@ -90,6 +90,8 @@ function registerTab() {
 				$hostnameValidationWitness.find('.not-validated').fadeOut(50);
 				//printing result in hostname response
 				$hostnameResponse.html('Congratulations! This hostname is available for you.');
+				//updating global object
+				register.hostname = $hostnameInput.val();
 			} else {
 				//hidding validated display
 				$hostnameValidationWitness.find('.validated').fadeOut(50);
@@ -179,6 +181,9 @@ function registerTab() {
 			}
 			//writting sentence
 			$encryptionKeyStringInput.val( array.join(' ') );
+
+			//updating global object
+			register.seed = $encryptionKeyStringInput.val();
 		}
 
 		function getWords() {
@@ -364,8 +369,5 @@ function registerTab() {
 	//print qr code
 	$('body').on('click', '#print-encryption-key-qr-code', function() {
 		window.open('print-qr-code.html');
-
-		register.hostname = $('#setup-page .register-section .register-hostname').val()
-		register.seed = $('#encryption-key-string').val();
 	});
 }
