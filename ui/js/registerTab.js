@@ -192,7 +192,9 @@ function registerTab() {
 			});
 		}
 
-		$('body').on('click', '.key-generator', gen);
+		$('body').on('click', '.key-generator', function() {
+			gen();
+		});
 
 		$(document).ready(function() {
 			getWords();
