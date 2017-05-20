@@ -1,4 +1,162 @@
 function registerTab() {
+
+	//validate hostname
+	var hostnameValidationConfig = {
+			requirements: {
+				min: 4,
+				max: 16,
+				numbers: false,
+				capitals: false,
+				specialChars: true, //is a false true, special chars are banned
+				strength: false
+			},
+			messages: {
+				max: 'Your hostname needs to be shorter than 16 characters long.',
+				min: 'Your hostname needs to be between 4 and 16 characters long.',
+				specialChars: 'You\'ve provided invalid characters.'
+			}
+		},
+		hostnameValidation = null,
+		hostnameValidator = new PasswordCheck(hostnameValidationConfig),
+		$hostnameInput = $('.register-hostname'),
+		$hostnameValidationWitness = $('.hostname-validation'),
+		$hostnameLoadingSpinner = $('.hostname-loading'),
+		$hostnameResponse = $('.hostname-response'),
+		hostnameRequester = new Requester(),
+		hostnameRequestStatus = null,
+		hostnameRequesterTimeout = null, //a timeout to prevent constantly calls to the server
+		hostnameRequesterTimeoutDuration = 1500; //ms
+
+	$hostnameInput.on('keyup', function() {
+		validateHostname();
+	});
+
+	function validateHostname() {
+
+		//making sure it meets the requirements before asking for availability
+		hostnameValidation = hostnameValidator.validate( $hostnameInput.val() );
+		console.log(hostnameValidation);
+
+		//hostname is too short
+		if ( !hostnameValidation.min.validated ) {
+			//hidding validated display
+			$hostnameValidationWitness.find('.validated').fadeOut(50);
+			//showing not validated display
+			$hostnameValidationWitness.find('.not-validated').fadeIn(50);
+			//printing error in hostname response
+			$hostnameResponse.html( hostnameValidation.min.message );
+			//breaking function and returning false
+			return false;
+		}
+
+		//hostname is too long
+		if ( !hostnameValidation.max.validated ) {
+			//hidding validated display
+			$hostnameValidationWitness.find('.validated').fadeOut(50);
+			//showing not validated display
+			$hostnameValidationWitness.find('.not-validated').fadeIn(50);
+			//printing error in hostname response
+			$hostnameResponse.html( hostnameValidation.max.message );
+			//breaking function and returning false
+			return false;
+		}
+
+		//there are illegal character: ^ a-z/0-9/-_
+		if ( hostnameValidation.specialChars.validated ) { //if there are illegal chars (validation returns true in case there are chars that are not a-z, 0-9 and - or _)
+			//hidding validated display
+			$hostnameValidationWitness.find('.validated').fadeOut(50);
+			//showing not validated display
+			$hostnameValidationWitness.find('.not-validated').fadeIn(50);
+			//printing error in hostname response
+			$hostnameResponse.html( hostnameValidationConfig.messages.specialChars );
+			//breaking function and returning false
+			return false;
+		}
+
+		//if the requirements are met, proceed
+
+		//showing validated display
+		$hostnameValidationWitness.find('.validated').fadeIn(50);
+		//hidding not validated display
+		$hostnameValidationWitness.find('.not-validated').fadeOut(50);
+		//emptying in hostname response
+		$hostnameResponse.html('');
+
+		//if we arrived here, ask the server if the domain is available
+		hostnameAvailability(function(response) {
+			if ( response ) {
+				//showing validated display
+				$hostnameValidationWitness.find('.validated').fadeIn(50);
+				//hidding not validated display
+				$hostnameValidationWitness.find('.not-validated').fadeOut(50);
+				//printing result in hostname response
+				$hostnameResponse.html('Congratulations! This hostname is available for you.');
+			} else {
+				//hidding validated display
+				$hostnameValidationWitness.find('.validated').fadeOut(50);
+				//showing not validated display
+				$hostnameValidationWitness.find('.not-validated').fadeIn(50);
+				//printing result in hostname response
+				$hostnameResponse.html('This hostname is not available. Try another.');
+			}
+		});
+	}
+
+	//asks the server if the hostname is available
+	function hostnameAvailability(cb) {
+
+		//init loading
+		hostnameLoadingWitness('start');
+		//it will end at the end of the request
+
+		//checking if there is a timeout active and killing it
+		if ( hostnameRequesterTimeout ) {
+			//clearing timeout
+			clearTimeout( hostnameRequesterTimeout );
+			hostnameRequesterTimeout = null;
+		}
+		//(re)starting it
+		hostnameRequesterTimeout = setTimeout(function() {
+			//setting status to active
+			hostnameRequestStatus = 'querying';
+
+			//asking the server
+			//hostnameRequester.setMethod....
+
+			//temporal timeout. modify when MUG actually checks hostname availability
+			setTimeout(function() {
+				if ( !hostnameRequesterTimeout ) {
+					//if there is another query on the way
+					//DO NOT EXECUTE THE CALLBACK
+					//a most updated result is on its way!
+					//exec cb
+					cb(true);
+				}
+				//updating status
+				hostnameRequestStatus = null;
+				//ending loading
+				hostnameLoadingWitness('stop');
+			}, 1000);
+			//end of temporal fake function
+
+			//clearing timeout
+			clearTimeout( hostnameRequesterTimeout );
+			hostnameRequesterTimeout = null;
+
+		}, hostnameRequesterTimeoutDuration);
+	}
+
+
+	function hostnameLoadingWitness(action) {
+		if ( action == 'start' ) {
+			$hostnameLoadingSpinner.addClass('active');
+		} else {
+			$hostnameLoadingSpinner.removeClass('active');
+		}
+	}
+
+
+
 	//generate private key
 	(function encryptionKeyGenerator() {
 		var words = ["beautiful","knee","stupid","question","flashy","tub","curvy","cheat","screw","testy","electric","bath","behavior","abiding","tall","royal","hurt","door","kindly","bent","pin","vanish","mindless","defeated","admire","argument","keen","tickle","box","ready","wish","ambitious","yarn","sable","spiffy","busy","snore","guarantee","north","jumbled","selection","bag","sweet","scribble","brash","merciful","miss","dead","number","married","dime","insidious","vulgar","overconfident","achiever","mushy","pointless","sniff","wail","nerv"],

@@ -50,10 +50,21 @@
 				<div class="form clearfix">
 					<div class="col-xs-12 col-sm-8 col-md-6 col-lg-6 col-sm-offset-2 col-md-offset-3 col-lg-offset-3">
 
-						<fieldset class="baptize">
+						<fieldset class="hostname">
 							<h4>Name your Minebox</h4>
-							<p>Hostname</p>
-							<input type="text" class="register-hostname" placeholder="Hostname" />
+							<p>Insert a hostname. Your server will be accessible from anywhere using the registered hostname.</p>
+							<div class="hostname-block">
+								<input type="text" class="register-hostname" placeholder="Hostname" />
+								<span class="permanent">.minebox.io</span>
+								<div class="hostname-validation">
+									<span class="oi validated" data-glyph="check"></span>
+									<span class="oi not-validated" data-glyph="ban"></span>
+								</div>
+								<div class="hostname-loading">
+									<span class="oi" data-glyph="reload"></span>
+								</div>
+							</div>
+							<p class="hostname-response"></p>
 						</fieldset>
 
 
