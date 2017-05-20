@@ -330,3 +330,14 @@
 	padding: 100px 0 350px;
 	text-align: center;
 }
+
+
+.prove-section {
+	text-align: center;
+}
+.prove-section fieldset {
+	
+}
+.prove-section fieldset + fieldset {
+	margin-top: 20px;
+}

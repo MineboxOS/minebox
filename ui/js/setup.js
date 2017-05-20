@@ -22,6 +22,17 @@ function Setup() {
 
 
 
+	//executing the function when the tab is opened for first time
+	$('.prove-section.navigation-tab').bind('tabShown', function() {
+		if ( $(this).attr('data-services') != 'on' ) {
+			proveTab();
+			$(this).attr('data-services', 'on');
+		}
+	});
+
+
+
+
 
 
 

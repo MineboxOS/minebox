@@ -277,6 +277,98 @@
 
 
 
+		<section class="prove-section navigation-tab" data-tab="prove">
+			<div class="container">
+				<fieldset class="header">
+					<img src="../assets/images/logo/minebox-logo-white.png" class="logo" />
+					<p>Your Minebox is almost ready. But before proceeding please confirm that you have printed your QR code and noted the twelve words.</p>
+				</fieldset>
+
+				<fieldset>
+					<p>If you didn't print your QR code before. Please do it now.</p>
+					<button id="print-encryption-key-qr-code-reminder" class="button">Print now</button>
+				</fieldset>
+
+				<fieldset>
+					<p>Once your QR code is printed and your private key is noted down, please validate them. Choose between scanning your QR code or manually type your private key.</p>
+					<button id="scan-encryption-key-qr-code-button" class="webcam-access-button button">Scan QR code</button>
+					<button id="type-encryption-key" class="button">Type encryption key</button>
+					<br />
+					<button class="button back-button navigation-button" data-go="register">Cancel</button>
+				</fieldset>
+
+				<fieldset class="restore-encryption-key" style="display:none">
+					<h4>Insert your encryption key</h4>
+					<p>When you first configured your Minebox, you got a collection of twelve words which were the seed of your encryption key. Please fill the following fields with your seed. The order is important.</p>
+
+					<div class="row insert-keys-block">
+						<div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3">
+							<div class="encryption-box">
+								<label class="encryption-word-number">1.</label>
+								<input type="text" class="encryption-word encryption-word-one" placeholder="Enter word number one" />
+							</div>
+							<div class="encryption-box">
+								<label class="encryption-word-number">2.</label>
+								<input type="text" class="encryption-word encryption-word-two" placeholder="Enter word number two" />
+							</div>
+							<div class="encryption-box">
+								<label class="encryption-word-number">3.</label>
+								<input type="text" class="encryption-word encryption-word-three" placeholder="Enter word number three" />
+							</div>
+							<div class="encryption-box">
+								<label class="encryption-word-number">4.</label>
+								<input type="text" class="encryption-word encryption-word-four" placeholder="Enter word number four" />
+							</div>
+							<div class="encryption-box">
+								<label class="encryption-word-number">5.</label>
+								<input type="text" class="encryption-word encryption-word-five" placeholder="Enter word number five" />
+							</div>
+							<div class="encryption-box">
+								<label class="encryption-word-number">6.</label>
+								<input type="text" class="encryption-word encryption-word-six" placeholder="Enter word number six" />
+							</div>
+							<div class="encryption-box">
+								<label class="encryption-word-number">7.</label>
+								<input type="text" class="encryption-word encryption-word-seven" placeholder="Enter word number seven" />
+							</div>
+							<div class="encryption-box">
+								<label class="encryption-word-number">8.</label>
+								<input type="text" class="encryption-word encryption-word-eight" placeholder="Enter word number eight" />
+							</div>
+							<div class="encryption-box">
+								<label class="encryption-word-number">9.</label>
+								<input type="text" class="encryption-word encryption-word-nine" placeholder="Enter word number nine" />
+							</div>
+							<div class="encryption-box">
+								<label class="encryption-word-number">10.</label>
+								<input type="text" class="encryption-word encryption-word-ten" placeholder="Enter word number ten" />
+							</div>
+							<div class="encryption-box">
+								<label class="encryption-word-number">11.</label>
+								<input type="text" class="encryption-word encryption-word-eleven" placeholder="Enter word number eleven" />
+							</div>
+							<div class="encryption-box">
+								<label class="encryption-word-number">12.</label>
+								<input type="text" class="encryption-word encryption-word-twelve" placeholder="Enter word number twelve" />
+							</div>
+							<p id="encryption-key-validation-response"></p>
+						</div>
+					</div>
+				</fieldset>
+
+				<fieldset>
+					<button class="button back-button navigation-button" data-go="welcome">Cancel</button>
+					<button id="restore-minebox-button" class="button progress-button" disabled>Restore my Minebox</button>
+				</fieldset>
+			</div>
+		</section>
+
+
+
+
+
+
+
 		<div id="progress-screen">
 			<div id="loading-space"></div>
 			<img src="../assets/images/minebox-device/minebox-device.png" id="minebox-device" />
@@ -330,6 +422,7 @@
 
 		<script type="text/javascript" src="../js/recoverTab.js"></script>
 		<script type="text/javascript" src="../js/registerTab.js"></script>
+		<script type="text/javascript" src="../js/proveTab.js"></script>
 		<script type="text/javascript" src="../js/setup.js"></script>
 		<script type="text/javascript">
 			//global var to store register seed and hostname and recover it in 'print private key' page
