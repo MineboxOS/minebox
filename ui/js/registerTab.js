@@ -35,7 +35,6 @@ function registerTab() {
 
 		//making sure it meets the requirements before asking for availability
 		hostnameValidation = hostnameValidator.validate( $hostnameInput.val() );
-		console.log(hostnameValidation);
 
 		//hostname is too short
 		if ( !hostnameValidation.min.validated ) {
@@ -221,7 +220,7 @@ function registerTab() {
 		//instancing password checker function
 		var data = {
 			requirements: {
-				min: 3,
+				min: 6,
 				max: false,
 				capitals: true,
 				numbers: true,
