@@ -162,7 +162,7 @@ function PasswordCheck(data) {
 
     function specialCharacters(password) {
         //based on http://stackoverflow.com/a/13840211
-        if ( /^[a-zA-Z0-9- ]*$/.test(password) == false ) {
+        if ( /^[a-zA-Z0-9-_]*$/.test(password) == false ) {
             return true;
         } else {
             return false;
