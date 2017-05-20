@@ -1,17 +1,5 @@
 function Setup() {
 
-	//tav navigation
-	var tabNavigatorData = {
-		buttons: $('.navigation-button'),
-		tabs: $('.navigation-tab'),
-		defaultTab: 'welcome'
-	};
-	var tabNavigator = new TabNavigator(tabNavigatorData);
-
-
-
-
-	
 	//executing the function when the tab is opened for first time
 	$('.recover-section.navigation-tab').bind('tabShown', function() {
 		if ( $(this).attr('data-services') != 'on' ) {

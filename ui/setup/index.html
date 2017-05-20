@@ -332,7 +332,16 @@
 		<script type="text/javascript" src="../js/registerTab.js"></script>
 		<script type="text/javascript" src="../js/setup.js"></script>
 		<script type="text/javascript">
+			//global var to store register seed and hostname and recover it in 'print private key' page
 			var register = {};
+
+			//tav navigation
+			var tabNavigator = new TabNavigator({
+				buttons: $('.navigation-button'),
+				tabs: $('.navigation-tab'),
+				defaultTab: 'welcome'
+			});
+
 			Setup();
 		</script>
 	</body>
