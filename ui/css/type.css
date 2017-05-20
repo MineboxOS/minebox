@@ -3,8 +3,8 @@
 /* font style, family, weight and line-heights */
 body {
   font-family: 'Roboto', Helvetica, Sans-serif;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: 14px;
+  line-height: 28px;
   font-weight: 200;
 }
 
@@ -42,8 +42,8 @@ h6 {
 p, span, label, li,
 input, select, textarea,
 button {
-  font-size: 12px;
-  line-height: 24px;
+  font-size: 14px;
+  line-height: 28px;
   font-weight: 200;
 }
 

@@ -1,6 +1,13 @@
+html {
+  /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#111122+0,000011+100 */
+  background: #111122; /* Old browsers */
+  background: -moz-radial-gradient(center, ellipse cover, #111122 0%, #000011 100%); /* FF3.6-15 */
+  background: -webkit-radial-gradient(center, ellipse cover, #111122 0%,#000011 100%); /* Chrome10-25,Safari5.1-6 */
+  background: radial-gradient(ellipse at center, #111122 0%,#000011 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#111122', endColorstr='#000011',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+}
 body {
-  background-color: #000;
-  color: #fff;
+  color: #aaa;
   font-size: 12px;
 }
 #topbar {
@@ -10,12 +17,12 @@ body {
   background-color: #030d00;
 }
 ::selection {
-  background: #24acce;
-  color: #000;
+  background: #000;
+  color: #24acce;
 }
 ::-moz-selection {
-  background: #24acce;
-  color: #000;
+  background: #000;
+  color: #24acce;
 }
 
 
@@ -146,7 +153,7 @@ input, textarea,
 select, .select,
 button, .button {
   background-color: #333;
-  color: #fff;
+  color: #aaa;
   outline-color: transparent;
 }
 input, textarea, select {
@@ -169,11 +176,19 @@ input[type="checkbox"]:after {
   background-color: #198b95;
 }
 button, .button {
-  background-color: #24acce;
+  background-color: rgba(36, 172, 206, 0.6);
   color: #000;
 }
 button:after, .button:after {
   background-color: #fff;
+}
+button:hover,
+.button:hover {
+  background-color: rgba(49, 197, 234, 0.6);
+}
+button:focus,
+.button:focus {
+  background-color: #37d7ff;
 }
 .back-button {
   background-color: rgba(255,255,255,.2) !important;

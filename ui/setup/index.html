@@ -4,7 +4,7 @@
 	<head>
 		<meta charset="utf_8" />
 
-		<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css" />
+		<link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet" />
 		<link href="../css/open-iconic.min.css" type="text/css" rel="stylesheet" />
 		<link href="../css/bootstrap.min.css" type="text/css" rel="stylesheet" />
 		<link href="../css/base.css" type="text/css" rel="stylesheet" />
@@ -26,11 +26,11 @@
 				<p>Welcome to your Minebox device</p>
 				<div class="choices row">
 					<div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
-						<span class="button register-button navigation-button" data-go="register">Create encryption key</span>
+						<button class="button register-button navigation-button" data-go="register">Create encryption key</button>
 						<p>This is my first Minebox device</p>
 					</div>
 					<div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
-						<span class="button recover-button navigation-button" data-go="recover">Enter existing encryption key</span>
+						<button class="button recover-button navigation-button" data-go="recover">Enter existing encryption key</button>
 						<p>I have had a Minebox device before</p>
 					</div>
 				</div>
@@ -167,12 +167,12 @@
 							</div>
 
 							<p>We highly recommend you to print your encryption key QR code and store it somewhere safe.</p>
-							<span id="print-encryption-key-qr-code" class="button">Print</span>
+							<button id="print-encryption-key-qr-code" class="button">Print</button>
 						</fieldset>
 
 						<fieldset>
-							<span class="button back-button navigation-button" data-go="welcome">Cancel</span>
-							<span id="register-minebox-button" class="button progress-button">Initialize my Minebox</span>
+							<button class="button back-button navigation-button" data-go="welcome">Cancel</button>
+							<button id="register-minebox-button" class="button progress-button">Initialize my Minebox</button>
 						</fieldset>
 					</div>
 				</div>
@@ -196,8 +196,8 @@
 						<fieldset class="caption">
 							<h4>Provide your encryption key</h4>
 							<p>If your device has a camera and you still have your encryption key's QR code, you can scan it. Otherwise you should provide manually your encryption key.</p>
-							<span id="scan-encryption-key-qr-code-button" class="webcam-access-button button">Scan QR code</span>
-							<span id="type-encryption-key" class="button">Type encryption key</span>
+							<button id="scan-encryption-key-qr-code-button" class="webcam-access-button button">Scan QR code</button>
+							<button id="type-encryption-key" class="button">Type encryption key</button>
 						</fieldset>
 
 						<fieldset class="restore-encryption-key" style="display:none">
@@ -262,8 +262,8 @@
 
 
 						<fieldset>
-							<span class="button back-button navigation-button" data-go="welcome">Cancel</span>
-							<span id="restore-minebox-button" class="button progress-button" disabled>Restore my Minebox</span>
+							<button class="button back-button navigation-button" data-go="welcome">Cancel</button>
+							<button id="restore-minebox-button" class="button progress-button" disabled>Restore my Minebox</button>
 						</fieldset>
 					</div>
 				</div>

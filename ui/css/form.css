@@ -22,10 +22,6 @@ button:hover, .button:hover {
 input, textarea {
   width: 100%;
 }
-input, textarea,
-select, .select {
-  font-weight: 600;
-}
 label {
   display: block;
 }
@@ -106,9 +102,9 @@ button:after, .button:after {
   height: 155px;
   top: -50px;
   left: -75px;
-  opacity: .2;
+  opacity: 0.5;
   -webkit-transform: rotate(35deg);
-          transform: rotate(35deg);
+  transform: rotate(35deg);
   -webkit-transition: all 550ms cubic-bezier(0.19, 1, 0.22, 1);
   transition: all 550ms cubic-bezier(0.19, 1, 0.22, 1);
 }
