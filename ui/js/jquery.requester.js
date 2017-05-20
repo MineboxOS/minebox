@@ -1,5 +1,7 @@
 function Requester() {
 
+  var xhr;
+
   var CONFIG = {
     cache: false
   };
@@ -17,8 +19,12 @@ function Requester() {
     CONFIG.dataType = type;
   }
 
+  function abort() {
+    xhr.abort();
+  }
+
   function run( successCallback, errorCallback, callback_func ) {
-    $.ajax(CONFIG)
+    xhr = $.ajax(CONFIG)
     .done(function( data ) {
       successCallback( data );
     })
@@ -35,6 +41,7 @@ function Requester() {
     setURL: setURL,
     setData: setData,
     setType: setType,
+    abort: abort,
     run: run
   }
 }
