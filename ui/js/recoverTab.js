@@ -1,5 +1,5 @@
 //handle recover functions
-function recover() {
+function recoverTab() {
 
 	//handle visibility of fieldset.restore-encryption-key
 	var $restoreEncryptionKey = $('.recover-section fieldset.restore-encryption-key'),
