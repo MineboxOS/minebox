@@ -509,6 +509,29 @@ function registerTab() {
 	$('.register-section').bind('notValidated', function() {
 		$('#register-minebox-button').attr('data-disabled', 'disabled');
 	});
+
+
+	//if clicking in submit without being everything validated
+	//display an error
+	$('#register-minebox-button').on('click', function() {
+		//emptying error
+		$(this).siblings('.error').html('');
+		//if hostname is not valid
+		if ( !registerValidation.status('hostname') ) {
+			$(this).siblings('.error').append('Your hostname is not valid<br />');
+		}
+		//if passwords are not valid
+		if ( !registerValidation.status('password') ) {
+			$(this).siblings('.error').append('Passwords are not valid<br />');
+		}
+		//if print button was not clicked
+		if ( !registerValidation.status('printButtonClicked') ) {
+			$(this).siblings('.error').append('You haven\'t printed your QR code<br />');
+		}
+		//if not every required fields are filled
+		if ( !registerValidation.status('required') ) {
+			$(this).siblings('.error').append('Check again you have properly filled all the fields.<br />');
+		}
 	});
 
 }
