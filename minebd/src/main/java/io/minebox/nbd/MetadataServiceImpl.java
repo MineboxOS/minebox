@@ -36,14 +36,20 @@ public class MetadataServiceImpl implements MetadataService {
     private static final Logger LOGGER = LoggerFactory.getLogger(MetadataServiceImpl.class);
 
     public static final String TEST_METADATA_DIR = "/home/andreas/minebox/restoreSample/backups/backup.1492640813";
-    public static final String ROOT_PATH = "http://localhost:8050/v1/file/";
-    private final ImmutableMap<String, String> filenameLookup;
-
+    volatile boolean wasInit = false;
+    private ImmutableMap<String, String> filenameLookup;
     private final String rootPath;
+    private final AuthTokenService authTokenService;
 
     @Inject
-    public MetadataServiceImpl(@Named("httpMetadata") String rootPath) {
+    public MetadataServiceImpl(@Named("httpMetadata") String rootPath, AuthTokenService authTokenService) {
         this.rootPath = rootPath;
+        this.authTokenService = authTokenService;
+    }
+
+    public void init() {
+        if (wasInit) return;
+        wasInit = true;
         final ImmutableList<String> metaData = loadMetaData();
         filenameLookup = Maps.uniqueIndex(metaData, input -> {
             final ArrayList<String> segments = Lists.newArrayList(Splitter.on(".").split(input));
@@ -54,7 +60,8 @@ public class MetadataServiceImpl implements MetadataService {
 
     private ImmutableList<String> loadMetaData() {
         try {
-            final HttpResponse<InputStream> response = Unirest.get(ROOT_PATH + "latestMeta")
+            final HttpResponse<InputStream> response = Unirest.get(rootPath + "latestMeta")
+                    .header("X-Auth-Token", authTokenService.getToken())
                     .asBinary();
 //            final String nameHeader = response.getHeaders().getFirst("Content-Disposition");
             final ZipInputStream zis = new ZipInputStream(response.getBody());
@@ -91,6 +98,7 @@ public class MetadataServiceImpl implements MetadataService {
 
     @Override
     public boolean downloadIfPossible(File file) {
+        init();
         final String toDownload = filenameLookup.get(file.getName());
         if (toDownload == null) {
             return false;
@@ -104,7 +112,9 @@ public class MetadataServiceImpl implements MetadataService {
         try {
             LOGGER.info("downloading missing file {} from remote service... ", toDownload);
             final long start = System.currentTimeMillis();
-            final InputStream is = Unirest.get(ROOT_PATH + toDownload).asBinary().getBody();
+            final InputStream is = Unirest.get(rootPath + toDownload)
+                    .header("X-Auth-Token", authTokenService.getToken())
+                    .asBinary().getBody();
             Files.copy(is, Paths.get(file.toURI()));
             final long duration = System.currentTimeMillis() - start;
             LOGGER.info("downloaded {} successfully in {} seconds", toDownload, Duration.ofMillis(duration).getSeconds());
@@ -113,4 +123,5 @@ public class MetadataServiceImpl implements MetadataService {
             throw new RuntimeException("unable to download file " + toDownload, e);
         }
     }
+
 }
