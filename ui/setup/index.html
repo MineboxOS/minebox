@@ -53,7 +53,7 @@
 
 						<fieldset class="hostname">
 							<h4>Name your Minebox</h4>
-							<p>Insert a hostname. Your server will be accessible from anywhere using the registered hostname.</p>
+							<p>Your server will be accessible from anywhere using the registered hostname. Only a-z and 0-9 characters allowed.</p>
 							<div class="hostname-block">
 								<input type="text" class="register-hostname" placeholder="Hostname" required="required" />
 								<span class="permanent">.minebox.io</span>
@@ -71,7 +71,7 @@
 
 						<fieldset class="username">
 							<h4>Set a username & password</h4>
-							<p>In order to have your files protected and secure, please provide a username and password.</p>
+							<p>In order to keep your files protected and secure, please provide your access credentials.</p>
 
 							<div class="group">
 								<p>Set your username</p>
@@ -113,7 +113,8 @@
 
 						<fieldset class="encryption">
 							<h4>Your encryption key</h4>
-							<p>The following words are the seed of your encryption key, write them down on a secure place or memorize them. In case of disaster you will be able to recover all of your data by just providing this twelve words. You can manually edit the values or randomly <span class="key-generator in-text-button">generate</span> new.</p>
+							<p>The following words are the seed of your encryption key, write them down on a secure place or memorize them. In case of disaster you will be able to recover all of your data by just providing this twelve words.</p>
+							<p>You can <span class="key-generator in-text-button">generate</span> new encryption keys.</p>
 							
 							<div class="row">
 								<div class="col-xs-12 col-sm-4 col-md-4 col-lg-4 encryption-box">
@@ -166,8 +167,11 @@
 								</div>
 								<input type="hidden" id="encryption-key-string" required="required" />
 							</div>
+						</fieldset>
 
-							<p>We highly recommend you to print your encryption key QR code and store it somewhere safe.</p>
+						<fieldset>
+							<p>We highly recommend you to print your encryption key QR code and store it somewhere safe. A new page will open automatically, you can follow the instructions in there to print your QR code.</p>
+							<p>Once you have printed your QR code, you will be able to click on <em>Initialize my Minebox</em> button and then you will have to prove the validity of your QR code and also the validity of the twelve words.</p>
 							<button id="print-encryption-key-qr-code" class="button">Print</button>
 						</fieldset>
 
