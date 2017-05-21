@@ -129,6 +129,7 @@
 }
 #setup-page .register-section .password-resume {
 	margin-top: 20px;
+	display: none;
 }
 #setup-page .register-section .password-strength {
 	

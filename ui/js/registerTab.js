@@ -293,7 +293,8 @@ function registerTab() {
 			$passwordStrength = $('.register-section .password-strength'),
 			$passwordStrengthBar = $('.register-section .password-strength-bar')
 			$passwordValidationChecker = $('.password-validation-checker.password-input'),
-			$repeatPasswordValidationChecker = $('.password-validation-checker.repeat-password-input');
+			$repeatPasswordValidationChecker = $('.password-validation-checker.repeat-password-input'),
+			$passwordResumeBox = $('.password-resume');
 
 		//password validation witnesses
 		var $minValidation = $('.password-requirements-validation.min-validation'),
@@ -325,6 +326,8 @@ function registerTab() {
 			strengthWitnessHandler();
 			//checking if password matches
 			doesPasswordMatch();
+			//displaying password resume
+			$passwordResumeBox.show(600);
 		});
 
 		$passwordRepeatInput.on('keyup', function() {
