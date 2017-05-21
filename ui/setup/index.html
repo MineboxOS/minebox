@@ -90,13 +90,6 @@
 							<div class="group password-resume">
 								<p>Password strength: <span class="password-strength">Low</span></p>
 								<div class="password-strength-witness"><div class="password-strength-bar"></div></div>
-								<ul class="password-requirements">
-									<li><span class="password-requirements-validation min-validation"><span class="oi validated" data-glyph="check"></span><span class="oi not-validated" data-glyph="ban"></span></span> More than 6 characters</li>
-									<li><span class="password-requirements-validation capital-validation"><span class="oi validated" data-glyph="check"></span><span class="oi not-validated" data-glyph="ban"></span></span> At least one capital letter</li>
-									<li><span class="password-requirements-validation number-validation"><span class="oi validated" data-glyph="check"></span><span class="oi not-validated" data-glyph="ban"></span></span> At least one number</li>
-									<li><span class="password-requirements-validation strength-validation"><span class="oi validated" data-glyph="check"></span><span class="oi not-validated" data-glyph="ban"></span></span> High password strength</li>
-								</ul>
-								<div class="error"></div>
 							</div>
 
 							<div class="group">
@@ -295,11 +288,9 @@
 				</fieldset>
 
 				<fieldset>
-					<p>Once your QR code is printed and your private key is noted down, please validate them. Choose between scanning your QR code or manually type your private key.</p>
+					<p>Please validate your private encryption key</p>
 					<button id="scan-encryption-key-qr-code-button" class="webcam-access-button button">Scan QR code</button>
 					<button id="type-encryption-key" class="button">Type encryption key</button>
-					<br />
-					<button class="button back-button navigation-button" data-go="register">Cancel</button>
 				</fieldset>
 
 				<fieldset class="restore-encryption-key" style="display:none">
@@ -362,8 +353,8 @@
 				</fieldset>
 
 				<fieldset>
-					<button class="button back-button navigation-button" data-go="welcome">Cancel</button>
-					<button id="restore-minebox-button" class="button progress-button" data-disabled="disabled">Restore my Minebox</button>
+					<button class="button back-button navigation-button" data-go="register">Cancel</button>
+					<button id="proved-private-key-button" class="button progress-button" data-disabled="disabled">Restore my Minebox</button>
 				</fieldset>
 			</div>
 		</section>

@@ -25,7 +25,6 @@ function registerTab() {
 		var validation = {
 			hostname: false,
 			password: false,
-			printButtonClicked: false,
 			required: false
 		};
 
@@ -76,15 +75,14 @@ function registerTab() {
 	var hostnameValidationConfig = {
 			requirements: {
 				min: 4,
-				max: 16,
+				max: false,
 				numbers: false,
 				capitals: false,
 				specialChars: true, //is a false true, special chars are banned
 				strength: false
 			},
 			messages: {
-				max: 'Your hostname needs to be shorter than 16 characters long.',
-				min: 'Your hostname needs to be between 4 and 16 characters long.',
+				min: 'Your hostname needs to be longer than 4 characters.',
 				specialChars: 'You\'ve provided invalid characters.'
 			}
 		},
@@ -119,18 +117,6 @@ function registerTab() {
 			$hostnameValidationWitness.find('.not-validated').fadeIn(50);
 			//printing error in hostname response
 			$hostnameResponse.html( hostnameValidation.min.message );
-			//updatevalidation object
-			return false;
-		}
-
-		//hostname is too long
-		if ( !hostnameValidation.max.validated ) {
-			//hidding validated display
-			$hostnameValidationWitness.find('.validated').fadeOut(50);
-			//showing not validated display
-			$hostnameValidationWitness.find('.not-validated').fadeIn(50);
-			//printing error in hostname response
-			$hostnameResponse.html( hostnameValidation.max.message );
 			//updatevalidation object
 			return false;
 		}
@@ -238,7 +224,8 @@ function registerTab() {
 
 	//validate all the required fields are filled
 	var $requiredFields = $('.register-section [required]');
-	$requiredFields.on('keyup', function() {
+
+	function checkRequiredFields() {
 		//any time the user types on a required field check if there is any empty and update register validation object
 		for ( var n = 0; n < $requiredFields.length; n++ ) {
 			if ( !$($requiredFields[n]).val().length ) {
@@ -248,27 +235,22 @@ function registerTab() {
 		}
 		//if we arrived here, everything is filled
 		registerValidation.update({required: true});
-	});
+	}
+
+	$requiredFields.bind('keyup', checkRequiredFields);
 
 
 
 	//generate private key
 	(function encryptionKeyGenerator() {
-		var words = ["beautiful","knee","stupid","question","flashy","tub","curvy","cheat","screw","testy","electric","bath","behavior","abiding","tall","royal","hurt","door","kindly","bent","pin","vanish","mindless","defeated","admire","argument","keen","tickle","box","ready","wish","ambitious","yarn","sable","spiffy","busy","snore","guarantee","north","jumbled","selection","bag","sweet","scribble","brash","merciful","miss","dead","number","married","dime","insidious","vulgar","overconfident","achiever","mushy","pointless","sniff","wail","nerv"],
-			$encryptionField = $('.register-section .encryption-word'),
+		var $encryptionField = $('.register-section .encryption-word'),
 			$encryptionKeyStringInput = $('#encryption-key-string');
 
-		function gen(array) {
+		var wordsRequester = new Requester();
 
-			//if array is not passed by, creating one with random words
-			if ( !array ) {
-				array = [];
-				for ( var n = 0; n < $encryptionField.length; n++ ) {
-					array.push( words[ getRandomInt(0, words.length - 1) ] );
-				}
-			}
+		function print(array) {
 
-			//print words either created or passed by ajax request
+			//print words
 			for ( var n = 0; n < $encryptionField.length; n++ ) {
 				//filling inputs
 				$($encryptionField[n]).val( array[n] );
@@ -278,26 +260,27 @@ function registerTab() {
 
 			//updating global object
 			register.seed = $encryptionKeyStringInput.val();
+
+			//forcing register validation to know that this fields are filled
+			//since this function was originally listening for "keyup" events and this generator
+			//can not fake the keyup event, we are calling the function straight
+			checkRequiredFields();
+
 		}
 
 		function getWords() {
-			var r = new Requester();
-			r.setURL( config.mug.url + 'key/generate' );
-			r.setMethod('GET');
-			r.run(function( response ) {
-				gen(response);
+			wordsRequester.setURL( config.mug.url + 'key/generate' );
+			wordsRequester.setMethod('GET');
+			wordsRequester.run(function( response ) {
+				print(response);
 			}, function( error ) {
 				//error;
 			});
 		}
 
-		$('body').on('click', '.key-generator', function() {
-			gen();
-		});
+		$('body').on('click', '.key-generator', getWords);
 
-		$(document).ready(function() {
-			getWords();
-		});
+		$(document).ready(getWords);
 	})();
 
 
@@ -313,21 +296,15 @@ function registerTab() {
 			$repeatPasswordValidationChecker = $('.password-validation-checker.repeat-password-input'),
 			$passwordResumeBox = $('.password-resume');
 
-		//password validation witnesses
-		var $minValidation = $('.password-requirements-validation.min-validation'),
-			$numbersValidation = $('.password-requirements-validation.number-validation'),
-			$capitalValidation = $('.password-requirements-validation.capital-validation'),
-			$strengthValidation = $('.password-requirements-validation.strength-validation');
-
 		//instancing password checker function
 		var data = {
 			requirements: {
-				min: 6,
+				min: false,
 				max: false,
-				capitals: true,
-				numbers: true,
+				capitals: false,
+				numbers: false,
 				specialChars: false,
-				strength: 80
+				strength: 1
 			}
 		};
 		var passwordChecker = new PasswordCheck(data);
@@ -337,8 +314,6 @@ function registerTab() {
 			//setting validation object password to false until script finishes and says otherwise
 			registerValidation.update({password: false});
 			//checking if password meets the requirements while user types it
-			//updating password requirements validation witnesses
-			passwordRequirementsWitnessHandler();
 			//update strength bar
 			strengthWitnessHandler();
 			//checking if password matches
@@ -359,8 +334,8 @@ function registerTab() {
 			//this function is executed anytime the user types either password-repeat or password inputs
 			//we have to make sure beforehands that there is something written in both inputs
 			if ( $passwordInput.val().length && $passwordRepeatInput.val().length ) {
-				//there is text written in both inputs and the password written in password-input is valid
-				if ( isPasswordValid() && passwordChecker.match( $passwordInput.val(), $passwordRepeatInput.val() ) ) {
+				//there is text written in both inputs
+				if ( passwordChecker.match( $passwordInput.val(), $passwordRepeatInput.val() ) ) {
 					//the texts match
 					//hide unmatch notification
 					//show matching notification
@@ -391,90 +366,6 @@ function registerTab() {
 
 		}
 
-		function isPasswordValid() {
-			//getting validation results
-			var validationResults = passwordChecker.validate( $passwordInput.val() );
-			//less than the minimum required characters
-			if ( !validationResults.min.validated ) {
-				return false;
-			}
-			//no capitals in the password
-			if ( !validationResults.capitals.validated ) {
-				return false;
-			}
-			//no numbers in the password
-			if ( !validationResults.numbers.validated ) {
-				return false;
-			}
-			//password is weak
-			if ( !validationResults.strength.validated ) {
-				return false;
-			}
-			//if we arrived here, the password is valid
-			return true;
-		}
-
-		//handle password requirements witnesses
-		function passwordRequirementsWitnessHandler() {
-			var validationResults = passwordChecker.validate( $passwordInput.val() );
-			var everything = true;
-			//handling visibility of minimum characters validation
-			if ( validationResults.min.validated ) {
-				$minValidation.find('.not-validated').fadeOut(50);
-				$minValidation.find('.validated').fadeIn(50);
-			} else {
-				$minValidation.find('.validated').fadeOut(50);
-				$minValidation.find('.not-validated').fadeIn(50);
-				everything = false;
-			}
-
-			//handling visibility of capital characters validation
-			if ( validationResults.capitals.validated ) {
-				$capitalValidation.find('.not-validated').fadeOut(50);
-				$capitalValidation.find('.validated').fadeIn(50);
-			} else {
-				$capitalValidation.find('.validated').fadeOut(50);
-				$capitalValidation.find('.not-validated').fadeIn(50);
-				everything = false;
-			}
-
-			//handling visibility of numbers validation
-			if ( validationResults.numbers.validated ) {
-				$numbersValidation.find('.not-validated').fadeOut(50);
-				$numbersValidation.find('.validated').fadeIn(50);
-			} else {
-				$numbersValidation.find('.validated').fadeOut(50);
-				$numbersValidation.find('.not-validated').fadeIn(50);
-				everything = false;
-			}
-
-			//handling visibility of strength validation
-			if ( validationResults.strength.validated ) {
-				$strengthValidation.find('.not-validated').fadeOut(50);
-				$strengthValidation.find('.validated').fadeIn(50);
-			} else {
-				$strengthValidation.find('.validated').fadeOut(50);
-				$strengthValidation.find('.not-validated').fadeIn(50);
-				everything = false;
-			}
-
-			//if some of the previous validations returns false it is collected
-			//within "everything" variable. if true, display "valid password"
-			//witness, otherwise display invalid pw.
-			if ( everything ) {
-				//the password is valid
-				$passwordValidationChecker.find('.not-validated').fadeOut(50);
-				$passwordValidationChecker.find('.validated').fadeIn(50);
-			} else {
-				//password is not valid
-				$passwordValidationChecker.find('.validated').fadeOut(50);
-				$passwordValidationChecker.find('.not-validated').fadeIn(50);
-			}
-
-			//returning total validation value
-			return everything;
-		}
-
 		//handle strength bar witness
 		function strengthWitnessHandler() {
 			var validationResults = passwordChecker.validate( $passwordInput.val() );
@@ -495,8 +386,6 @@ function registerTab() {
 
 	//print qr code
 	$('body').on('click', '#print-encryption-key-qr-code', function() {
-		//updating register validation object
-		registerValidation.update({printButtonClicked: true});
 		//opening the new window
 		window.open('print-qr-code.html');
 	});
@@ -523,10 +412,6 @@ function registerTab() {
 		//if passwords are not valid
 		if ( !registerValidation.status('password') ) {
 			$(this).siblings('.error').append('Passwords are not valid<br />');
-		}
-		//if print button was not clicked
-		if ( !registerValidation.status('printButtonClicked') ) {
-			$(this).siblings('.error').append('You haven\'t printed your QR code<br />');
 		}
 		//if not every required fields are filled
 		if ( !registerValidation.status('required') ) {
