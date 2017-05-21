@@ -8,7 +8,7 @@ import io.minebox.nbd.ep.NullMetadataService;
 /**
  * Created by andreas on 27.04.17.
  */
-@ImplementedBy(NullMetadataService.class)
+@ImplementedBy(MetadataServiceImpl.class)
 public interface MetadataService {
     boolean downloadIfPossible(File file);
 }
