@@ -55,7 +55,7 @@
 							<h4>Name your Minebox</h4>
 							<p>Insert a hostname. Your server will be accessible from anywhere using the registered hostname.</p>
 							<div class="hostname-block">
-								<input type="text" class="register-hostname" placeholder="Hostname" />
+								<input type="text" class="register-hostname" placeholder="Hostname" required="required" />
 								<span class="permanent">.minebox.io</span>
 								<div class="hostname-validation">
 									<span class="oi validated" data-glyph="check"></span>
@@ -75,7 +75,7 @@
 
 							<div class="group">
 								<p>Set your username</p>
-								<input type="text" class="register-username" placeholder="Username" />
+								<input type="text" class="register-username" placeholder="Username" required="required" />
 							</div>
 
 							<div class="group">
@@ -84,7 +84,7 @@
 									<span class="oi validated" data-glyph="check"></span>
 									<span class="oi not-validated" data-glyph="ban"></span>
 								</span>
-								<input type="password" class="register-password" placeholder="Password" />
+								<input type="password" class="register-password" placeholder="Password" required="required" />
 							</div>
 
 							<div class="group">
@@ -93,7 +93,7 @@
 									<span class="oi validated" data-glyph="check"></span>
 									<span class="oi not-validated" data-glyph="ban"></span>
 								</span>
-								<input type="password" class="register-password-repeat" placeholder="Repeat your password" />
+								<input type="password" class="register-password-repeat" placeholder="Repeat your password" required="required" />
 							</div>
 
 							<div class="password-resume">
@@ -118,53 +118,53 @@
 							<div class="row">
 								<div class="col-xs-12 col-sm-4 col-md-4 col-lg-4 encryption-box">
 									<label class="encryption-word-number">1.</label>
-									<input type="text" class="encryption-word encryption-word-one" readonly />
+									<input type="text" class="encryption-word encryption-word-one" readonly required="required" />
 								</div>
 								<div class="col-xs-12 col-sm-4 col-md-4 col-lg-4 encryption-box">
 									<label class="encryption-word-number">2.</label>
-									<input type="text" class="encryption-word encryption-word-two" readonly />
+									<input type="text" class="encryption-word encryption-word-two" readonly required="required" />
 								</div>
 								<div class="col-xs-12 col-sm-4 col-md-4 col-lg-4 encryption-box">
 									<label class="encryption-word-number">3.</label>
-									<input type="text" class="encryption-word encryption-word-three" readonly />
+									<input type="text" class="encryption-word encryption-word-three" readonly required="required" />
 								</div>
 								<div class="col-xs-12 col-sm-4 col-md-4 col-lg-4 encryption-box">
 									<label class="encryption-word-number">4.</label>
-									<input type="text" class="encryption-word encryption-word-four" readonly />
+									<input type="text" class="encryption-word encryption-word-four" readonly required="required" />
 								</div>
 								<div class="col-xs-12 col-sm-4 col-md-4 col-lg-4 encryption-box">
 									<label class="encryption-word-number">5.</label>
-									<input type="text" class="encryption-word encryption-word-five" readonly />
+									<input type="text" class="encryption-word encryption-word-five" readonly required="required" />
 								</div>
 								<div class="col-xs-12 col-sm-4 col-md-4 col-lg-4 encryption-box">
 									<label class="encryption-word-number">6.</label>
-									<input type="text" class="encryption-word encryption-word-six" readonly />
+									<input type="text" class="encryption-word encryption-word-six" readonly required="required" />
 								</div>
 								<div class="col-xs-12 col-sm-4 col-md-4 col-lg-4 encryption-box">
 									<label class="encryption-word-number">7.</label>
-									<input type="text" class="encryption-word encryption-word-seven" readonly />
+									<input type="text" class="encryption-word encryption-word-seven" readonly required="required" />
 								</div>
 								<div class="col-xs-12 col-sm-4 col-md-4 col-lg-4 encryption-box">
 									<label class="encryption-word-number">8.</label>
-									<input type="text" class="encryption-word encryption-word-eight" readonly />
+									<input type="text" class="encryption-word encryption-word-eight" readonly required="required" />
 								</div>
 								<div class="col-xs-12 col-sm-4 col-md-4 col-lg-4 encryption-box">
 									<label class="encryption-word-number">9.</label>
-									<input type="text" class="encryption-word encryption-word-nine" readonly />
+									<input type="text" class="encryption-word encryption-word-nine" readonly required="required" />
 								</div>
 								<div class="col-xs-12 col-sm-4 col-md-4 col-lg-4 encryption-box">
 									<label class="encryption-word-number">10.</label>
-									<input type="text" class="encryption-word encryption-word-ten" readonly />
+									<input type="text" class="encryption-word encryption-word-ten" readonly required="required" />
 								</div>
 								<div class="col-xs-12 col-sm-4 col-md-4 col-lg-4 encryption-box">
 									<label class="encryption-word-number">11.</label>
-									<input type="text" class="encryption-word encryption-word-eleven" readonly />
+									<input type="text" class="encryption-word encryption-word-eleven" readonly required="required" />
 								</div>
 								<div class="col-xs-12 col-sm-4 col-md-4 col-lg-4 encryption-box">
 									<label class="encryption-word-number">12.</label>
-									<input type="text" class="encryption-word encryption-word-twelve" readonly />
+									<input type="text" class="encryption-word encryption-word-twelve" readonly required="required" />
 								</div>
-								<input type="hidden" id="encryption-key-string" />
+								<input type="hidden" id="encryption-key-string" required="required" />
 							</div>
 
 							<p>We highly recommend you to print your encryption key QR code and store it somewhere safe.</p>
@@ -209,51 +209,51 @@
 								<div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3">
 									<div class="encryption-box">
 										<label class="encryption-word-number">1.</label>
-										<input type="text" class="encryption-word encryption-word-one" placeholder="Enter word number one" />
+										<input type="text" class="encryption-word encryption-word-one" placeholder="Enter word number one" required="required" />
 									</div>
 									<div class="encryption-box">
 										<label class="encryption-word-number">2.</label>
-										<input type="text" class="encryption-word encryption-word-two" placeholder="Enter word number two" />
+										<input type="text" class="encryption-word encryption-word-two" placeholder="Enter word number two" required="required" />
 									</div>
 									<div class="encryption-box">
 										<label class="encryption-word-number">3.</label>
-										<input type="text" class="encryption-word encryption-word-three" placeholder="Enter word number three" />
+										<input type="text" class="encryption-word encryption-word-three" placeholder="Enter word number three" required="required" />
 									</div>
 									<div class="encryption-box">
 										<label class="encryption-word-number">4.</label>
-										<input type="text" class="encryption-word encryption-word-four" placeholder="Enter word number four" />
+										<input type="text" class="encryption-word encryption-word-four" placeholder="Enter word number four" required="required" />
 									</div>
 									<div class="encryption-box">
 										<label class="encryption-word-number">5.</label>
-										<input type="text" class="encryption-word encryption-word-five" placeholder="Enter word number five" />
+										<input type="text" class="encryption-word encryption-word-five" placeholder="Enter word number five" required="required" />
 									</div>
 									<div class="encryption-box">
 										<label class="encryption-word-number">6.</label>
-										<input type="text" class="encryption-word encryption-word-six" placeholder="Enter word number six" />
+										<input type="text" class="encryption-word encryption-word-six" placeholder="Enter word number six" required="required" />
 									</div>
 									<div class="encryption-box">
 										<label class="encryption-word-number">7.</label>
-										<input type="text" class="encryption-word encryption-word-seven" placeholder="Enter word number seven" />
+										<input type="text" class="encryption-word encryption-word-seven" placeholder="Enter word number seven" required="required" />
 									</div>
 									<div class="encryption-box">
 										<label class="encryption-word-number">8.</label>
-										<input type="text" class="encryption-word encryption-word-eight" placeholder="Enter word number eight" />
+										<input type="text" class="encryption-word encryption-word-eight" placeholder="Enter word number eight" required="required" />
 									</div>
 									<div class="encryption-box">
 										<label class="encryption-word-number">9.</label>
-										<input type="text" class="encryption-word encryption-word-nine" placeholder="Enter word number nine" />
+										<input type="text" class="encryption-word encryption-word-nine" placeholder="Enter word number nine" required="required" />
 									</div>
 									<div class="encryption-box">
 										<label class="encryption-word-number">10.</label>
-										<input type="text" class="encryption-word encryption-word-ten" placeholder="Enter word number ten" />
+										<input type="text" class="encryption-word encryption-word-ten" placeholder="Enter word number ten" required="required" />
 									</div>
 									<div class="encryption-box">
 										<label class="encryption-word-number">11.</label>
-										<input type="text" class="encryption-word encryption-word-eleven" placeholder="Enter word number eleven" />
+										<input type="text" class="encryption-word encryption-word-eleven" placeholder="Enter word number eleven" required="required" />
 									</div>
 									<div class="encryption-box">
 										<label class="encryption-word-number">12.</label>
-										<input type="text" class="encryption-word encryption-word-twelve" placeholder="Enter word number twelve" />
+										<input type="text" class="encryption-word encryption-word-twelve" placeholder="Enter word number twelve" required="required" />
 									</div>
 									<p id="encryption-key-validation-response"></p>
 								</div>
