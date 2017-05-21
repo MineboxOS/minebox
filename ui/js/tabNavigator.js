@@ -1,4 +1,4 @@
-//requires hashManager
+//requires hashManager & progressScreen
 
 function TabNavigator( data ) {
 
@@ -104,8 +104,10 @@ function TabNavigator( data ) {
 
 		if ( !hash.length ) {
 			go( CONFIG.defaultTab );
-		} else {
+		} else if ( hash != 'running' ) {
 			go( hash );
+		} else {
+			progressScreen.open();
 		}
 
 	});

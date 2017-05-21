@@ -138,12 +138,12 @@ function proveTab() {
 		//encryptionKeyRequester.setMethod()...
 
 		setTimeout(function() {
-			var response = false;
+			var response = true;
 
 			$submitButton.siblings('.error').html('');
 
 			if ( response ) {
-				processScreen.open();
+				progressScreen.open();
 			} else {
 				$submitButton.siblings('.error').html('The key is not valid. Please check you have written everything correctly.');
 			}
