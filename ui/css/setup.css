@@ -25,7 +25,7 @@
 	text-align: center;
 }
 #setup-page .register-section .form {
-	text-align: left;
+	text-align: justify;
 }
 #setup-page .register-section fieldset {
 	margin-top: 50px;
@@ -216,7 +216,7 @@
 	text-align: center;
 }
 #setup-page .recover-section .form {
-	text-align: left;
+	text-align: justify;
 }
 #setup-page .recover-section fieldset {
 	margin: 50px 0;
