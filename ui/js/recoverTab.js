@@ -49,7 +49,7 @@ function recoverTab() {
 
 	//webcam manager
 	//requires instascan, $encryptionKeyInputs, showEncryptionKeyInputs()
-	var $webcamButton = $('.recover-tab .webcam-access-button'),
+	var $webcamButton = $('.recover-section .webcam-access-button'),
 		$closeWebcamButton = $('#close-instascan-button');
 	//qr code reader
 	$webcamButton.on('click', function() {
