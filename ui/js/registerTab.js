@@ -337,10 +337,11 @@ function registerTab() {
 		//eval passwords matching and handle witnesses
 		function doesPasswordMatch() {
 			//this function is executed anytime the user types either password-repeat or password inputs
-			//we have to make sure before that there is something written in both inputs
+			//we have to make sure beforehands that there is something written in both inputs
 			if ( $passwordInput.val().length && $passwordRepeatInput.val().length ) {
-				if ( passwordChecker.match( $passwordInput.val(), $passwordRepeatInput.val() ) ) {
-					//there is text written in both inputs and they match
+				//there is text written in both inputs and the password written in password-input is valid
+				if ( isPasswordValid() && passwordChecker.match( $passwordInput.val(), $passwordRepeatInput.val() ) ) {
+					//the texts match
 					//hide unmatch notification
 					//show matching notification
 					$repeatPasswordValidationChecker.find('.validated').fadeIn(50);
@@ -358,7 +359,7 @@ function registerTab() {
 					$repeatPasswordValidationChecker.find('.validated').fadeOut(50);
 				}
 			} else {
-				//there is, at least, on of the inputs empty. hiding all notifications
+				//there is, at least, on of the inputs empty or password provided is not valid. hiding all notifications
 				//hide unmatch notification
 				//hide matching notification
 				$repeatPasswordValidationChecker.find('.not-validated').fadeOut(50);
@@ -368,6 +369,29 @@ function registerTab() {
 			//returning result
 			return false;
 
+		}
+
+		function isPasswordValid() {
+			//getting validation results
+			var validationResults = passwordChecker.validate( $passwordInput.val() );
+			//less than the minimum required characters
+			if ( !validationResults.min.validated ) {
+				return false;
+			}
+			//no capitals in the password
+			if ( !validationResults.capitals.validated ) {
+				return false;
+			}
+			//no numbers in the password
+			if ( !validationResults.numbers.validated ) {
+				return false;
+			}
+			//password is weak
+			if ( !validationResults.strength.validated ) {
+				return false;
+			}
+			//if we arrived here, the password is valid
+			return true;
 		}
 
 		//handle password requirements witnesses
