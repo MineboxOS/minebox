@@ -19,4 +19,20 @@ function proveTab() {
 	$('body').on('click', '#print-encryption-key-qr-code-reminder', function() {
 		window.open('print-qr-code.html');
 	});
+
+
+
+
+	//scan qr code
+	$('body').on('click', '.webcam-access-button', function() {
+		instascanManager.show();
+		instascanManager.scan(function(response) {
+			console.log(response);
+		});
+	});
+
+
+
+
+	//type qr code
 }
