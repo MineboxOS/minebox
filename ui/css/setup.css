@@ -343,3 +343,6 @@
 .prove-section fieldset + fieldset {
 	margin-top: 20px;
 }
+.prove-section .insert-keys-block {
+	margin-top: 10px;
+}
