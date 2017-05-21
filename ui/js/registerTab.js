@@ -504,10 +504,11 @@ function registerTab() {
 
 	//submit button enabler/disabler listening to the events
 	$('.register-section').bind('validated', function() {
-		$('#register-minebox-button').removeAttr('disabled');
+		$('#register-minebox-button').removeAttr('data-disabled');
 	});
 	$('.register-section').bind('notValidated', function() {
-		$('#register-minebox-button').attr('disabled', 'disabled');
+		$('#register-minebox-button').attr('data-disabled', 'disabled');
+	});
 	});
 
 }

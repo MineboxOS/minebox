@@ -177,7 +177,7 @@
 
 						<fieldset>
 							<button class="button back-button navigation-button" data-go="welcome">Cancel</button>
-							<button id="register-minebox-button" class="button navigation-button" data-go="prove" disabled>Initialize my Minebox</button>
+							<button id="register-minebox-button" class="button navigation-button" data-go="prove" data-disabled="disabled">Initialize my Minebox</button>
 						</fieldset>
 					</div>
 				</div>
@@ -268,7 +268,7 @@
 
 						<fieldset>
 							<button class="button back-button navigation-button" data-go="welcome">Cancel</button>
-							<button id="restore-minebox-button" class="button progress-button" disabled>Restore my Minebox</button>
+							<button id="restore-minebox-button" class="button progress-button" data-disabled="disabled">Restore my Minebox</button>
 						</fieldset>
 					</div>
 				</div>
@@ -362,7 +362,7 @@
 
 				<fieldset>
 					<button class="button back-button navigation-button" data-go="welcome">Cancel</button>
-					<button id="restore-minebox-button" class="button progress-button" disabled>Restore my Minebox</button>
+					<button id="restore-minebox-button" class="button progress-button" data-disabled="disabled">Restore my Minebox</button>
 				</fieldset>
 			</div>
 		</section>
@@ -382,10 +382,10 @@
 				<div id="progress-bar"></div>
 			</div>
 			<ul id="boot-log">
-				<li><input type="checkbox" disabled />Installing Rockstor</li>
-				<li><input type="checkbox" disabled />Restoring your backup</li>
-				<li><input type="checkbox" disabled />Installing Rockons</li>
-				<li><input type="checkbox" disabled />Logging you in</li>
+				<li><input type="checkbox" data-disabled="disabled" />Installing Rockstor</li>
+				<li><input type="checkbox" data-disabled="disabled" />Restoring your backup</li>
+				<li><input type="checkbox" data-disabled="disabled" />Installing Rockons</li>
+				<li><input type="checkbox" data-disabled="disabled" />Logging you in</li>
 			</ul>
 			<div id="result">
 				<!-- Filled via js -->

@@ -66,7 +66,7 @@ function TabNavigator( data ) {
 
 
 	$buttons.on('click', function() {
-		if ( !$(this).attr('disabled') ) {
+		if ( !$(this).attr('data-disabled') ) {
 			go( $(this).attr('data-go') );
 		}
 	});
