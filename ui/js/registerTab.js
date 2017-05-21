@@ -147,11 +147,10 @@ function registerTab() {
 		}
 
 		//if the requirements are met, proceed
-
-		//showing validated display
-		$hostnameValidationWitness.find('.validated').fadeIn(50);
-		//hidding not validated display
-		$hostnameValidationWitness.find('.not-validated').fadeOut(50);
+		//hidding validated display
+		$hostnameValidationWitness.find('.validated').fadeOut(50);
+		//showing not validated display
+		$hostnameValidationWitness.find('.not-validated').fadeIn(50);
 		//emptying in hostname response
 		$hostnameResponse.html('');
 
