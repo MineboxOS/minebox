@@ -25,7 +25,8 @@ function registerTab() {
 		var validation = {
 			hostname: false,
 			password: false,
-			printButtonClicked: false
+			printButtonClicked: false,
+			required: false
 		};
 
 		function status(key) {
@@ -232,6 +233,22 @@ function registerTab() {
 			$hostnameLoadingSpinner.removeClass('active');
 		}
 	}
+
+
+
+	//validate all the required fields are filled
+	var $requiredFields = $('.register-section [required]');
+	$requiredFields.on('keyup', function() {
+		//any time the user types on a required field check if there is any empty and update register validation object
+		for ( var n = 0; n < $requiredFields.length; n++ ) {
+			if ( !$($requiredFields[n]).val().length ) {
+				registerValidation.update({required: false});
+				return false;
+			}
+		}
+		//if we arrived here, everything is filled
+		registerValidation.update({required: true});
+	});
 
 
 
