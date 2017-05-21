@@ -169,6 +169,8 @@ function registerTab() {
 
 	//asks the server if the hostname is available
 	function hostnameAvailability(cb) {
+		//loading witness
+		loadingWitness.start();
 
 		//init loading
 		hostnameLoadingWitness('start');
@@ -185,11 +187,16 @@ function registerTab() {
 			//setting status to active
 			hostnameRequestStatus = 'querying';
 
+			//loading witness
+			loadingWitness.start();
+
 			//asking the server
 			//hostnameRequester.setMethod....
 
 			//temporal timeout. modify when MUG actually checks hostname availability
 			setTimeout(function() {
+				//loading witness
+				loadingWitness.stop();
 				if ( !hostnameRequesterTimeout ) {
 					//if there is another query on the way
 					//DO NOT EXECUTE THE CALLBACK
@@ -201,6 +208,8 @@ function registerTab() {
 				hostnameRequestStatus = null;
 				//ending loading
 				hostnameLoadingWitness('stop');
+				//loading witness
+				loadingWitness.stop();
 			}, 1000);
 			//end of temporal fake function
 
@@ -269,10 +278,14 @@ function registerTab() {
 		}
 
 		function getWords() {
+			//loading witness
+			loadingWitness.start();
 			wordsRequester.setURL( config.mug.url + 'key/generate' );
 			wordsRequester.setMethod('GET');
 			wordsRequester.run(function( response ) {
 				print(response);
+				//loading witness
+				loadingWitness.stop();
 			}, function( error ) {
 				//error;
 			});

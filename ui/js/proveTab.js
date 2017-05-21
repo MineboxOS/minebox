@@ -127,6 +127,8 @@ function proveTab() {
 		encryptionKeyString = '';
 
 	function validateEncryptionKey() {
+		//loading witness
+		loadingWitness.start();
 		//encryption key to array
 		for ( var n = 0; n < $encryptionKeyInputs.length; n++ ) {
 			encryptionKeyArray.push( $($encryptionKeyInputs[n]).val() );
@@ -138,6 +140,9 @@ function proveTab() {
 		//encryptionKeyRequester.setMethod()...
 
 		setTimeout(function() {
+			//loading witness
+			loadingWitness.stop();
+
 			var response = true;
 
 			$submitButton.siblings('.error').html('');

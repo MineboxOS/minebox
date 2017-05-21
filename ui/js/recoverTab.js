@@ -100,11 +100,13 @@ function recoverTab() {
 	});
 
 	function privateKeyValidation(cb) {
+		loadingWitness.start();
 		//this function sends the twelve words to the server so they can be validated
 		//currently faking the result with "true" with a timeout
 		//when the server returns true, execute the callback cb();
 		setTimeout(function() {
 			if ( true && cb ) {
+				loadingWitness.stop();
 				cb();
 			}
 		}, 10000);
