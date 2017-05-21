@@ -24,7 +24,8 @@ function registerTab() {
 
 		var validation = {
 			hostname: false,
-			password: false
+			password: false,
+			printButtonClicked: false
 		};
 
 		function status(key) {
@@ -478,6 +479,9 @@ function registerTab() {
 
 	//print qr code
 	$('body').on('click', '#print-encryption-key-qr-code', function() {
+		//updating register validation object
+		registerValidation.update({printButtonClicked: true});
+		//opening the new window
 		window.open('print-qr-code.html');
 	});
 
