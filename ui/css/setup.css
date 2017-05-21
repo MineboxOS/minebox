@@ -13,41 +13,41 @@
 }
 
 
-#setup-page .welcome-section {
+.welcome-section {
 	text-align: center;
 }
-#setup-page .welcome-section .choices {
+.welcome-section .choices {
 	margin-top: 100px;
 }
 
 
-#setup-page .register-section {
+.register-section {
 	text-align: center;
 }
-#setup-page .register-section .form {
+.register-section .form {
 	text-align: justify;
 }
-#setup-page .register-section fieldset {
+.register-section fieldset {
 	margin-top: 50px;
 }
-#setup-page .register-section .group {
+.register-section .group {
 	position: relative;
 }
-#setup-page .hostname-block {
+.hostname-block {
 	position: relative;
 }
-#setup-page .register-hostname {
-	display: inline-block;
+.register-hostname {
+	display: inline-block !important;
 	vertical-align: middle;
 	margin-right: 5px;
 	width: calc( 100% - 100px);
 }
-#setup-page .hostname-block>.permanent {
+.hostname-block>.permanent {
 	display: inline-block;
 	vertical-align: middle;
 	margin-top: -9px;
 }
-#setup-page .hostname-validation {
+.hostname-validation {
 	position: absolute;
 	top: 0;
 	left: 100%;
@@ -55,7 +55,7 @@
 	width: 40px;
 	height: 40px;
 }
-#setup-page .hostname-validation>span {
+.hostname-validation>span {
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -65,7 +65,7 @@
 	line-height: 40px;
 	display: none;
 }
-#setup-page .hostname-loading {
+.hostname-loading {
 	position: absolute;
 	top: 0;
 	right: 100%;
@@ -73,7 +73,7 @@
 	width: 40px;
 	height: 40px;
 }
-#setup-page .hostname-loading>span {
+.hostname-loading>span {
 	display: block;
 	width: 40px;
 	height: 40px;
@@ -85,7 +85,7 @@
 	-moz-transition: opacity ease .3s;
 	-o-transition: opacity ease .3s;
 }
-#setup-page .hostname-loading.active>span {
+.hostname-loading.active>span {
 	opacity: 1;
 	animation: loadSpinner 1s;
 	-webkit-animation: loadSpinner 1s;
@@ -100,7 +100,7 @@
 	-moz-animation-timing-function: linear;
 	-o-animation-timing-function: linear;
 }
-#setup-page .password-validation-checker {
+.password-validation-checker {
 	position: absolute;
 	top: 28px;
 	left: 100%;
@@ -108,7 +108,7 @@
 	height: 42px;
 	text-align: center;
 }
-#setup-page .password-validation-checker>span.oi {
+.password-validation-checker>span.oi {
 	display: none;
 	line-height: 46px;
 	position: absolute;
@@ -124,24 +124,24 @@
 .register-section .oi.not-validated {
 	color: #ff0072;
 }
-#setup-page .register-section .group + .group {
+.register-section .group + .group {
 	margin-top: 10px;
 }
-#setup-page .register-section .password-resume {
+.register-section .password-resume {
 	margin-top: 20px;
 	display: none;
 }
-#setup-page .register-section .password-strength {
+.register-section .password-strength {
 	
 }
-#setup-page .register-section .password-strength-witness {
+.register-section .password-strength-witness {
 	height: 2px;
 	background-color: rgba(36,172,206,.2);
 	position: relative;
 	width: 100%;
 	overflow: hidden;
 }
-#setup-page .register-section .password-strength-bar {
+.register-section .password-strength-bar {
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -178,33 +178,34 @@
 .password-resume .password-requirements-validation>.oi.not-validated {
 	display: block;
 }
-#setup-page .register-section .encryption input {
+.register-section .encryption input {
 	margin: 15px 0;
 	text-align: center;
 }
-#setup-page .register-section .encryption-word-number {
+.register-section .encryption-word-number {
 	line-height: 72px;
 }
 
-#setup-page .encryption-box {
+.encryption-box {
 	position: relative;
 }
-#setup-page .encryption-word-number {
+.encryption-word-number {
 	position: absolute;
 	opacity: 0.6;
 	top: 0;
 	left: 0;
 	line-height: 42px;
+	margin-left: -14px;
 	font-size: 9px;
 	transition: all ease .3s;
 	-webkit-transition: all ease .3s;
 	-moz-transition: all ease .3s;
 	-o-transition: all ease .3s;
 }
-#setup-page .recover-section .encryption-word-number {
-	margin-left: -14px;
+.register-section .encryption-word-number {
+	margin-left: 0;
 }
-#setup-page .encryption-box:hover .encryption-word-number {
+.encryption-box:hover .encryption-word-number {
 	opacity: 0.7;
 	font-size: 10px;
 }
@@ -212,21 +213,21 @@
 
 
 
-#setup-page .recover-section {
+.recover-section {
 	text-align: center;
 }
-#setup-page .recover-section .form {
+.recover-section .form {
 	text-align: justify;
 }
-#setup-page .recover-section fieldset {
+.recover-section fieldset {
 	margin: 50px 0;
 }
-#setup-page .recover-section .insert-keys-block {
+.recover-section .insert-keys-block {
 	margin: 20px 0;
 }
 
 
-#setup-page .progress-section {
+.progress-section {
 	text-align: center;
 	position: relative;
 }
