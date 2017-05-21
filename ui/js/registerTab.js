@@ -1,5 +1,75 @@
 function registerTab() {
 
+	//register validation object
+	//requires objectLength and objectKeys functions
+	var registerValidation = RegisterValidationManager();
+	function RegisterValidationManager() {
+
+		var CONFIG = {
+			events: {
+				update: {
+					target: '.register-section',
+					name: 'validationStatusUpdated'
+				},
+				validated: {
+					target: '.register-section',
+					name: 'validated'
+				},
+				notValidated: {
+					target: '.register-section',
+					name: 'notValidated'
+				}
+			}
+		};
+
+		var validation = {
+			hostname: false,
+			password: false
+		};
+
+		function status(key) {
+			if (key) {
+				return validation[key];
+			} else {
+				return validation;
+			}
+		}
+
+		function update(obj) {
+			//updating validation obj
+			$.extend(validation, obj, true);
+			//rising updated event
+			$(CONFIG.events.update.target).trigger(CONFIG.events.update.name);
+			//checking if everything is validated or not and rise an event
+			validationControl();
+		}
+
+		function validationControl() {
+			//checks everything within the validation object and rises the proper event
+			var result = true;
+			var keys = objectKeys(validation);
+			for ( var n = 0; n < objectLength(validation); n++ ) {
+				if (! validation[ keys[n] ] ) {
+					result = false;
+				}
+			}
+			//rising events
+			if ( result ) {
+				$(CONFIG.events.validated.target).trigger(CONFIG.events.validated.name);
+			} else {
+				$(CONFIG.events.notValidated.target).trigger(CONFIG.events.notValidated.name);
+			}
+		}
+
+		return {
+			status: status,
+			update: update
+		}
+	}
+
+
+
+
 	//validate hostname
 	var hostnameValidationConfig = {
 			requirements: {
@@ -33,6 +103,9 @@ function registerTab() {
 
 	function validateHostname() {
 
+		//updating validation object to false until server says otherwise
+		registerValidation.update({hostname: false});
+
 		//making sure it meets the requirements before asking for availability
 		hostnameValidation = hostnameValidator.validate( $hostnameInput.val() );
 
@@ -44,7 +117,7 @@ function registerTab() {
 			$hostnameValidationWitness.find('.not-validated').fadeIn(50);
 			//printing error in hostname response
 			$hostnameResponse.html( hostnameValidation.min.message );
-			//breaking function and returning false
+			//updatevalidation object
 			return false;
 		}
 
@@ -56,7 +129,7 @@ function registerTab() {
 			$hostnameValidationWitness.find('.not-validated').fadeIn(50);
 			//printing error in hostname response
 			$hostnameResponse.html( hostnameValidation.max.message );
-			//breaking function and returning false
+			//updatevalidation object
 			return false;
 		}
 
@@ -68,7 +141,7 @@ function registerTab() {
 			$hostnameValidationWitness.find('.not-validated').fadeIn(50);
 			//printing error in hostname response
 			$hostnameResponse.html( hostnameValidationConfig.messages.specialChars );
-			//breaking function and returning false
+			//updatevalidation object
 			return false;
 		}
 
@@ -92,6 +165,8 @@ function registerTab() {
 				$hostnameResponse.html('Congratulations! This hostname is available for you.');
 				//updating global object
 				register.hostname = $hostnameInput.val();
+				//update validation object
+				registerValidation.update({hostname: true});
 			} else {
 				//hidding validated display
 				$hostnameValidationWitness.find('.validated').fadeOut(50);
@@ -99,6 +174,8 @@ function registerTab() {
 				$hostnameValidationWitness.find('.not-validated').fadeIn(50);
 				//printing result in hostname response
 				$hostnameResponse.html('This hostname is not available. Try another.');
+				//update validation object
+				registerValidation.update({hostname: false});
 			}
 		});
 	}
@@ -239,6 +316,8 @@ function registerTab() {
 
 		//on user typing
 		$passwordInput.on('keyup', function() {
+			//setting validation object password to false until script finishes and says otherwise
+			registerValidation.update({password: false});
 			//checking if password meets the requirements while user types it
 			//updating password requirements validation witnesses
 			passwordRequirementsWitnessHandler();
@@ -249,6 +328,8 @@ function registerTab() {
 		});
 
 		$passwordRepeatInput.on('keyup', function() {
+			//setting validation object password to false until script finishes and says otherwise
+			registerValidation.update({password: false});
 			//does the passwords match?
 			doesPasswordMatch();
 		});
@@ -264,6 +345,8 @@ function registerTab() {
 					//show matching notification
 					$repeatPasswordValidationChecker.find('.validated').fadeIn(50);
 					$repeatPasswordValidationChecker.find('.not-validated').fadeOut(50);
+					//updating validation object
+					registerValidation.update({password: true});
 
 					//returning result
 					return true;
@@ -370,4 +453,14 @@ function registerTab() {
 	$('body').on('click', '#print-encryption-key-qr-code', function() {
 		window.open('print-qr-code.html');
 	});
+
+
+	//submit button enabler/disabler listening to the events
+	$('.register-section').bind('validated', function() {
+		$('#register-minebox-button').removeAttr('disabled');
+	});
+	$('.register-section').bind('notValidated', function() {
+		$('#register-minebox-button').attr('disabled', 'disabled');
+	});
+
 }
