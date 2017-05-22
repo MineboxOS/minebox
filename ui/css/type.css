@@ -5,7 +5,7 @@ body {
   font-family: 'Roboto', Helvetica, Sans-serif;
   font-size: 14px;
   line-height: 28px;
-  font-weight: 200;
+  font-weight: 400;
   text-align: justify;
 }
 
@@ -45,7 +45,7 @@ input, select, textarea,
 button {
   font-size: 14px;
   line-height: 28px;
-  font-weight: 200;
+  font-weight: 400;
 }
 
 
