@@ -1,0 +1,54 @@
+#plugins {
+
+}
+#plugins .sidebar {
+
+}
+#plugins .content {
+
+}
+#plugins-box {
+
+}
+.plugin {
+  margin: 0 !important;
+  padding-top: 18px;
+  padding-bottom: 18px;
+  cursor: pointer;
+}
+.plugin-inner:after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  width: 80%;
+  height: 6px;
+  margin-top: -3px;
+  transition: background-color ease .3s;
+}
+.plugin-inner {
+  padding: 18px;
+  height: 300px;
+  position: relative;
+}
+.plugin .logo {
+  height: 50px;
+  width: 100%;
+  background-size: contain;
+  background-position: center left;
+  background-repeat: no-repeat;
+  margin-bottom: 5px;
+}
+.plugin h3 {
+
+}
+.plugin p {
+  height: 80px;
+  overflow: hidden;
+}
+.plugin .settings {
+  position: absolute;
+  bottom: 18px;
+  left: 18px;
+  margin: 0;
+}

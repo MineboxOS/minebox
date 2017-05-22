@@ -1,0 +1,39 @@
+/* heebo-300 - latin */
+@font-face {
+  font-family: 'Heebo';
+  font-style: normal;
+  font-weight: 300;
+  src: url('../assets/fonts/heebo/heebo-v2-latin-300.eot'); /* IE9 Compat Modes */
+  src: local('Heebo Light'), local('Heebo-Light'),
+       url('../assets/fonts/heebo/heebo-v2-latin-300.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+       url('../assets/fonts/heebo/heebo-v2-latin-300.woff2') format('woff2'), /* Super Modern Browsers */
+       url('../assets/fonts/heebo/heebo-v2-latin-300.woff') format('woff'), /* Modern Browsers */
+       url('../assets/fonts/heebo/heebo-v2-latin-300.ttf') format('truetype'), /* Safari, Android, iOS */
+       url('../assets/fonts/heebo/heebo-v2-latin-300.svg#Heebo') format('svg'); /* Legacy iOS */
+}
+/* heebo-regular - latin */
+@font-face {
+  font-family: 'Heebo';
+  font-style: normal;
+  font-weight: 400;
+  src: url('../assets/fonts/heebo/heebo-v2-latin-regular.eot'); /* IE9 Compat Modes */
+  src: local('Heebo'), local('Heebo-Regular'),
+       url('../assets/fonts/heebo/heebo-v2-latin-regular.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+       url('../assets/fonts/heebo/heebo-v2-latin-regular.woff2') format('woff2'), /* Super Modern Browsers */
+       url('../assets/fonts/heebo/heebo-v2-latin-regular.woff') format('woff'), /* Modern Browsers */
+       url('../assets/fonts/heebo/heebo-v2-latin-regular.ttf') format('truetype'), /* Safari, Android, iOS */
+       url('../assets/fonts/heebo/heebo-v2-latin-regular.svg#Heebo') format('svg'); /* Legacy iOS */
+}
+/* heebo-700 - latin */
+@font-face {
+  font-family: 'Heebo';
+  font-style: normal;
+  font-weight: 700;
+  src: url('../assets/fonts/heebo/heebo-v2-latin-700.eot'); /* IE9 Compat Modes */
+  src: local('Heebo Bold'), local('Heebo-Bold'),
+       url('../assets/fonts/heebo/heebo-v2-latin-700.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+       url('../assets/fonts/heebo/heebo-v2-latin-700.woff2') format('woff2'), /* Super Modern Browsers */
+       url('../assets/fonts/heebo/heebo-v2-latin-700.woff') format('woff'), /* Modern Browsers */
+       url('../assets/fonts/heebo/heebo-v2-latin-700.ttf') format('truetype'), /* Safari, Android, iOS */
+       url('../assets/fonts/heebo/heebo-v2-latin-700.svg#Heebo') format('svg'); /* Legacy iOS */
+}

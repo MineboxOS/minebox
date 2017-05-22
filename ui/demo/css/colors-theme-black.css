@@ -1,0 +1,334 @@
+body {
+  background-color: #000;
+  color: #fff;
+}
+#topbar {
+  background-color: #191919;
+}
+#header {
+  background-color: #111;
+}
+::selection {
+  background: #24acce;
+  color: #ffffff;
+}
+::-moz-selection {
+  background: #24acce;
+  color: #ffffff;
+}
+
+
+/* MENU */
+#menu li:hover {
+  background-color: #191919;
+}
+#menu li:after {
+  background-color: #24acce;
+}
+#mobile-menu .mobile-menu .bar {
+  background-color: #fff;
+}
+#mobile-menu .mobile-menu.active .bar {
+  background-color: #24acce;
+}
+@media ( max-width: 991px ) {
+  #menu-box.active {
+    background-color: #fff;
+    color: #24acce;
+  }
+  #menu-box.active li:before {
+    color: #000;
+  }
+}
+
+
+
+/* SIDEBAR */
+#sidebar {
+  background-color: #111111;
+}
+.sidebar-block li:hover {
+  background-color: #191919;
+}
+.sidebar-block li.active {
+  background-color: #232323;
+}
+
+
+/* TABS */
+.tab-buttons li {
+  background-color: rgba(255,255,255,.05);
+  color: #fff;
+}
+.tab-buttons li.active {
+  background-color: rgba(255,255,255,.15);
+}
+.tab-buttons li:hover {
+  background-color: rgba(255,255,255,.2);
+}
+.tab-buttons {
+  border-bottom-color: rgba(255,255,255,.05);
+}
+
+
+/* TABLES */
+.table-striped>tbody>tr:nth-of-type(odd) {
+  background-color: rgba(255,255,255,.05);
+}
+.table-striped>tbody>tr:nth-of-type(even) {
+  background-color: rgba(0,0,0,.05);
+}
+.table>tbody>tr>td, .table>tbody>tr>th,
+.table>tfoot>tr>td, .table>tfoot>tr>th,
+.table>thead>tr>td, .table>thead>tr>th {
+  border-top-color: rgba(255,255,255,.1);
+}
+
+
+
+/* WIDGETS */
+.widget-title {
+  background-color: #232323;
+}
+.widget-inner {
+  background-color: #111111;
+}
+#backups-widget .backup-name {
+  color: #666;
+}
+#resources-widget .system-state.good {
+  color: #24acce;
+}
+#backups-widget .resource-monitor .bar,
+#disks-widget .resource-monitor .bar,
+#resources-widget .resource-monitor .bar {
+  background-color: #232323;
+}
+#resources-widget .resource-monitor .fill,
+#disks-widget .resource-monitor .fill,
+#backups-widget .resource-monitor .fill {
+  background-color: #24acce;
+}
+
+
+
+/* WALLETS */
+#wallet-details .passphrase span {
+  background-color: rgba(255,255,255,.1);
+}
+#wallet-details .coin-icon {
+  background-color: #24acce;
+  color: #fff;
+}
+#wallet-details .wallet-title {
+  color: #24acce;
+}
+#wallet-details .info.details input {
+  background-color: #191919;
+  color: #24acce;
+}
+#wallet-details .info.details li.wallet-balance {
+  color: #24acce;
+}
+#wallet-details .info.details li.wallet-balance input {
+  background-color: #24acce;
+  color: #fff;
+}
+
+
+/* FORMS */
+input, textarea,
+select, .select,
+button, .button {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  outline-color: transparent;
+}
+input:focus, textarea:focus,
+select:focus, .select:focus,
+button:focus, .button:focus {
+  outline-color: rgba(0,0,0,.5);
+}
+input:hover, textarea:hover,
+select:hover, .select:hover,
+button:hover, .button:hover {
+  outline-color: rgba(0,0,0,.3)
+}
+input[type="checkbox"] {
+  background-color: #fff;
+}
+input[type="checkbox"]:before,
+input[type="checkbox"]:after {
+  background-color: #198b95;
+}
+button, .button {
+  background-color: #24acce;
+  color: #fff;
+}
+::-webkit-input-placeholder {
+  color: rgba(255,255,255,.8);
+}
+::-moz-placeholder {
+  color: rgba(255,255,255,.8);
+}
+:-ms-input-placeholder {
+  color: rgba(255,255,255,.8);
+}
+:-moz-placeholder {
+  color: rgba(255,255,255,.8);
+}
+
+
+
+/* BACKUPS */
+#backup-manager {
+  background-color: #151515;
+}
+#snapshots {
+  background-color: #101010;
+}
+#snapshots:after {
+  background-color: #24acce;
+}
+.snapshot,
+.snapshot .date {
+  border-color: #151515 !important;
+}
+.split-created .size {
+  border-color: #171717;
+}
+.split-created .progress {
+  background-color: #171717;
+}
+.split-deleted .size {
+  border-color: #000000;
+}
+.split-deleted .progress {
+  background-color: #000000;
+}
+.backup-take-snapshot-inner {
+  background-color: #151515;
+}
+
+.snapshot:hover .split-created .size {
+  border-color: #24acce;
+}
+.snapshot:hover .split-created .progress {
+  background-color: #24acce;
+}
+.snapshot:hover .split-deleted .size {
+  border-color: #139ea7;
+}
+.snapshot:hover .split-deleted .progress {
+  background-color: #139ea7;
+}
+
+
+/* PLUGINS */
+.plugin.active .plugin-inner:after {
+  background-color: #24acce;
+}
+.plugin.unactive .plugin-inner:after {
+  background-color: #333;
+}
+.plugin-inner {
+  /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#242424+0,121212+100 */
+background: #242424; /* Old browsers */
+background: -moz-linear-gradient(top,  #242424 0%, #121212 100%); /* FF3.6-15 */
+background: -webkit-linear-gradient(top,  #242424 0%,#121212 100%); /* Chrome10-25,Safari5.1-6 */
+background: linear-gradient(to bottom,  #242424 0%,#121212 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#242424', endColorstr='#121212',GradientType=0 ); /* IE6-9 */
+
+}
+
+
+
+
+/* PATTERN LOCK */
+
+.patt-circ.hovered {
+  border: 2px solid #24acce;
+}
+.patt-circ {
+	border: 20px solid #24acce;
+}
+.patt-error .patt-circ.hovered {
+	background-color: rgba(50, 135, 195, 0.4);
+}
+.patt-dots {
+	background-color: #24acce;
+}
+.patt-circ.hovered .patt-dots  {
+	background-color: #24acce;
+}
+.patt-lines {
+	background-color: rgba(50, 135, 195, 0.4);
+}
+
+
+/* FILESYSTEM */
+#filesystem {
+  background: #f4f8fe;
+}
+#filesystem-tree {
+  color: #333;
+}
+#filesystem-tree li.selected>.inner {
+  background-color: #24acce;
+  color: #fff;
+}
+#filesystem-tree li.uploaded .inner:after {
+  background-color: #06b61d;
+}
+#filesystem-tree li.uploading .inner:after {
+  background-color: #ffe309;
+}
+#filesystem-tree li.error .inner:after {
+  background-color: #ff092c;
+}
+#unlock-encrypted-folder-outer {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+#filesystem-action-bar {
+  background-color: #191919;
+  color: #fff;
+}
+.filesystem-action-element .action-button-hover {
+  background-color: #111;
+}
+#filesystem-uploading .progress {
+  background-color: #24acce;
+}
+
+
+
+/* CONTEXTUAL MENU */
+.context-menu {
+  background-color: #2e2e2e;
+  color: #fff;
+  box-shadow: 0 0 30px rgba(0,0,0,.5);
+}
+.context-menu li:hover {
+  background-color: rgba(255,255,255,.1)
+}
+.context-menu li + li {
+  border-top: 1px solid rgba(255,255,255,.1);
+}
+
+
+
+/* CONTRACTS */
+.contract:before {
+  background-color: #24acce;
+}
+.contract-inner {
+  background-color: #131313;
+  box-shadow: 0 0 30px rgba(0,0,0,.05);
+}
+.contract-inner h2 {
+  color: #24acce;
+}
+.contract input {
+  background-color: rgba(255,255,255,.03);
+  color: #24acce;
+}

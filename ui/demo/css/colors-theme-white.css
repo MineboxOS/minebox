@@ -1,0 +1,192 @@
+body {
+  background-color: #fff;
+  color: #333;
+}
+p, span, label, li,
+input, select, textarea,
+button {
+  font-weight: 400;
+}
+#topbar {
+  background-color: #333;
+}
+#header {
+  background-color: #000000;
+  color: #fff;
+}
+::selection {
+  background: #00d2ff;
+  color: #0340a2;
+}
+::-moz-selection {
+  background: #00d2ff;
+  color: #0340a2;
+}
+
+
+/* MENU */
+#menu li:hover {
+  background-color: #222;
+}
+#menu li:after {
+  background-color: #fff;
+}
+
+
+
+/* SIDEBAR */
+#sidebar {
+  background-color: #000000;
+  color: #fff;
+}
+.sidebar-block li:hover {background-color: #222;}
+.sidebar-block li.active {
+  background-color: #333;
+}
+
+
+/* TABS */
+.tab-buttons li {
+  background-color: rgba(255,255,255,.05);
+  color: #fff;
+}
+.tab-buttons li.active {
+  background-color: rgba(255,255,255,.15);
+}
+.tab-buttons li:hover {
+  background-color: rgba(255,255,255,.2);
+}
+.tab-buttons {
+  border-bottom-color: rgba(255,255,255,.05);
+}
+
+
+/* TABLES */
+.table-striped>tbody>tr:nth-of-type(odd) {
+  background-color: rgba(255,255,255,.05);
+}
+.table-striped>tbody>tr:nth-of-type(even) {
+  background-color: rgba(0,0,0,.05);
+}
+.table>tbody>tr>td, .table>tbody>tr>th,
+.table>tfoot>tr>td, .table>tfoot>tr>th,
+.table>thead>tr>td, .table>thead>tr>th {
+  border-top-color: rgba(255,255,255,.1);
+}
+
+
+
+/* WIDGETS */
+.widget-title {
+  background-color: #000;
+  color: #fff;
+}
+.widget-inner {
+  background-color: #fafafa;
+}
+
+
+
+/* WALLETS */
+#wallet-icon {
+
+}
+#wallets-list .wallet {
+}
+#wallets-list .menu,
+#wallets-list .coin-icon {
+  color: #fff;
+}
+#wallet-details .passphrase span {
+  background-color: #ff092c;
+  color: #fff;
+}
+
+
+
+/* FORMS */
+input, textarea,
+select, .select,
+button, .button {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  outline-color: transparent;
+}
+input:focus, textarea:focus,
+select:focus, .select:focus,
+button:focus, .button:focus {
+  outline-color: rgba(0,0,0,.5);
+}
+input:hover, textarea:hover,
+select:hover, .select:hover,
+button:hover, .button:hover {
+  outline-color: rgba(0,0,0,.3)
+}
+input[type="checkbox"] {
+  background-color: #fff;
+}
+input[type="checkbox"]:before,
+input[type="checkbox"]:after {
+  background-color: #197f95;
+}
+button, .button {
+  background-color: #ff092c;
+  color: #fff;
+}
+::-webkit-input-placeholder {
+  color: rgba(255,255,255,.8);
+}
+::-moz-placeholder {
+  color: rgba(255,255,255,.8);
+}
+:-ms-input-placeholder {
+  color: rgba(255,255,255,.8);
+}
+:-moz-placeholder {
+  color: rgba(255,255,255,.8);
+}
+
+
+
+/* BACKUPS */
+#backup-manager {
+  background-color: #fafafa;
+}
+#snapshots {
+  background-color: #f5f5f5;
+}
+#snapshots:after {
+  background-color: #ff092c;
+}
+.snapshot,
+.snapshot .date {
+  border-color: #fafafa !important;
+}
+.split-created .size {
+  border-color: #e5e5e5;
+}
+.split-created .progress {
+  background-color: #e5e5e5;
+}
+.split-deleted .size {
+  border-color: #dfdfdf;
+}
+.split-deleted .progress {
+  background-color: #dfdfdf;
+}
+.backup-take-snapshot-inner {
+  background-color: #fafafa;
+}
+
+.snapshot:hover .split-created .size {
+  border-color: #aaa;
+}
+.snapshot:hover .split-created .progress {
+  background-color: #aaa;
+}
+.snapshot:hover .split-deleted .size {
+  border-color: #999;
+}
+.snapshot:hover .split-deleted .progress {
+  background-color: #999;
+}
