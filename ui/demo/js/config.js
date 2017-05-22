@@ -84,31 +84,6 @@ var config = {
     },
     activeClass: 'active'
   },
-  backups: {
-    snapshots: {
-      firstLoad: 13, //n of snapshots that will be loaded when document is loaded
-      olderLoad: 12, //n of snapshots to load when panning to the right
-      method: 'owl', //whether you want to append, prepend or use native's owl carousel method (append will add them at right, prepend at left)
-      carousel: {
-        pagination: false,
-        navigation: false,
-        items: 12,
-        itemsDesktop: 10,
-        itemsDesktopSmall: 8,
-        itemsTablet: 6,
-        itemsTabletSmall: 4,
-        itemsMobile: 2,
-        addClassActive: true
-      }
-    },
-    templates: {
-      path: 'templates/backups/',
-      files: {
-        globalStatus: 'backup-status-live.html',
-        snapshotsIteration: 'backup-snapshot-iteration.html'
-      }
-    }
-  },
   patternLock: {
     margin: 5,
     radius: 10

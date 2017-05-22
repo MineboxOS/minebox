@@ -1,106 +1,185 @@
 #backups {
 
 }
-#backups .content {
-  padding: 20px;
-}
-#backup-manager {
-  padding: 10px;
-}
-#backup-manager-window {
-  position: relative;
+
+#backups-app {
+  position: fixed;
+  top: 60px; /* header's height */
+  left: 0;
   width: 100%;
-  height: 500px;
-  overflow: hidden;
+  height: calc(100% - 60px); /* header's height */
 }
-#snapshots {
-  height: 100%;
-  position: relative;
-  transition: opacity ease .5s
+
+
+
+
+
+
+
+
+/* panel */
+#panel {
+  position: absolute;
+  top: 40px;
+  left: 40px;
+  width: 400px;
+  height: 100px;
+  z-index: 1000;
+  border: 3px solid rgba(36, 172, 206, 0.8);
+  background-color: rgba(36, 172, 206, 0.1);
 }
-#snapshots.loading {
-  cursor: progress;
-}
-#snapshots.loading:after {
-  content: '';
+
+
+
+
+
+
+
+
+/* graph */
+#graph {
   position: absolute;
   top: 0;
   left: 0;
-  width: 0;
-  height: 1px;
-  animation: loading 2s;
-  animation-iteration-count: infinite;
-  -webkit-animation: loading 2s;
-  -webkit-animation-iteration-count: infinite;
-  -moz-animation: loading 2s;
-  -moz-animation-iteration-count: infinite;
-  -o-animation: loading 2s;
-  -o-animation-iteration-count: infinite;
+  width: 100%;
+  height: calc( 100% - 80px ); /* #browser's height */
+  background-color: rgba(36, 172, 206, 0.15);
+  overflow: hidden;
 }
-.snapshot {
+  #graph-inner {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 200%;
+    height: 100%;
+  }
+    #new-files {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 50%;
+    }
+    #new-files:before {
+      content: '';
+      width: 100%;
+      height: 1px;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background-color: #24acce;
+    }
+    #cumulative-files {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 50%;
+    }
+      #cumulative-files .bar {
+        bottom: unset;
+        top: 0;
+      }
+
+
+
+
+
+
+
+
+/* browser */
+#browser {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 80px;
+  padding: 5px;
+  background-color: rgba(255,255,255,0.05);
+}
+  #browser .window {
+    cursor: pointer;
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 150px;
+    height: 100%;
+    z-index: 100;
+  }
+  #browser .window:before {
+    content: '';
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    width: calc( 100% - 10px );
+    height: calc( 100% - 10px );
+    border: 3px solid rgba(36, 172, 206, 0.8);
+    background-color: rgba(36, 172, 206, 0.1);
+  }
+  #browser-bars {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    z-index: 90;
+  }
+
+
+
+
+
+
+
+
+
+
+/* bar-container and anything related to bars */
+.bar-container {
+  width: 100%;
   height: 100%;
-  border-right: 1px solid transparent;
-}
-.snapshot:first-child {
-  border-left: 1px solid transparent;
-}
-.snapshot-space {
-  height: calc( 100% - 50px );
   position: relative;
 }
-.split-created {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: calc(100% - 4px);
-  height: calc(100% - 4px);
+  .bar-box {
+    float: right;
+    display: block;
+    height: 100%;
+    position: relative;
+  }
+    .bar {
+      position: absolute;
+      bottom: 0;
+      background-color: rgba(36, 172, 206, 0.8);
+      height: 80%
+    }
+/* bars exceptions */
+#graph .bar-box {
+  width: 90px;
+  padding-left: 10px;
+  padding-right: 10px;
 }
-.snapshot-space .size {
-  position: absolute;
-  width: 100%;
-  height: 0;
-  left: 0;
-  transition: all ease-in .5s;
-  border-width: 1px;
-  border-style: solid;
-  cursor: crosshair;
+  #graph .bar {
+    left: 10px;
+    width: calc( 100% - 20px );
+  }
+#browser .bar-box {
+  width: 10px;
+  padding-left: 2px;
+  padding-right: 2px;
 }
-.snapshot-space .progress {
-  position: absolute;
-  width: 100%;
-  height: 0;
-  left: 0;
-  transition: all ease-in .5s;
-  cursor: crosshair;
-}
-.split-created .size,
-.split-created .progress {
-  bottom: 0;
-}
-.snapshot .date {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 49px;
-  border-top: 1px solid transparent;
-  padding: 12px;
-}
-.snapshot .date p {
-  line-height: 12px;
-  margin: 0;
-}
-.backup-take-snapshot-inner {
-  margin-top: 18px;
-  padding-top: 18px;
-  padding-bottom: 18px;
-}
-#take-snapshot-button {
-  display: block;
-  line-height: 42px;
-  height: 42px;
-  padding-left: 12px;
-  padding-right: 12px;
-  margin: 6px 0;
-  width: 180px;
-}
+  #browser .bar {
+    left: 2px;
+    width: calc( 100% - 4px );
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
