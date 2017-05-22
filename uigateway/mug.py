@@ -27,6 +27,7 @@ MINEBD_URL="http://localhost:8080/v1/"
 MINEBD_AUTH_KEY_FILE="/etc/minebox/local-auth.key"
 MINEBD_STORAGE_PATH="/mnt/storage"
 UPLOADER_CMD="/usr/lib/minebox/uploader-bg.sh"
+MBKEY_CMD="/usr/lib/minebox/mbkey.sh"
 H_PER_SC=1e24 # hastings per siacoin
 
 
@@ -235,9 +236,21 @@ def api_key_verify():
 @app.route("/key", methods=['PUT'])
 def api_key_put():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-put-key
-    if not checkLogin():
-        return jsonify(message="Unauthorized access, please log into the main UI."), 401, getHeaders()
-    return jsonify(message="Not yet implemented."), 501, getHeaders()
+    mbdata, mb_status_code = getFromMineBD('serialnumber')
+    if mb_status_code == 200:
+        return jsonify(message="File system is already encrypted, cannot set key."), 400, getHeaders()
+    elif "messagesource" in mbdata and mbdata["messagesource"] == "MineBD":
+        # MineBD is running but encryption is not yet set up, we can actually set a key!
+        if len(request.data):
+          retcode = subprocess.call([MBKEY_CMD, "set", request.data])
+          if retcode == 0:
+              return jsonify(message="Key set successfully"), 200, getHeaders()
+          else:
+              return jsonify(message="Setting key failed."), 500, getHeaders()
+        else:
+            return jsonify(message="No useful key handed over."), 400, getHeaders()
+    else:
+        return jsonify(message="The Minebox storage is not running, please reboot the box or call support!"), 503, getHeaders()
 
 
 @app.route("/key", methods=['POST'])
