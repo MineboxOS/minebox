@@ -8,7 +8,7 @@ import javax.ws.rs.core.MediaType;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.minebox.nbd.AuthTokenService;
+import io.minebox.nbd.RemoteTokenService;
 import io.swagger.annotations.Api;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,12 +20,12 @@ import org.slf4j.LoggerFactory;
 public class RemoteTokenResource {
     public static final String PATH = "/auth";
     private static final Logger LOGGER = LoggerFactory.getLogger(RemoteTokenResource.class);
-    private final AuthTokenService authTokenService;
+    private final RemoteTokenService remoteTokenService;
 
 
     @Inject
-    public RemoteTokenResource(AuthTokenService authTokenService) {
-        this.authTokenService = authTokenService;
+    public RemoteTokenResource(RemoteTokenService remoteTokenService) {
+        this.remoteTokenService = remoteTokenService;
     }
 
     @GET
@@ -33,8 +33,6 @@ public class RemoteTokenResource {
     @Produces("text/plain")
     @PermitAll
     public String getMetadataToken() {
-        return authTokenService.getToken();
+        return remoteTokenService.getToken();
     }
-
-
 }

@@ -35,16 +35,15 @@ public class MetadataServiceImpl implements MetadataService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MetadataServiceImpl.class);
 
-    public static final String TEST_METADATA_DIR = "/home/andreas/minebox/restoreSample/backups/backup.1492640813";
-    volatile boolean wasInit = false;
+    private volatile boolean wasInit = false;
     private ImmutableMap<String, String> filenameLookup;
     private final String rootPath;
-    private final AuthTokenService authTokenService;
+    private final RemoteTokenService remoteTokenService;
 
     @Inject
-    public MetadataServiceImpl(@Named("httpMetadata") String rootPath, AuthTokenService authTokenService) {
+    public MetadataServiceImpl(@Named("httpMetadata") String rootPath, RemoteTokenService remoteTokenService) {
         this.rootPath = rootPath;
-        this.authTokenService = authTokenService;
+        this.remoteTokenService = remoteTokenService;
     }
 
     public void init() {
@@ -60,8 +59,8 @@ public class MetadataServiceImpl implements MetadataService {
 
     private ImmutableList<String> loadMetaData() {
         try {
-            final HttpResponse<InputStream> response = Unirest.get(rootPath + "latestMeta")
-                    .header("X-Auth-Token", authTokenService.getToken())
+            final HttpResponse<InputStream> response = Unirest.get(rootPath + "file/latestMeta")
+                    .header("X-Auth-Token", remoteTokenService.getToken())
                     .asBinary();
 //            final String nameHeader = response.getHeaders().getFirst("Content-Disposition");
             final ZipInputStream zis = new ZipInputStream(response.getBody());
@@ -112,8 +111,8 @@ public class MetadataServiceImpl implements MetadataService {
         try {
             LOGGER.info("downloading missing file {} from remote service... ", toDownload);
             final long start = System.currentTimeMillis();
-            final InputStream is = Unirest.get(rootPath + toDownload)
-                    .header("X-Auth-Token", authTokenService.getToken())
+            final InputStream is = Unirest.get(rootPath + "file/" + toDownload)
+                    .header("X-Auth-Token", remoteTokenService.getToken())
                     .asBinary().getBody();
             Files.copy(is, Paths.get(file.toURI()));
             final long duration = System.currentTimeMillis() - start;
