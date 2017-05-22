@@ -1,0 +1,167 @@
+[
+	{
+		"name":1495450116711,
+		"time_snapshot":1495450116711,
+		"size":571191240,
+		"numFiles":9877,
+		"progress":100,
+		"status":"FINISHED",
+		"metadata":"FINISHED",
+		"relative_size": 0,
+		"relative_progress": 100
+	},
+	{
+		"name":1495363716711,
+		"time_snapshot":1495363716711,
+		"size":884940440,
+		"numFiles":531,
+		"progress":100,
+		"status":"FINISHED",
+		"metadata":"FINISHED",
+		"relative_size": 0,
+		"relative_progress": 100
+	},
+	{
+		"name":1495277316711,
+		"time_snapshot":1495277316711,
+		"size":884493320,
+		"numFiles":5419,
+		"progress":100,
+		"status":"FINISHED",
+		"metadata":"FINISHED",
+		"relative_size": 0,
+		"relative_progress": 100
+	},
+	{
+		"name":1495190916711,
+		"time_snapshot":1495190916711,
+		"size":755853981,
+		"numFiles":9823,
+		"progress":100,
+		"status":"FINISHED",
+		"metadata":"FINISHED",
+		"relative_size": 0,
+		"relative_progress": 100
+	},
+	{
+		"name":1495104516711,
+		"time_snapshot":1495104516711,
+		"size":301434648,
+		"numFiles":8435,
+		"progress":100,
+		"status":"FINISHED",
+		"metadata":"FINISHED",
+		"relative_size": 0,
+		"relative_progress": 100
+	},
+	{
+		"name":1495018116711,
+		"time_snapshot":1495018116711,
+		"size":788197547,
+		"numFiles":288,
+		"progress":100,
+		"status":"FINISHED",
+		"metadata":"FINISHED",
+		"relative_size": 0,
+		"relative_progress": 100
+	},
+	{
+		"name":1494931716711,
+		"time_snapshot":1494931716711,
+		"size":918896962,
+		"numFiles":9191,
+		"progress":100,
+		"status":"FINISHED",
+		"metadata":"FINISHED",
+		"relative_size": 0,
+		"relative_progress": 100
+	},
+	{
+		"name":1494845316711,
+		"time_snapshot":1494845316711,
+		"size":534868093,
+		"numFiles":719,
+		"progress":100,
+		"status":"FINISHED",
+		"metadata":"FINISHED",
+		"relative_size": 0,
+		"relative_progress": 100
+	},
+	{
+		"name":1494758916711,
+		"time_snapshot":1494758916711,
+		"size":681217016,
+		"numFiles":7667,
+		"progress":100,
+		"status":"FINISHED",
+		"metadata":"FINISHED",
+		"relative_size": 0,
+		"relative_progress": 100
+	},
+	{
+		"name":1494672516711,
+		"time_snapshot":1494672516711,
+		"size":342400158,
+		"numFiles":1991,
+		"progress":100,
+		"status":"FINISHED",
+		"metadata":"FINISHED",
+		"relative_size": 0,
+		"relative_progress": 100
+	},
+	{
+		"name":1494586116711,
+		"time_snapshot":1494586116711,
+		"size":307500745,
+		"numFiles":3373,
+		"progress":100,
+		"status":"FINISHED",
+		"metadata":"FINISHED",
+		"relative_size": 0,
+		"relative_progress": 100
+	},
+	{
+		"name":1494499716711,
+		"time_snapshot":1494499716711,
+		"size":580215281,
+		"numFiles":3523,
+		"progress":100,
+		"status":"FINISHED",
+		"metadata":"FINISHED",
+		"relative_size": 0,
+		"relative_progress": 100
+	},
+	{
+		"name":1494413316711,
+		"time_snapshot":1494413316711,
+		"size":454126712,
+		"numFiles":9600,
+		"progress":100,
+		"status":"FINISHED",
+		"metadata":"FINISHED",
+		"relative_size": 0,
+		"relative_progress": 100
+	},
+	{
+		"name":1494326916711,
+		"time_snapshot":1494326916711,
+		"size":682570321,
+		"numFiles":3293,
+		"progress":100,
+		"status":"FINISHED",
+		"metadata":"FINISHED",
+		"relative_size": 0,
+		"relative_progress": 100
+	},
+	{
+		"name":1494240516711,
+		"time_snapshot":1494240516711,
+		"size":507160323,
+		"numFiles":1561,
+		"progress":100,
+		"status":"FINISHED",
+		"metadata":"FINISHED",
+		"relative_size": 0,
+		"relative_progress": 100
+	}
+]
