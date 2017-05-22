@@ -17,3 +17,5 @@ keymanager/.gradle/
 *.img
 *.dat
 .idea
+*.iso
+backup.*.zip

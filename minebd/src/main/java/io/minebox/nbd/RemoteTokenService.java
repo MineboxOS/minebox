@@ -15,12 +15,12 @@ import org.bitcoinj.core.Sha256Hash;
 /**
  * Created by andreas on 21.05.17.
  */
-public class AuthTokenService {
+public class RemoteTokenService {
     final private EncyptionKeyProvider encyptionKeyProvider;
     private final String rootPath;
 
     @Inject
-    public AuthTokenService(@Named("httpMetadata") String rootPath, EncyptionKeyProvider encyptionKeyProvider) {
+    public RemoteTokenService(@Named("httpMetadata") String rootPath, EncyptionKeyProvider encyptionKeyProvider) {
         this.rootPath = rootPath;
         this.encyptionKeyProvider = encyptionKeyProvider;
     }
