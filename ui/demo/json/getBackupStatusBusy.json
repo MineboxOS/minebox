@@ -1,0 +1,15 @@
+{
+  "status": "live",
+  "id": "sdfsdf89s",
+  "backup_time_ago": "3h22m",
+  "backup_percent": "50",
+  "backup_size": "22",
+  "files": {
+    "added": "342",
+    "removed": "4324"
+  },
+  "date": "19/09/2016",
+  "date_timestamp": "957823423423",
+  "time": "14:52",
+  "time_zone": "CET"
+}

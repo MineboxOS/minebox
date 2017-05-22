@@ -1,0 +1,22 @@
+<div id="{{snapshot_id}}" class="snapshot idle" data-id="{{snapshot_id}}" data-index="{{snapshot_index}}">
+  <div class="snapshot-space">
+    <div class="split-created">
+      <div class="size">
+        <div class="progress"></div>
+      </div>
+    </div>
+    <div class="information" style="display:none;">
+      <input type="hidden" class="size" value="{{snapshot_size}}" />
+      <input type="hidden" class="date" value="{{snapshot_date}}@{{snapshot_time}}" />
+      <input type="hidden" class="deleted-bytes" value="{{snapshot_deleted_bytes}}" />
+      <input type="hidden" class="created-bytes" value="{{snapshot_created_bytes}}" />
+      <input type="hidden" class="deleted-files" value="{{snapshot_deleted_files}}" />
+      <input type="hidden" class="created-files" value="{{snapshot_created_files}}" />
+      <input type="hidden" class="upload-progress" value="{{snapshot_upload_progress}}" />
+    </div>
+  </div>
+  <div class="date">
+    <p>{{snapshot_date}}</p>
+    <p>{{snapshot_time}} {{snapshot_time_zone}}</p>
+  </div>
+</div>

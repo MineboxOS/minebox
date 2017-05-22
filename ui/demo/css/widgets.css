@@ -1,0 +1,59 @@
+/*
+  Common mockup stuff for widgets
+*/
+
+#widgets-box {
+  padding: 6px;
+  position: relative;
+}
+.widget {
+  /*float: left;*/
+  width: 25%;
+  height: 300px;
+  padding: 6px;
+}
+.widget.expanded {
+  width: calc(50% - 8px);
+  height: 600px;
+}
+.widget-inner {
+  border-radius: 3px;
+  overflow: hidden;
+  height: 100%;
+}
+.widget-title {
+  position: relative;
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+}
+.widget-title>h5 {
+  line-height: 36px;
+}
+.widget-title .action-box {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 36px;
+  height: 36px;
+  text-align: center;
+}
+.widget-title .action-box>i {
+  display: inline-block;
+  line-height: 36px;
+  width: 32px;
+  margin: 0;
+  cursor: pointer;
+}
+.widget-content {
+  padding: 8px 12px 12px;
+}
+.widget-content-section {
+
+}
+.widget-content-section + .widget-content-section {
+  margin-top: 12px;
+}
+.expand-widget-button {
+  display: none !important;
+}

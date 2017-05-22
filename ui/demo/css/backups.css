@@ -1,0 +1,106 @@
+#backups {
+
+}
+#backups .content {
+  padding: 20px;
+}
+#backup-manager {
+  padding: 10px;
+}
+#backup-manager-window {
+  position: relative;
+  width: 100%;
+  height: 500px;
+  overflow: hidden;
+}
+#snapshots {
+  height: 100%;
+  position: relative;
+  transition: opacity ease .5s
+}
+#snapshots.loading {
+  cursor: progress;
+}
+#snapshots.loading:after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 1px;
+  animation: loading 2s;
+  animation-iteration-count: infinite;
+  -webkit-animation: loading 2s;
+  -webkit-animation-iteration-count: infinite;
+  -moz-animation: loading 2s;
+  -moz-animation-iteration-count: infinite;
+  -o-animation: loading 2s;
+  -o-animation-iteration-count: infinite;
+}
+.snapshot {
+  height: 100%;
+  border-right: 1px solid transparent;
+}
+.snapshot:first-child {
+  border-left: 1px solid transparent;
+}
+.snapshot-space {
+  height: calc( 100% - 50px );
+  position: relative;
+}
+.split-created {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(100% - 4px);
+  height: calc(100% - 4px);
+}
+.snapshot-space .size {
+  position: absolute;
+  width: 100%;
+  height: 0;
+  left: 0;
+  transition: all ease-in .5s;
+  border-width: 1px;
+  border-style: solid;
+  cursor: crosshair;
+}
+.snapshot-space .progress {
+  position: absolute;
+  width: 100%;
+  height: 0;
+  left: 0;
+  transition: all ease-in .5s;
+  cursor: crosshair;
+}
+.split-created .size,
+.split-created .progress {
+  bottom: 0;
+}
+.snapshot .date {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 49px;
+  border-top: 1px solid transparent;
+  padding: 12px;
+}
+.snapshot .date p {
+  line-height: 12px;
+  margin: 0;
+}
+.backup-take-snapshot-inner {
+  margin-top: 18px;
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+#take-snapshot-button {
+  display: block;
+  line-height: 42px;
+  height: 42px;
+  padding-left: 12px;
+  padding-right: 12px;
+  margin: 6px 0;
+  width: 180px;
+}

@@ -1,0 +1,112 @@
+#wallet {
+  padding: 60px 0;
+}
+
+#wallet .patt-holder {
+  margin: 0 auto;
+}
+
+#wallet .wallet {
+  position: relative;
+  display: block;
+  max-width: 400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+#wallet .wallet + .wallet {
+  margin-top: 90px;
+}
+
+#wallet .wallet section {
+  margin-top: 30px;
+}
+
+#wallet .button-box {
+
+}
+
+#wallet .wallet-title {
+
+}
+
+#wallet .wallet .balance-box {
+  position: relative;
+  font-size: 24px;
+  line-height: 40px;
+  height: 42px;
+}
+
+#wallet .wallet .coin-icon {
+  font: inherit;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 42px;
+  height: 42px;
+  text-align: center;
+}
+
+#wallet .wallet .wallet-balance {
+  font: inherit;
+  padding: 0;
+  padding-left: 54px;
+  margin: 0;
+}
+
+#wallet .reveal-box {
+  position: relative;
+  height: 150px;
+}
+
+#wallet .reveal-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: all ease .3s;
+}
+
+#wallet .reveal-container.revealed {
+  opacity: 1;
+}
+
+#wallet textarea.wallet-address {
+  height: 100px;
+  min-height: 0;
+  line-height: 18px;
+  padding: 12px;
+  margin: 0;
+  display: block;
+}
+
+#wallet .secret {
+  text-align: left;
+}
+
+#wallet .secret span {
+  display: inline-block;
+  padding: 0 3px;
+  height: 18px;
+  line-height: 18px;
+  margin: 4px 1px;
+}
+
+
+#access-denied {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  width: 360px;
+  height: 120px;
+  margin-left: -180px;
+  margin-top: -50px;
+  text-align: center;
+  background-color: #051401;
+  padding: 20px;
+}
+#access-denied h1 {
+  margin-bottom: 0;
+}

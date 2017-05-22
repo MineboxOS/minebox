@@ -1,0 +1,9 @@
+{
+  "id": "contract-3",
+  "fileSizeBytes": "2400",
+  "maxDurationWeeks": "11",
+  "startingTime": "1472561373201",
+  "collateralPerTBMonthSC": "97",
+  "pricePerTBPerMonthSC": "10",
+  "bandwidthPriceSC": "210",
+}

@@ -1,0 +1,33 @@
+<div id="backups">
+  <div id="content" class="content">
+
+    <div id="backup-global-status" style="display:none;">
+      {{backup-status}}
+    </div>
+
+    <div id="backup-manager">
+
+      <div class="backup-manager-title">
+        <h5>Backups</h5>
+      </div>
+
+      <div id="backup-manager-window">
+        <div id="snapshots" class="snapshots-container loading">
+        </div>
+      </div>
+    </div>
+
+    <div class="backup-take-snapshot clearfix">
+      <div class="col-xs-12 col-sm-6 col-md-4 pull-right backup-take-snapshot-inner">
+        <div class="pull-left">
+          <p>Next snapshot is scheduled for:</p>
+          <p id="next-snapshot-scheduled"></p>
+        </div>
+        <div class="pull-right">
+          <span id="take-snapshot-button" class="button"><i class="ic ic-camera"></i>&nbsp;Take it now</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
