@@ -36,10 +36,10 @@ body {
 @media ( max-width: 991px ) {
   #menu-box.active {
     background-color: #000;
-    color: #009800;
+    color: #24acce;
   }
   #menu-box.active li:before {
-    color: #0f0;
+    color: #0cf;
   }
 }
 
