@@ -288,6 +288,8 @@ function registerTab() {
 				loadingWitness.stop();
 			}, function( error ) {
 				//error;
+				//loading witness
+				loadingWitness.stop();
 			});
 		}
 

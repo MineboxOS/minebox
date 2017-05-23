@@ -126,9 +126,38 @@ function proveTab() {
 		encryptionKeyArray = [],
 		encryptionKeyString = '';
 
+	//REMOVE LATER
+	//REMOVE LATER
+	//REMOVE LATER
+	//REMOVE LATER
+	//REMOVE LATER
+	//REMOVE LATER
+	//REMOVE LATER
+	//REMOVE LATER
+	//REMOVE LATER
+	var a = register.seed.split(' ');
+	var $e = $('.prove-section .encryption-word');
+	for ( var n = 0; n < a.length; n++ ) {
+		$($e[n]).val(a[n]);
+	}
+	//REMOVE LATER
+	//REMOVE LATER
+	//REMOVE LATER
+	//REMOVE LATER
+	//REMOVE LATER
+	//REMOVE LATER
+	//REMOVE LATER
+	//REMOVE LATER
+	//REMOVE LATER
+	//REMOVE LATER
+	//REMOVE LATER
+	//REMOVE LATER
+	//REMOVE LATER
+	//REMOVE LATER
+	//REMOVE LATER
+
+
 	function validateEncryptionKey() {
-		//loading witness
-		loadingWitness.start();
 		//encryption key to array
 		for ( var n = 0; n < $encryptionKeyInputs.length; n++ ) {
 			encryptionKeyArray.push( $($encryptionKeyInputs[n]).val() );
@@ -137,23 +166,39 @@ function proveTab() {
 		encryptionKeyString = encryptionKeyArray.join(' ');
 
 		//faking server call here
-		//encryptionKeyRequester.setMethod()...
-
-		setTimeout(function() {
+		//matching the generated key and the provided one are the same (checking agains register.seed)
+		if ( encryptionKeyString == register.seed ) {
+			//they match
 			//loading witness
-			loadingWitness.stop();
+			loadingWitness.start();
+			//placing call
+			encryptionKeyRequester.setURL( config.mug.url + 'key' );
+			encryptionKeyRequester.setMethod('PUT');
+			encryptionKeyRequester.setData(encryptionKeyString);
+			encryptionKeyRequester.run(function(response) {
+				console.log(response);
+				//loading witness
+				loadingWitness.stop();
 
-			var response = true;
+				var response = true;
 
-			$submitButton.siblings('.error').html('');
+				$submitButton.siblings('.error').html('');
 
-			if ( response ) {
-				progressScreen.open();
-			} else {
-				$submitButton.siblings('.error').html('The key is not valid. Please check you have written everything correctly.');
-			}
-		}, 1000);
-
+				if ( response ) {
+					progressScreen.open();
+				} else {
+					$submitButton.siblings('.error').html('The key is not valid. Please check you have written everything correctly.');
+				}
+			}, function(error) {
+				console.log(error);
+				$('.prove-section .error').html('The private key you have provided is not correct (server said)');
+				//loading witness
+				loadingWitness.stop();
+			})
+		} else {
+			//they do not match
+			$('.prove-section .error').html('The private key you have provided is not correct');
+		}
 
 	}
 
