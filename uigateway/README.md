@@ -49,3 +49,22 @@ Or at yum level:
 yum install pyOpenSSL
 ```
 This adds no dependencies to the above.
+
+
+As the distro-installed packages create issues, we are installing our own stuff
+in virtualenv:
+```
+yum install python-virtualenv python2-pip
+```
+`python-virtualenv`,`python2-pip`,`python-setuptools` from `base`.
+
+Commands to set up / work with VirtualEnv:
+```
+cd /usr/lib/minebox
+virtualenv mug
+source mug/bin/activate
+pip install flask flask-cors requests packaging appdirs
+pip install pyopenssl
+<do stuff>
+deactivate
+```

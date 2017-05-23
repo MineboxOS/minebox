@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/lib/minebox/mug.py
+ExecStart=/usr/lib/minebox/mug.sh
 Restart=on-failure
 RestartSec=30
 
