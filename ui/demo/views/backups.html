@@ -2,13 +2,30 @@
   <div id="backups-app">
 
     <div id="panel">
-
+      <button id="new-snapshot-button" class="panel-button">&nbsp;</button>
+      <button id="display-size-scale-button" class="panel-button active">&nbsp;</button>
+      <button id="navigator-button" class="panel-button active">&nbsp;</button>
     </div>
 
 
     <div id="graph">
 
       <div class="loading"></div>
+
+      <div id="size-scale">
+        <div class="positive">
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
+        <div class="negative">
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
+      </div>
 
       <div id="graph-inner">
 
@@ -22,13 +39,13 @@
 
     </div>
 
-    <div id="browser">
+    <div id="timeline" class="active">
 
       <div class="window"></div>
 
       <div class="loading"></div>
 
-      <div id="browser-bars" class="bar-container clearfix">
+      <div id="timeline-bars" class="bar-container clearfix">
       </div>
 
     </div>

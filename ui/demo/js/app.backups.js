@@ -20,11 +20,14 @@ function backup() {
   };
 
   var $cumulativeFiles = $('#cumulative-files'),
-      $browserBarsBox = $('#browser-bars'),
+      $timeline = $('#timeline'),
+      $timelineBarsBox = $('#timeline-bars'),
+      $graph = $('#graph'),
       $graphContainer = $('#graph-inner'),
-      $scrollWindow = $('#browser .window'),
+      $scrollWindow = $('#timeline .window'),
+      $panelButtons = $('.panel-button'),
       $graphBars,
-      $browserBars,
+      $timelineBars,
       numberOfBars,
       backupInterface = BackupInterface(CONFIG);
 
@@ -35,7 +38,7 @@ function backup() {
     //making .window draggable
     $scrollWindow.draggable({
       axis: 'x',
-      containment: '#browser',
+      containment: '#timeline',
       drag: backupInterface.handleScroll
     });
   }
@@ -82,8 +85,8 @@ function backup() {
         printingTempHTMLString = replaceAll( printingTempHTMLString, '{{snapshot_time}}', array[n].time_snapshot );
         //printing in graph
         $cumulativeFiles.append( printingTempHTMLString );
-        //printing en browser
-        $browserBarsBox.append( printingTempHTMLString );
+        //printing en timeline
+        $timelineBarsBox.append( printingTempHTMLString );
       }
       //once everything is printed, update selection elements
       updateBarsSelectors();
@@ -98,14 +101,14 @@ function backup() {
       setGraphContainerWidth();
       setWindowScrollerWidth();
       setGraphBarsWidth();
-      setBrowserBarsWidth();
+      setTimelineBarsWidth();
     }
 
           //select bars
           function updateBarsSelectors() {
             //updating elements
             $graphBars = $('#graph .bar-box');
-            $browserBars = $('#browser-bars .bar-box');
+            $timelineBars = $('#timeline-bars .bar-box');
           }
 
           //get bar numbers by screen width
@@ -127,10 +130,10 @@ function backup() {
             $graphBars.css( 'width', 100 / barsTotal + '%' );
           }
 
-          //set browser bars width -> called on init and on resize
-          function setBrowserBarsWidth() {
+          //set timeline bars width -> called on init and on resize
+          function setTimelineBarsWidth() {
             //the width is the result of dividing available space (100%) between the number of bars
-            $browserBars.css( 'width', 100 / $browserBars.length + '%' );
+            $timelineBars.css( 'width', 100 / $timelineBars.length + '%' );
           }
 
           //set graph container width
@@ -160,7 +163,7 @@ function backup() {
 
     /*
      * FUNCTIONS FOR NAVIGATION
-     * Functions that handle window position, buttons pressed...
+     * Functions that handle window position
      */
           //handle drag and drop in scrolling window
           function handleScrollingWindow() {
@@ -174,6 +177,46 @@ function backup() {
               'transform': 'translateX(' + scrollingWindowData.percent + '%)',
               'margin-right': ( scrollingWindowData.percent * window.innerWidth ) / 100 + 'px'
             });
+          }
+
+
+    /*
+     * FUNCTIONS FOR PANEL
+     * Functions that handle button's panel activity
+     */
+          //handle button .activity
+          $panelButtons.on('click', function() {
+            if ( $(this).attr('id') != 'new-snapshot-button' ) {
+              if ( $(this).hasClass('active') ) {
+                $(this).removeClass('active');
+              } else {
+                $(this).addClass('active');
+              }
+            }
+            buttonClicked( $(this) );
+            $(this).blur();
+          });
+
+          function buttonClicked( $clicked ) {
+            if ( $clicked.attr('id') == 'display-size-scale-button' ) {
+              displaySizeScale();
+            } else if ( $clicked.attr('id') == 'navigator-button' ) {
+              displayTimeline();
+            }
+          }
+
+          function displaySizeScale() {
+
+          }
+
+          function displayTimeline() {
+            if ( $timeline.hasClass('active') ) {
+              $timeline.removeClass('active');
+              $graph.addClass('expand');
+            } else {
+              $timeline.addClass('active');
+              $graph.removeClass('expand');
+            }
           }
 
 
