@@ -24,6 +24,7 @@ H_PER_SC=1e24 # hastings per siacoin
 app = Flask(__name__)
 
 @app.route("/")
+@setOrigin()
 def api_root():
     links = []
     for rule in app.url_map.iter_rules():
@@ -35,6 +36,7 @@ def api_root():
 
 
 @app.route("/backup/list", methods=['GET'])
+@setOrigin()
 def api_backup_list():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backuplist
     if not checkLogin():
@@ -47,6 +49,7 @@ def api_backup_list():
 
 
 @app.route("/backup/<backupname>/status", methods=['GET'])
+@setOrigin()
 def api_backup_status(backupname):
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backup1493807150status
     if not checkLogin():
@@ -64,6 +67,7 @@ def api_backup_status(backupname):
 
 
 @app.route("/backup/all/status", methods=['GET'])
+@setOrigin()
 def api_backup_all_status():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backupallstatus
     if not checkLogin():
@@ -82,6 +86,7 @@ def api_backup_all_status():
 
 
 @app.route("/backup/start", methods=['POST'])
+@setOrigin()
 def api_backup_start():
     # Doc: *** TBD - not documented yet***
     if not checkLogin():
@@ -106,6 +111,7 @@ def api_backup_start():
 
 
 @app.route("/key/status", methods=['GET'])
+@setOrigin()
 def api_key_status():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-keystatus
     if not checkLogin():
@@ -114,6 +120,7 @@ def api_key_status():
 
 
 @app.route("/key/generate", methods=['GET'])
+@setOrigin()
 def api_key_generate():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-keygenerate
     mbdata, mb_status_code = getFromMineBD('keys/asJson')
@@ -126,6 +133,7 @@ def api_key_generate():
 
 
 @app.route("/key/verify", methods=['POST'])
+@setOrigin()
 def api_key_verify():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-post-keyverify
     if not checkLogin():
@@ -134,6 +142,7 @@ def api_key_verify():
 
 
 @app.route("/key", methods=['PUT'])
+@setOrigin()
 def api_key_put():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-put-key
     mbdata, mb_status_code = getFromMineBD('serialnumber')
@@ -154,6 +163,7 @@ def api_key_put():
 
 
 @app.route("/key", methods=['POST'])
+@setOrigin()
 def api_key_post():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-post-key
     if not checkLogin():
@@ -162,6 +172,7 @@ def api_key_post():
 
 
 @app.route("/consensus", methods=['GET'])
+@setOrigin()
 def api_consensus():
     # Doc: *** TBD - not documented yet***
     if not checkLogin():
@@ -172,6 +183,7 @@ def api_consensus():
 
 
 @app.route("/contracts", methods=['GET'])
+@setOrigin()
 def api_contracts():
     # Doc: *** not documented yet***
     if not checkLogin():
@@ -266,6 +278,7 @@ def api_status():
 
 
 @app.route("/wallet/status", methods=['GET'])
+@setOrigin()
 def api_wallet_status():
     # Doc: *** not documented yet***
     if not checkLogin():
@@ -292,6 +305,7 @@ def api_wallet_status():
 
 
 @app.route("/wallet/unlock", methods=['POST'])
+@setOrigin()
 def api_wallet_unlock():
     # Doc: *** not documented yet***
     if not checkLogin():
@@ -307,11 +321,13 @@ def api_wallet_unlock():
 
 
 @app.errorhandler(404)
+@setOrigin()
 def page_not_found(error):
     app.logger.error('Method not found: %s' % request.url)
     return jsonify(error="Method not supported: "+ str(error)), 404
 
 @app.errorhandler(500)
+@setOrigin()
 def page_not_found(error):
     app.logger.error('Internal server error @ %s %s' % (request.url , str(error)))
     return jsonify(error="Internal server error: "+ str(error)), 500
