@@ -56,7 +56,9 @@ in virtualenv:
 ```
 yum install python-virtualenv python2-pip
 ```
-`python-virtualenv`,`python2-pip`,`python-setuptools` from `base`.
+This results in the following packages being installed:
+`python-backports`, `python-backports-ssl_match_hostname`, `python-virtualenv`,
+`python-setuptools` from `base` and `python2-pip` from `epel`.
 
 Commands to set up / work with VirtualEnv:
 ```
