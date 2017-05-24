@@ -11,7 +11,11 @@ ExecStart=/usr/bin/java -jar /usr/lib/minebox/minebd-1.0-SNAPSHOT-all.jar /etc/m
 ExecStartPost=/usr/bin/systemctl start nbd@nbd0
 #the exepected return code is 143, since this is the one java sends as answer to SIGTERM (kill -15) 143 = 128+15
 SuccessExitStatus=143
-TimeoutStartSec=infinity
+# To disable the timeout, systemd 229 and later uses infinity, but CentOS 7
+# has systemd 219, where only 0 works for that. 229+ support 0 for compat.
+# See https://github.com/systemd/systemd/blob/v229/NEWS#L109-L113
+#TimeoutStartSec=infinity
+TimeoutStartSec=0
 
 #ExecStop=
 
