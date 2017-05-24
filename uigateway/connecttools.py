@@ -15,7 +15,6 @@ MINEBD_AUTH_KEY_FILE="/etc/minebox/local-auth.key"
 def setOrigin(*args, **kwargs):
     def decorator(f):
         def wrapped_function(*args, **kwargs):
-            current_app.logger.info("oh, well.")
             if request.method == 'OPTIONS':
                 resp = current_app.make_default_options_response()
             else:
