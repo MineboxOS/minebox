@@ -26,11 +26,11 @@ function LoadingSpace() {
 		//invert direction
 		if ( $element.attr('data-position') == 'left' ) {
 			//move to right
-			props.left = '1000%';
+			props.left = '1200%';
 			$element.attr('data-position', 'right');
 		} else if ( $element.attr('data-position') == 'right' ) {
 			//move to left
-			props.left = '-1000%';
+			props.left = '-1200%';
 			$element.attr('data-position', 'left');
 		} else {
 			//left has not been set yet, moving to random
@@ -38,11 +38,11 @@ function LoadingSpace() {
 
 			if ( !choice ) {
 				//move to left
-				props.left = '-1000%';
+				props.left = '-1200%';
 				$element.attr('data-position', 'left');
 			} else {
 				//move to right
-				props.left = '1000%';
+				props.left = '1200%';
 				$element.attr('data-position', 'right');
 			}
 		}
