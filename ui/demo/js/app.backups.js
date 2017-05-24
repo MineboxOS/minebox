@@ -26,6 +26,7 @@ function backup() {
       $graphContainer = $('#graph-inner'),
       $scrollWindow = $('#timeline .window'),
       $panelButtons = $('.panel-button'),
+      $sizeScale = $('#size-scale'),
       $graphBars,
       $timelineBars,
       numberOfBars,
@@ -38,9 +39,8 @@ function backup() {
     //making .window draggable
     $scrollWindow.draggable({
       axis: 'x',
-      containment: '#timeline',
-      drag: backupInterface.handleScroll
-    });
+      containment: '#timeline'
+    }).bind('drag', backupInterface.handleScroll);
   }
 
 
@@ -178,6 +178,28 @@ function backup() {
               'margin-right': ( scrollingWindowData.percent * window.innerWidth ) / 100 + 'px'
             });
           }
+          //handle click and point in scrolling window
+          var clickAndPointData = {};
+          $timelineBarsBox.on('click', function(e) {
+            //preventing event to go deeper on DOM
+            e.stopPropagation();
+            //storing clicked point and offset
+            clickAndPointData.offset = $scrollWindow.width() / 2;
+            clickAndPointData.clicked = e.pageX;
+            //preventing "click" out of the margin area
+            if ( clickAndPointData.clicked < clickAndPointData.offset ) {
+              //if clicked too on the left
+              clickAndPointData.go = 0;
+            } else if ( clickAndPointData.clicked > window.innerWidth - clickAndPointData.offset ) {
+              //if clicked too on the right
+              clickAndPointData.go = (window.innerWidth - clickAndPointData.offset) - clickAndPointData.offset;
+            } else {
+              //if clicked within the margins
+              clickAndPointData.go = clickAndPointData.clicked - clickAndPointData.offset;
+            }
+            //moving
+            $scrollWindow.css('left', clickAndPointData.go).trigger('drag');
+          });
 
 
     /*
@@ -206,7 +228,11 @@ function backup() {
           }
 
           function displaySizeScale() {
-
+            if ( $sizeScale.hasClass('active') ) {
+              $sizeScale.removeClass('active');
+            } else {
+              $sizeScale.addClass('active');
+            }
           }
 
           function displayTimeline() {
@@ -218,6 +244,22 @@ function backup() {
               $graph.removeClass('expand');
             }
           }
+
+
+    /*
+     * FUNCTIONS FOR BARS INTERACTION
+     * Functions that handle bars activity
+     */
+          //handle .bar events
+          $('body').on('click', '#graph .bar-box', function() {
+            //only if clicked bar is not active already
+            if ( !$(this).hasClass('active') ) {
+              //removing class on all bars
+              $('#graph .bar-box').removeClass('active');
+              //add class to clicked
+              $(this).addClass('active');
+            }
+          });
 
 
     return {
