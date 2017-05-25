@@ -209,6 +209,10 @@ button:focus,
 :-moz-placeholder {
   color: rgba(255,255,255,.2);
 }
+.in-text-button {
+    border-bottom: 1px dotted #24acce;
+    color: #24acce;
+}
 
 
 
@@ -391,3 +395,80 @@ button:focus,
   background-color: rgba(255,255,255,.03);
   color: #24acce;
 }
+
+
+
+
+/* SETUP */
+.register-section .oi.validated {
+  color: #00ff76;
+}
+.register-section .oi.not-validated {
+  color: #ff0072;
+}
+.register-section .password-strength-witness {
+  background-color: rgba(36,172,206,.2);
+}
+.register-section .password-strength-bar {
+  background-color: #24acce;
+}
+#progress-bar {
+  background-color: #24acce;
+}
+#loading-space .star {
+  background-color: #01c9fb;
+  box-shadow: 0 0 30px #01c9fb;
+}
+
+
+
+
+/* INSTASCAN */
+#instascan-box {
+  background-color: rgba(0,0,0,.8);
+}
+#close-instascan-button:before,
+#close-instascan-button:after {
+  background-color: #fff;
+}
+
+
+
+
+/* NOTIFY */
+.notify-window .obfuscation-layer {
+  background-color: rgba(0,0,0,.8);
+}
+.notify-window .obfuscation-layer {
+  background-color: #001;
+  border: 1px solid #24acce;
+}
+.notify-window .close-btn:after,
+.notify-window .close-btn:before {
+  background-color: #fff;
+}
+.notify-window button.accept {
+  background-color: #24acce;
+}
+.notify-window button.cancel {
+  background-color: #101010;
+}
+@media ( max-width: 500px ) {
+  .notify-window .close-btn:after,
+  .notify-window .close-btn:before {
+    background-color: #101010;
+  }
+}
+@media ( max-height: 560px ) {
+  .notify-window .close-btn:after,
+  .notify-window .close-btn:before {
+    background-color: #24acce;
+  }
+}
+
+
+
+
+
+
+

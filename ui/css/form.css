@@ -121,8 +121,6 @@ button + .button,
 }
 .in-text-button {
     display: inline-block;
-    border-bottom: 1px dotted #24acce;
-    color: #24acce;
     cursor: pointer;
 }
 ::-webkit-input-placeholder {
