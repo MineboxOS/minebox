@@ -109,7 +109,7 @@ function recoverTab() {
 				loadingWitness.stop();
 				cb();
 			}
-		}, 10000);
+		}, 2000);
 	}
 
 }
