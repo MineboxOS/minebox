@@ -126,35 +126,6 @@ function proveTab() {
 		encryptionKeyArray = [],
 		encryptionKeyString = '';
 
-	//REMOVE LATER
-	//REMOVE LATER
-	//REMOVE LATER
-	//REMOVE LATER
-	//REMOVE LATER
-	//REMOVE LATER
-	//REMOVE LATER
-	//REMOVE LATER
-	//REMOVE LATER
-	var a = register.seed.split(' ');
-	var $e = $('.prove-section .encryption-word');
-	for ( var n = 0; n < a.length; n++ ) {
-		$($e[n]).val(a[n]);
-	}
-	//REMOVE LATER
-	//REMOVE LATER
-	//REMOVE LATER
-	//REMOVE LATER
-	//REMOVE LATER
-	//REMOVE LATER
-	//REMOVE LATER
-	//REMOVE LATER
-	//REMOVE LATER
-	//REMOVE LATER
-	//REMOVE LATER
-	//REMOVE LATER
-	//REMOVE LATER
-	//REMOVE LATER
-	//REMOVE LATER
 
 
 	function validateEncryptionKey() {
