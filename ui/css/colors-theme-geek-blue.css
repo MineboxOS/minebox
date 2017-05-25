@@ -1,10 +1,8 @@
 html {
-  /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#111122+0,000011+100 */
-  background: #111122; /* Old browsers */
-  background: -moz-radial-gradient(center, ellipse cover, #111122 0%, #000011 100%); /* FF3.6-15 */
-  background: -webkit-radial-gradient(center, ellipse cover, #111122 0%,#000011 100%); /* Chrome10-25,Safari5.1-6 */
-  background: radial-gradient(ellipse at center, #111122 0%,#000011 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
-  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#111122', endColorstr='#000011',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+  background-image: url(../assets/images/gradient-bg.png);
+  background-size: cover;
+  background-attachment: fixed;
+  background-position: center;
 }
 body {
   color: #aaa;

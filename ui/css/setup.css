@@ -3,7 +3,7 @@
 }
 #setup-page>section {
 	display: none;
-	padding: 100px 0 300px;
+	padding: 100px 0;
 }
 #setup-page>section .logo {
 	width: 100%;
