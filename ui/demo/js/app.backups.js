@@ -160,6 +160,56 @@ function backup() {
             $scrollWindow.css( 'width', 100 / windowScrollRatio + '%' );
           }
 
+          function renderVisible() {
+            setTimeout(function() {
+              var $visible = calculateVisible();
+              renderHeight($visible);
+            }, 1000);
+          }
+
+          function renderHeight($visible) {
+            //init maximum var
+            var maximum = 0;
+            var minimum = $($visible[0]).attr('data-size'); //giving it a value to start with
+            //iterating through visible to know the maximum and minimum
+            for ( var n = 0; n < $visible.length; n++ ) {
+              if ( $($visible[n]).attr('data-size') > maximum ) {
+                maximum = $($visible[n]).attr('data-size');
+              }
+              if ( $($visible[n]).attr('data-size') < minimum ) {
+                minimum = $($visible[n]).attr('data-size');
+              }
+            }
+            //iterating through visible again to apply the maximum
+            for ( var n = 0; n < $visible.length; n++ ) {
+              //$($visible[n]).find('.bar').css( 'height', Math.log( parseInt( $($visible[n]).attr('data-size')) / Math.log(maximum) ) );
+              console.log( logScale(minimum, maximum, $($visible[n]).attr('data-size') ) );
+            }
+
+            function logScale(min,max,size) {
+              //Position will be between min and max
+              var minp = min;
+              var maxp = max;
+
+              //The result should be between 0 an 100
+              var minv = Math.log(1);
+              var maxv = Math.log(10);
+
+              //Calculate adjustment factor
+              var scale = (maxv-minv) / (maxp-minp);
+
+              return Math.exp(minv + scale*(size-minp));
+            }
+
+          }
+
+          function printData() {
+            for ( var n = 0; n < $visible.length; n++ ) {
+
+            }
+          }
+
+
 
     /*
      * FUNCTIONS FOR NAVIGATION
@@ -177,7 +227,27 @@ function backup() {
               'transform': 'translateX(' + scrollingWindowData.percent + '%)',
               'margin-right': ( scrollingWindowData.percent * window.innerWidth ) / 100 + 'px'
             });
+            renderVisible();
           }
+
+          function calculateVisible() {
+            //init array
+            var arrayOfVisible = [];
+            //iterating through elements
+            for ( var n = 0; n < $graphBars.length; n++ ) {
+              //if current bar offset is higher than 0
+              if ( $($graphBars[n]).offset().left > 0 ) {
+                //and if current bar offset + current bar width is lower than window width
+                if ( $($graphBars[n]).offset().left + $($graphBars[n]).width() < window.innerWidth ) {
+                  //add to array
+                  arrayOfVisible.push( $($graphBars[n]) );
+                }
+              }
+            }
+            //returning array
+            return arrayOfVisible;
+          }
+
           //handle click and point in scrolling window
           var clickAndPointData = {};
           $timelineBarsBox.on('click', function(e) {

@@ -330,8 +330,7 @@
       position: absolute;
       bottom: 0;
       border: 1px solid #24acce;
-      background-color: transparent;
-      height: 80%;
+      background-color: transparent;;
       transition: all ease .3s;
       -webkit-transition: all ease .3s;
       -moz-transition: all ease .3s;
