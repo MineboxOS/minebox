@@ -9,7 +9,7 @@ function backup() {
       requester: new Requester()
     },
     templates: {
-      bars: '<div id="backup-{{backup_name}}" class="bar-box backup-status-{{backup_status}} backup-metadata-{{backup_metadata}}" data-name="{{backup_name}}" data-timestamp="{{snapshot_time}}" data-size="{{backup_size}}" data-relative-size="{{backup_relative_size}}" data-progress="{{backup_progress}}" data-relative-progress="{{backup_relative_progress}}"><div class="bar"></div></div>'
+      bars: '<div id="backup-{{backup_name}}" class="bar-box backup-status-{{backup_status}} backup-metadata-{{backup_metadata}}" data-name="{{backup_name}}" data-timestamp="{{snapshot_time}}" data-size="{{backup_size}}" data-relative-size="{{backup_relative_size}}" data-progress="{{backup_progress}}" data-relative-progress="{{backup_relative_progress}}"><div class="bar"></div><div class="info"><p class="date"></p><p class="name"></p><p class="size"></p></div></div>'
     },
     bars: {
       desktop: 16,
@@ -84,9 +84,9 @@ function backup() {
         printingTempHTMLString = replaceAll( printingTempHTMLString, '{{backup_relative_progress}}', array[n].relative_progress );
         printingTempHTMLString = replaceAll( printingTempHTMLString, '{{snapshot_time}}', array[n].time_snapshot );
         //printing in graph
-        $cumulativeFiles.append( printingTempHTMLString );
+        $cumulativeFiles.prepend( printingTempHTMLString );
         //printing en timeline
-        $timelineBarsBox.append( printingTempHTMLString );
+        $timelineBarsBox.prepend( printingTempHTMLString );
       }
       //once everything is printed, update selection elements
       updateBarsSelectors();
@@ -128,6 +128,8 @@ function backup() {
             }
             //setting its width
             $graphBars.css( 'width', 100 / barsTotal + '%' );
+            //setting bars height & info
+            renderVisible();
           }
 
           //set timeline bars width -> called on init and on resize
@@ -161,52 +163,95 @@ function backup() {
           }
 
           function renderVisible() {
-            setTimeout(function() {
-              var $visible = calculateVisible();
-              renderHeight($visible);
-            }, 1000);
+            renderGraphBarsHeight(getVisible());
+            renderTimelineBarsHeight();
           }
 
-          function renderHeight($visible) {
+          function renderGraphBarsHeight($visible) {
             //init maximum var
             var maximum = 0;
-            var minimum = $($visible[0]).attr('data-size'); //giving it a value to start with
+            var minimum = parseInt( $($visible[0]).attr('data-size') ); //giving it a value to start with
             //iterating through visible to know the maximum and minimum
             for ( var n = 0; n < $visible.length; n++ ) {
-              if ( $($visible[n]).attr('data-size') > maximum ) {
-                maximum = $($visible[n]).attr('data-size');
+              if ( parseInt( $($visible[n]).attr('data-size') ) > maximum ) {
+                maximum = parseInt( $($visible[n]).attr('data-size') );
               }
-              if ( $($visible[n]).attr('data-size') < minimum ) {
-                minimum = $($visible[n]).attr('data-size');
+              if ( parseInt( $($visible[n]).attr('data-size') ) < minimum ) {
+                minimum = parseInt( $($visible[n]).attr('data-size') );
               }
             }
-            //iterating through visible again to apply the maximum
+            
+            //iterating through visible again to apply the height and fill the data
             for ( var n = 0; n < $visible.length; n++ ) {
-              //$($visible[n]).find('.bar').css( 'height', Math.log( parseInt( $($visible[n]).attr('data-size')) / Math.log(maximum) ) );
-              console.log( logScale(minimum, maximum, $($visible[n]).attr('data-size') ) );
+              $($visible[n]).find('.bar').css('height', ( logScale(minimum, maximum, $($visible[n]).attr('data-size') ) ) + '%' );
+              printData( $($visible[n]) );
             }
 
-            function logScale(min,max,size) {
-              //Position will be between min and max
-              var minp = min;
-              var maxp = max;
-
-              //The result should be between 0 an 100
-              var minv = Math.log(1);
-              var maxv = Math.log(10);
-
-              //Calculate adjustment factor
-              var scale = (maxv-minv) / (maxp-minp);
-
-              return Math.exp(minv + scale*(size-minp));
-            }
-
+            //adjust size scale values
+            adjustSizeScaleValues( maximum );
           }
 
-          function printData() {
-            for ( var n = 0; n < $visible.length; n++ ) {
-
+          var rendering = null;
+          function renderTimelineBarsHeight() {
+            if ( rendering ) {
+              clearTimeout(rendering);
+              rendering = null;
             }
+            rendering = setTimeout(function() {
+              //init maximum var
+              var maximum = 0;
+              var minimum = parseInt( $($timelineBars[0]).attr('data-size') ); //giving it a value to start with
+              //iterating through visible to know the maximum and minimum
+              for ( var n = 0; n < $timelineBars.length; n++ ) {
+                if ( parseInt( $($timelineBars[n]).attr('data-size') ) > maximum ) {
+                  maximum = parseInt( $($timelineBars[n]).attr('data-size') );
+                }
+                if ( parseInt( $($timelineBars[n]).attr('data-size') ) < minimum ) {
+                  minimum = parseInt( $($timelineBars[n]).attr('data-size') );
+                }
+              }
+
+              //iterating through visible again to apply the maximum
+              for ( var n = 0; n < $timelineBars.length; n++ ) {
+                $($timelineBars[n]).find('.bar').css('height', ( logScale(minimum, maximum, $($timelineBars[n]).attr('data-size') ) ) + '%' );
+              }
+            }, 600);
+          }
+
+          function logScale(min,max,size) {
+            //making size a integer
+            size = parseInt( size );
+            //Position will be between min and max
+            var minp = min;
+            var maxp = max;
+
+            //The result should be between 0 an 100
+            var minv = Math.log(10);
+            var maxv = Math.log(100);
+
+            //Calculate adjustment factor
+            var scale = (maxv-minv) / (maxp-minp);
+
+            return Math.exp(minv + scale*(size-minp));
+          }
+
+          function printData($element) {
+            var d = new Date( parseInt($element.attr('data-timestamp')) );
+            var info = {
+              date: d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear(),
+              name: '#' + $element.attr('data-name'),
+              size: ( parseInt( $element.attr('data-size') ) / 1000000 ) + 'MB'
+            };
+            $element.find('.date').html( info.date );
+            $element.find('.name').html( info.name );
+            $element.find('.size').html( info.size );
+          }
+
+          function adjustSizeScaleValues( maximum ) {
+            $sizeScale.find('.fourty').html( ( ( maximum * 40 ) / 100 ) / 1000000 + 'MB' );
+            $sizeScale.find('.sixty').html( ( ( maximum * 60 ) / 100 ) / 1000000 + 'MB' );
+            $sizeScale.find('.seventy').html( ( ( maximum * 70 ) / 100 ) / 1000000 + 'MB' );
+            $sizeScale.find('.seventyfive').html( ( ( maximum * 75 ) / 100 ) / 1000000 + 'MB' );
           }
 
 
@@ -230,21 +275,21 @@ function backup() {
             renderVisible();
           }
 
-          function calculateVisible() {
-            //init array
+          function getVisible() {
             var arrayOfVisible = [];
-            //iterating through elements
-            for ( var n = 0; n < $graphBars.length; n++ ) {
-              //if current bar offset is higher than 0
-              if ( $($graphBars[n]).offset().left > 0 ) {
-                //and if current bar offset + current bar width is lower than window width
-                if ( $($graphBars[n]).offset().left + $($graphBars[n]).width() < window.innerWidth ) {
-                  //add to array
+            var cache = {
+              timelineWindowPosition: $scrollWindow.offset().left,
+              timelineWindowWidth: $scrollWindow.width(),
+              timelineBarsWidth: $($timelineBars[0]).width()
+            };
+
+            for ( var n = 0; n < $timelineBars.length; n++ ) {
+              if ( $($timelineBars[n]).offset().left > cache.timelineWindowPosition - cache.timelineBarsWidth ) {
+                if ( $($timelineBars[n]).offset().left < cache.timelineWindowPosition + cache.timelineWindowWidth + cache.timelineBarsWidth ) {
                   arrayOfVisible.push( $($graphBars[n]) );
                 }
               }
             }
-            //returning array
             return arrayOfVisible;
           }
 
