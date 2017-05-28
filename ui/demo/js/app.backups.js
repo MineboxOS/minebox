@@ -26,6 +26,7 @@ function backup() {
       $graphContainer = $('#graph-inner'),
       $scrollWindow = $('#timeline .window'),
       $panelButtons = $('.panel-button'),
+      $newSnapshotButton = $('#new-snapshot-button'),
       $sizeScale = $('#size-scale'),
       $graphBars,
       $timelineBars,
@@ -254,6 +255,25 @@ function backup() {
             $sizeScale.find('.seventyfive').html( ( ( maximum * 75 ) / 100 ) / 1000000 + 'MB' );
           }
 
+          function takeNewSnapshot() {
+            //ask to the server
+            //on return..
+            var d = new Date();
+            var array = [{
+              name: getRandomString(10),
+              status: 'uploading',
+              metadata: 'uploading',
+              size: 4000000000,
+              relative_size: 40000000,
+              progress: 95,
+              relative_progress: 0,
+              time_snapshot: d.getTime()
+            }];
+
+            printBars(array);
+            build();
+          }
+
 
 
     /*
@@ -334,6 +354,10 @@ function backup() {
             $(this).blur();
           });
 
+          $newSnapshotButton.on('click', function() {
+            takeNewSnapshot();
+          });
+
           function buttonClicked( $clicked ) {
             if ( $clicked.attr('id') == 'display-size-scale-button' ) {
               displaySizeScale();
@@ -391,6 +415,7 @@ function backup() {
 
   $(window).resize(function() {
     backupInterface.build();
+    backupInterface.handleScroll();
   });
 
 }
