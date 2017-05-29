@@ -50,7 +50,9 @@ def getFromSia(api):
     headers.update({'User-Agent': 'Sia-Agent'})
     try:
         response = requests.get(url, headers=headers)
-        if re.match(r'^application/json', response.headers['Content-Type']):
+        if ('Content-Type' in response.headers
+            and re.match(r'^application/json',
+                         response.headers['Content-Type'])):
             # create a dict generated from the JSON response.
             siadata = response.json()
             if response.status_code >= 400:
@@ -58,7 +60,8 @@ def getFromSia(api):
                 siadata["messagesource"] = "sia"
             return siadata, response.status_code
         else:
-            return {"message": response.text, "messagesource": "sia"}, response.status_code
+            return {"message": response.text,
+                    "messagesource": "sia"}, response.status_code
     except requests.ConnectionError as e:
         return {"message": str(e)}, 503
     except requests.RequestException as e:
@@ -72,7 +75,9 @@ def postToSia(api, formData):
     headers.update({'User-Agent': 'Sia-Agent'})
     try:
         response = requests.post(url, data=formData, headers=headers)
-        if re.match(r'^application/json', response.headers['Content-Type']):
+        if ('Content-Type' in response.headers
+            and re.match(r'^application/json',
+                         response.headers['Content-Type'])):
             # create a dict generated from the JSON response.
             siadata = response.json()
             if response.status_code >= 400:
@@ -80,7 +85,8 @@ def postToSia(api, formData):
                 siadata["messagesource"] = "sia"
             return siadata, response.status_code
         else:
-            return {"message": response.text, "messagesource": "sia"}, response.status_code
+            return {"message": response.text,
+                    "messagesource": "sia"}, response.status_code
     except requests.ConnectionError as e:
         return {"message": str(e)}, 503
     except requests.RequestException as e:
@@ -94,7 +100,9 @@ def getFromMineBD(api):
         local_key = f.read().rstrip()
     try:
         response = requests.get(url, auth=("user", local_key))
-        if re.match(r'^application/json', response.headers['Content-Type']):
+        if ('Content-Type' in response.headers
+            and re.match(r'^application/json',
+                         response.headers['Content-Type'])):
             # create a dict generated from the JSON response.
             mbdata = response.json()
             if response.status_code >= 400:
@@ -102,7 +110,8 @@ def getFromMineBD(api):
                 mbdata["messagesource"] = "MineBD"
             return mbdata, response.status_code
         else:
-            return {"message": response.text, "messagesource": "MineBD"}, response.status_code
+            return {"message": response.text,
+                    "messagesource": "MineBD"}, response.status_code
     except requests.ConnectionError as e:
         return {"message": str(e)}, 503
     except requests.RequestException as e:
@@ -122,7 +131,8 @@ def checkLogin():
     cookiejar.set('sessionid', sessionid)
     try:
         # Given that we call localhost, the cert will be wrong, so don't verify.
-        response = requests.post(user_api, data=[], headers=headers, cookies=cookiejar, verify=False)
+        response = requests.post(user_api, data=[], headers=headers,
+                                 cookies=cookiejar, verify=False)
         if response.status_code == 200:
           return response.json()
         else:
