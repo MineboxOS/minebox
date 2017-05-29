@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from flask import Flask, Response, request, jsonify, json
+from flask import Flask, request, jsonify, json
 from os.path import ismount
 import re
 import logging
@@ -42,10 +42,7 @@ def api_backup_list():
     if not checkLogin():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     metalist = backupinfo.getList()
-    # Does not work in Flask 0.10 and lower, see http://flask.pocoo.org/docs/0.10/security/#json-security
-    #return jsonify(metalist)
-    # Work around that so it works even in 0.10.
-    return Response(json.dumps(metalist),  mimetype='application/json'), 200
+    return jsonify(metalist), 200
 
 
 @app.route("/backup/<backupname>/status", methods=['GET'])
@@ -79,10 +76,7 @@ def api_backup_all_status():
         backupstatus, status_code = backupinfo.getStatus(backupname)
         statuslist.append(backupstatus)
 
-    # Does not work in Flask 0.10 and lower, see http://flask.pocoo.org/docs/0.10/security/#json-security
-    #return jsonify(statuslist)
-    # Work around that so it works even in 0.10.
-    return Response(json.dumps(statuslist),  mimetype='application/json'), 200
+    return jsonify(statuslist), 200
 
 
 @app.route("/backup/start", methods=['POST'])
@@ -125,11 +119,7 @@ def api_key_generate():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-keygenerate
     mbdata, mb_status_code = getFromMineBD('keys/asJson')
     # For the moment, just blindly hand over the result from MineBD.
-    if isinstance(mbdata, list):
-        # jsonify cannot deal with lists in Flask <0.10
-        return Response(json.dumps(mbdata),  mimetype='application/json'), mb_status_code
-    else:
-        return jsonify(mbdata), mb_status_code
+    return jsonify(mbdata), mb_status_code
 
 
 @app.route("/key/verify", methods=['POST'])
@@ -206,10 +196,7 @@ def api_contracts():
           "data_size": contract["size"],
           "height_end": contract["endheight"],
         })
-    # Does not work in Flask 0.10 and lower, see http://flask.pocoo.org/docs/0.10/security/#json-security
-    #return jsonify(statuslist)
-    # Work around that so it works even in 0.10.
-    return Response(json.dumps(contractlist),  mimetype='application/json'), 200
+    return jsonify(contractlist), 200
 
 
 @app.route("/status", methods=['GET'])
