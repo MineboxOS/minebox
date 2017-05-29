@@ -3,6 +3,7 @@
 from flask import request, make_response, current_app
 from functools import update_wrapper
 from urlparse import urlparse
+from os import environ
 import re
 import requests
 
@@ -10,6 +11,9 @@ import requests
 SIAD_URL="http://localhost:9980/"
 MINEBD_URL="http://localhost:8080/v1/"
 MINEBD_AUTH_KEY_FILE="/etc/minebox/local-auth.key"
+METADATA_URL=""
+DEMODATA_URL="http://localhost:8050/v1/"
+DEMOSIA_URL="http://localhost:9900/"
 
 
 def setOrigin(*args, **kwargs):

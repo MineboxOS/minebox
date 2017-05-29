@@ -2,13 +2,15 @@
 
 from flask import Flask, request, jsonify, json
 from os.path import ismount
+from os import environ
 import re
 import logging
 import time
 import subprocess
 import pwd
 import backupinfo
-from connecttools import setOrigin, checkLogin, getFromSia, postToSia, getFromMineBD
+from connecttools import (DEMODATA_URL, setOrigin, checkLogin,
+                          getFromSia, postToSia, getFromMineBD)
 
 
 # Define various constants.
@@ -18,6 +20,7 @@ SSL_CERT="/root/rockstor-core_vm/certs/rockstor.cert"
 SSL_KEY="/root/rockstor-core_vm/certs/rockstor.key"
 MINEBD_STORAGE_PATH="/mnt/storage"
 UPLOADER_CMD=backupinfo.UPLOADER_CMD
+DEMOSIAC_CMD="/root/minebox-client-tools_vm/sia/demosiac.sh"
 MBKEY_CMD="/usr/lib/minebox/mbkey.sh"
 H_PER_SC=1e24 # hastings per siacoin
 
@@ -92,6 +95,11 @@ def api_backup_start():
     if not siadata["synced"]:
         return jsonify(message="Sia consensus is not fully synced, try again later."), 503
     # TBD: Make sure MineBD is not running a restore.
+    # DEMO: set environment variables for uploader to demo services.
+    if 'DEMO' in environ:
+        environ['SIAC'] = DEMOSIAC_CMD
+        environ['METADATA_URL'] = DEMODATA_URL
+        environ['SERVER_URI'] = DEMODATA_URL
     # Make uploader start a new upload.
     starttime = time.time()
     subprocess.call([UPLOADER_CMD])

@@ -13,7 +13,7 @@ DATADIR_MASK="/mnt/lower*/data"
 METADATA_BASE="/mnt/lower1/mineboxmeta"
 SIA_DIR=${SIA_DIR:-"/mnt/lower1/sia"}
 SIAC=${SIAC:-"/usr/local/bin/siac"}
-METADATA_URL=${METADATA_URL:-""} # e.g. https://meta.minebox.io/
+METADATA_URL=${METADATA_URL:-""} # e.g. https://metadata.minebox.io/v1/
 # To see all possible REST commands of MineDB, see http://localhost:8080/v1/swagger
 MINEBD_URL=${MINEBD_URL:-"http://localhost:8080/v1/"}
 MINEBD_AUTH_PWD=`cat /etc/minebox/local-auth.key`
@@ -212,7 +212,9 @@ popd
 # Upload metadata bundle.
 if [ -n "${METADATA_URL}" ]; then
   echo "Upload metadata."
-  curl --upload-file $METADATA_BASE/"$backupname.zip" ${METADATA_URL}
+  # We need to fetch a token from ${METADATA_URL}/auth/token
+  METADATA_TOKEN="123"
+  curl --header "X-Auth-Token: ${METADATA_TOKEN}" --upload-file $METADATA_BASE/"$backupname.zip" ${METADATA_URL}/file/"$backupname.zip"
 else
   echo "TBD: Upload metadata."
 fi
