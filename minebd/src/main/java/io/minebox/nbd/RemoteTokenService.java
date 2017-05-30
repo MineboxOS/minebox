@@ -1,6 +1,7 @@
 package io.minebox.nbd;
 
 import java.time.Instant;
+import java.util.Optional;
 
 import com.google.common.base.Charsets;
 import com.google.inject.Inject;
@@ -25,9 +26,9 @@ public class RemoteTokenService {
         this.encyptionKeyProvider = encyptionKeyProvider;
     }
 
-    public String getToken() {
+    public Optional<String> getToken() {
         final String key = encyptionKeyProvider.getImmediatePassword();
-        final String s = key + "meta";
+        final String s = key + " meta";
         final ECKey privKey = ECKey.fromPrivate(Sha256Hash.twiceOf(s.getBytes(Charsets.UTF_8)).getBytes());
 
 /*
@@ -44,9 +45,9 @@ public class RemoteTokenService {
                     .queryString("timestamp", timeStamp)
                     .queryString("signature", privKey.signMessage(String.valueOf(timeStamp)))
                     .asString();
-            return token.getBody();
+            return Optional.of(token.getBody());
         } catch (UnirestException e) {
-            throw new RuntimeException(e);
+            return Optional.empty();
         }
 
     }

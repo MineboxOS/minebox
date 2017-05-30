@@ -23,4 +23,5 @@ class StaticEncyptionKeyProvider implements EncyptionKeyProvider {
     public String getImmediatePassword() {
         return keyForTesting;
     }
+
 }

@@ -7,6 +7,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -24,6 +26,7 @@ import com.google.inject.name.Named;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import io.minebox.nbd.encryption.EncyptionKeyProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,33 +37,47 @@ import org.slf4j.LoggerFactory;
 public class MetadataServiceImpl implements MetadataService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MetadataServiceImpl.class);
-
-    private volatile boolean wasInit = false;
-    private ImmutableMap<String, String> filenameLookup;
     private final String rootPath;
     private final RemoteTokenService remoteTokenService;
+    private volatile boolean wasInit = false;
+    private volatile boolean connectedToMetadata = false;
+    private volatile boolean hasMetadata = false;
+    private ImmutableMap<String, String> filenameLookup;
 
     @Inject
-    public MetadataServiceImpl(@Named("httpMetadata") String rootPath, RemoteTokenService remoteTokenService) {
+    public MetadataServiceImpl(@Named("httpMetadata") String rootPath, RemoteTokenService remoteTokenService, EncyptionKeyProvider encyptionKeyProvider) {
         this.rootPath = rootPath;
         this.remoteTokenService = remoteTokenService;
+        encyptionKeyProvider.onLoadKey(this::init);
     }
 
-    public void init() {
+    static String extractFilename(String attachmenName) {
+        //             attachment; filename=backup.1492640813.zip
+        final Matcher matcher = Pattern.compile("filename\\=(.*)$").matcher(attachmenName);
+        matcher.find();
+        return matcher.group(1);
+    }
+
+    private void init() {
         if (wasInit) return;
         wasInit = true;
-        final ImmutableList<String> metaData = loadMetaData();
+        final ImmutableList<String> metaData = loadMetaData(); //list of remote filenames
         filenameLookup = Maps.uniqueIndex(metaData, input -> {
             final ArrayList<String> segments = Lists.newArrayList(Splitter.on(".").split(input));
-            segments.remove(1);
+            segments.remove(1); //remove timestamp
             return Joiner.on(".").join(segments); // minebox_v1_0.dat
         });
     }
 
     private ImmutableList<String> loadMetaData() {
+        final Optional<String> token = remoteTokenService.getToken();
+        if (!token.isPresent()) {
+            LOGGER.error("unable to obtain auth token. not trying to fetch the latest meta data");
+            return ImmutableList.of();
+        }
         try {
             final HttpResponse<InputStream> response = Unirest.get(rootPath + "file/latestMeta")
-                    .header("X-Auth-Token", remoteTokenService.getToken())
+                    .header("X-Auth-Token", token.get())
                     .asBinary();
 //            final String nameHeader = response.getHeaders().getFirst("Content-Disposition");
             final ZipInputStream zis = new ZipInputStream(response.getBody());
@@ -75,8 +92,11 @@ public class MetadataServiceImpl implements MetadataService {
                     b.add(datName);
                 }
             }
+            connectedToMetadata = true;
             LOGGER.info("loaded backup from metadata service");
-            return b.build();
+            final ImmutableList<String> ret = b.build();
+            hasMetadata = !ret.isEmpty();
+            return ret;
         } catch (UnirestException | IOException e) {
             LOGGER.error("unable to load backup from metadata service");
             return ImmutableList.of();
@@ -88,16 +108,9 @@ public class MetadataServiceImpl implements MetadataService {
 
     }
 
-    static String extractFilename(String attachmenName) {
-        //             attachment; filename=backup.1492640813.zip
-        final Matcher matcher = Pattern.compile("filename\\=(.*)$").matcher(attachmenName);
-        matcher.find();
-        return matcher.group(1);
-    }
-
     @Override
     public boolean downloadIfPossible(File file) {
-        init();
+        if (!wasInit) throw new IllegalStateException("i was not inited yet");
         final String toDownload = filenameLookup.get(file.getName());
         if (toDownload == null) {
             return false;
@@ -107,12 +120,35 @@ public class MetadataServiceImpl implements MetadataService {
         }
     }
 
+    @Override
+    public boolean hasMetadata() {
+        if (!wasInit) throw new IllegalStateException("i was not inited yet");
+        return hasMetadata;
+    }
+
+    @Override
+    public boolean connectedMetadata() {
+        if (!wasInit) throw new IllegalStateException("i was not inited yet");
+        return connectedToMetadata;
+    }
+
+
+    @Override
+    public Collection<String> allFilenames() {
+        return filenameLookup.keySet();
+    }
+
     private void downloadFromDemoData(File file, String toDownload) {
+        final Optional<String> token = remoteTokenService.getToken();
+        if (!token.isPresent()) {
+            LOGGER.error("unable to obtain auth token needed to download file {}", toDownload);
+            throw new RuntimeException("unable to download file " + toDownload);
+        }
         try {
             LOGGER.info("downloading missing file {} from remote service... ", toDownload);
             final long start = System.currentTimeMillis();
             final InputStream is = Unirest.get(rootPath + "file/" + toDownload)
-                    .header("X-Auth-Token", remoteTokenService.getToken())
+                    .header("X-Auth-Token", token.get())
                     .asBinary().getBody();
             Files.copy(is, Paths.get(file.toURI()));
             final long duration = System.currentTimeMillis() - start;

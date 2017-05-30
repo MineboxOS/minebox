@@ -1,5 +1,7 @@
 package io.minebox.resource;
 
+import java.util.Optional;
+
 import javax.annotation.security.PermitAll;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -32,7 +34,7 @@ public class RemoteTokenResource {
     @Path("/getMetadataToken")
     @Produces("text/plain")
     @PermitAll
-    public String getMetadataToken() {
+    public Optional<String> getMetadataToken() {
         return remoteTokenService.getToken();
     }
 }

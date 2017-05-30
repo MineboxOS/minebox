@@ -38,7 +38,6 @@ public class KeyResource {
     }
 
     @GET
-    @Path("/")
     @ApiOperation(value = "just a dummy  lists all WS classes",
             response = String.class)
     @Produces("text/plain")
