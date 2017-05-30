@@ -9,7 +9,7 @@ import time
 import subprocess
 import pwd
 import backupinfo
-from connecttools import (DEMODATA_URL, setOrigin, checkLogin,
+from connecttools import (setOrigin, checkLogin, getDemoURL,
                           getFromSia, postToSia, getFromMineBD)
 
 
@@ -98,8 +98,8 @@ def api_backup_start():
     # DEMO: set environment variables for uploader to demo services.
     if 'DEMO' in environ:
         environ['SIAC'] = DEMOSIAC_CMD
-        environ['METADATA_URL'] = DEMODATA_URL
-        environ['SERVER_URI'] = DEMODATA_URL
+        environ['METADATA_URL'] = getDemoURL()
+        environ['SERVER_URI'] = getDemoURL()
     # Make uploader start a new upload.
     starttime = time.time()
     subprocess.call([UPLOADER_CMD])
@@ -246,7 +246,10 @@ def api_status():
             hasusers = True
     outdata["users_created"] = hasusers
 
-    outdata["backup_type"] = "sia"
+    if 'DEMO' in environ:
+        outdata["backup_type"] = "sia_demo"
+    else:
+        outdata["backup_type"] = "sia"
     consdata, cons_status_code = getFromSia('consensus')
     if cons_status_code == 200:
         outdata["sia_daemon_running"] = True

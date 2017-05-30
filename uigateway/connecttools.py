@@ -11,8 +11,8 @@ import requests
 SIAD_URL="http://localhost:9980/"
 MINEBD_URL="http://localhost:8080/v1/"
 MINEBD_AUTH_KEY_FILE="/etc/minebox/local-auth.key"
-METADATA_URL=""
-DEMODATA_URL="http://localhost:8050/v1/"
+METADATA_URL="https://metadata.minebox.io/v1/"
+LOCALDEMO_URL="http://localhost:8050/v1/"
 DEMOSIA_URL="http://localhost:9900/"
 
 
@@ -46,6 +46,13 @@ def setOrigin(*args, **kwargs):
         f.required_methods.add('OPTIONS')
         return update_wrapper(wrapped_function, f)
     return decorator
+
+
+def getDemoURL():
+    if 'DEMO' in environ and environ['DEMO'] == 'local':
+        return LOCALDEMO_URL
+    return METADATA_URL
+
 
 def getFromSia(api):
     url = SIAD_URL + api

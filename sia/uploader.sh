@@ -13,7 +13,7 @@ DATADIR_MASK="/mnt/lower*/data"
 METADATA_BASE="/mnt/lower1/mineboxmeta"
 SIA_DIR=${SIA_DIR:-"/mnt/lower1/sia"}
 SIAC=${SIAC:-"/usr/local/bin/siac"}
-METADATA_URL=${METADATA_URL:-""} # e.g. https://metadata.minebox.io/v1/
+METADATA_URL=${METADATA_URL:-"https://metadata.minebox.io/v1/"}
 # To see all possible REST commands of MineDB, see http://localhost:8080/v1/swagger
 MINEBD_URL=${MINEBD_URL:-"http://localhost:8080/v1/"}
 MINEBD_AUTH_PWD=`cat /etc/minebox/local-auth.key`
@@ -28,7 +28,7 @@ die() {
     echo -e "$1"
     exit 1
 }
-LANG=C
+# LANG=C
 
 # Step 0: Check if prerequisites are met to make backups.
 if [ "`basename $SIAC`" = "siac" ]; then
@@ -119,7 +119,7 @@ else
     btrfs subvolume snapshot -r $subvol $subvol/snapshots/$snapname
   done
   echo "Telling MineBD to pause (for 1.5s) to make sure no modified blocks exist with the same timestamp as in our snapshots."
-  curl -u $MINEBD_AUTH_USER:$MINEBD_AUTH_PWD -X PUT \
+  curl --fail --user $MINEBD_AUTH_USER:$MINEBD_AUTH_PWD -X PUT \
        --header 'Content-Type: application/json' --header 'Accept: text/plain' \
        "${MINEBD_URL}pause"
 fi
@@ -210,13 +210,20 @@ if [ -e "$backupname.zip" ]; then
 fi
 popd
 # Upload metadata bundle.
-if [ -n "${METADATA_URL}" ]; then
-  echo "Upload metadata."
-  # We need to fetch a token from ${METADATA_URL}/auth/token
-  METADATA_TOKEN="123"
-  curl --header "X-Auth-Token: ${METADATA_TOKEN}" --upload-file $METADATA_BASE/"$backupname.zip" ${METADATA_URL}/file/"$backupname.zip"
-else
-  echo "TBD: Upload metadata."
+echo "Upload metadata."
+# We need to fetch a token from MineBD to feed to the metadata service.
+METADATA_TOKEN=`curl --fail --user $MINEBD_AUTH_USER:$MINEBD_AUTH_PWD \
+                     --header 'Content-Type: application/json' \
+                     --header 'Accept: text/plain' \
+                     "${MINEBD_URL}auth/getMetadataToken"`
+if [ "$?" != "0" ]; then
+  die "ERROR: Cannot reach MineBD to get a metadata token."
+fi
+curl --fail --header "X-Auth-Token: ${METADATA_TOKEN}" \
+     --upload-file $METADATA_BASE/"$backupname.zip" \
+     "${METADATA_URL}file/$backupname.zip"
+if [ "$?" != "0" ]; then
+  die "ERROR: Upload to metadata service failed."
 fi
 
 # Step 4: Remove snapshot.
