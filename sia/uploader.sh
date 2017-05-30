@@ -13,6 +13,7 @@ DATADIR_MASK="/mnt/lower*/data"
 METADATA_BASE="/mnt/lower1/mineboxmeta"
 SIA_DIR=${SIA_DIR:-"/mnt/lower1/sia"}
 SIAC=${SIAC:-"/usr/local/bin/siac"}
+SIAC_TIMEOUT=30s
 METADATA_URL=${METADATA_URL:-"https://metadata.minebox.io/v1/"}
 # To see all possible REST commands of MineDB, see http://localhost:8080/v1/swagger
 MINEBD_URL=${MINEBD_URL:-"http://localhost:8080/v1/"}
@@ -42,6 +43,8 @@ if [ "`basename $SIAC`" = "siac" ]; then
   if [ "$siasync" != "Yes" ]; then
     die "ERROR: sia seems not to be synced. Check yourself with |siac| and run again when it's synced."
   fi
+else
+  SIAC_TIMEOUT=15m
 fi
 # TBD: Make sure MineBD is not running a restore.
 
@@ -149,7 +152,7 @@ for filepath in $DATADIR_MASK/snapshots/$snapname/*/*.dat; do
       echo "$sia_filename is part of the set but the upload is already in progress."
     else
       echo "$sia_filename has to be uploaded, starting that."
-      timeout 30s $SIAC renter upload $filepath $sia_filename
+      timeout $SIAC_TIMEOUT $SIAC renter upload $filepath $sia_filename
       ret=$?
       if [ "$ret" = "124" ]; then
         die "ERROR: upload command timed out. You may need to restart the sia daemon, see https://github.com/NebulousLabs/Sia/issues/1605 for more information. You can re-start this backup process later by calling |$0 $snapname|."
