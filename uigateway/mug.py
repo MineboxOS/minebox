@@ -332,7 +332,8 @@ def page_not_found(error):
 
 
 if __name__ == "__main__":
-    app.debug = True
+    if 'DEBUG' in environ:
+        app.debug = True
     if not app.debug:
         # In production mode, add log handler to sys.stderr.
         app.logger.addHandler(logging.StreamHandler())
