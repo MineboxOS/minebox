@@ -56,11 +56,11 @@ public class StatusResource {
         }
         for (String fileName : metadataService.allFilenames()) {
             if (!Files.exists(Paths.get(parentDir).resolve(fileName))) {
-                status.isRestored = false;
+                status.restoreRunning = true;
                 return status;
             }
         }
-        status.isRestored = true;
+        status.restoreRunning = false;
         return status;
     }
 
@@ -68,7 +68,7 @@ public class StatusResource {
     public static class Status {
         public boolean hasEncryptionKey = false;
         public boolean remoteMetadataDetected = false;
-        public boolean isRestored = false;
+        public boolean restoreRunning = false;
         public boolean connectedMetadata = false;
     }
 }
