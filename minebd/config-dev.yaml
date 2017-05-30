@@ -11,6 +11,7 @@ logging:
   loggers:
     io.minebox: DEBUG
     io.minebox.nbd.NbdStatsReporter: INFO
+    org.bitcoin.Secp256k1Context: ERROR
 
 #netty-spectific settings of minebd
 minebd:
@@ -21,5 +22,5 @@ minebd:
   encryptionKeyPath: ./localetc/minebox/minebox.key
   authFile: ./localetc/minebox/local-auth.key
   bucketSize : 40M
-  httpMetadata: "http://localhost:8050/v1/"
+  httpMetadata: https://metadata.minebox.io/v1/
   ignoreMissingPaths: true

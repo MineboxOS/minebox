@@ -3,11 +3,7 @@ package io.minebox.nbd;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
-import javax.annotation.Nullable;
-
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -31,17 +27,13 @@ import static io.minebox.nbd.NbdServer.State.*;
 @Singleton
 public class NbdServer implements Managed {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(NbdServer.class);
     private final int port;
     private final SystemdUtil systemdUtil;
-    private static final Logger LOGGER = LoggerFactory.getLogger(NbdServer.class);
     private final ExportProvider exportProvider;
     private final EncyptionKeyProvider encyptionKeyProvider;
     private EventLoopGroup eventLoopGroup;
     private volatile State state = IDLE;
-
-    enum State {
-        IDLE, STARTING, KEY_DETECTED, STARTED, SHUTTINGDOWN, SHUTDOWN;
-    }
 
     @VisibleForTesting
     @Inject
@@ -89,41 +81,37 @@ public class NbdServer implements Managed {
         state = STARTING;
         //we want to delay the initialisation until the master password is ready
         LOGGER.info("starting up NBD service , waiting for encryption key to be present until we expose the port...");
-        Futures.addCallback(encyptionKeyProvider.getMasterPassword(), new FutureCallback<String>() {
-            @Override
-            public void onSuccess(@Nullable String result) {
-                if (state != STARTING) {
-                    throw new IllegalStateException("i expected to be starting");
-                }
-                state = KEY_DETECTED;
-                eventLoopGroup = new NioEventLoopGroup();
-                ServerBootstrap bootstrap = new ServerBootstrap();
-                bootstrap.group(eventLoopGroup)
-                        .channel(NioServerSocketChannel.class)
-                        .localAddress(new InetSocketAddress(port))
-                        .childHandler(new ChannelInitializer<SocketChannel>() {
-                            @Override
-                            protected void initChannel(SocketChannel ch) throws Exception {
-                                ch.pipeline().addLast(new HandshakePhase(exportProvider));
-                            }
-                        });
-                final ChannelFuture bind = bootstrap.bind();
-                ChannelFuture f;
-                try {
-                    f = bind.sync();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException("unable to start without being interrupted...", e);
-                }
-                LOGGER.info("started up minebd on port {} ", port);
-                final Channel channel = f.channel();
-                systemdUtil.sendNotify(); //tell systemd we are ready
-                state = STARTED;
+        encyptionKeyProvider.onLoadKey(() -> {
+            if (state != STARTING) {
+                throw new IllegalStateException("i expected to be starting");
             }
-
-            @Override
-            public void onFailure(Throwable t) {
-                LOGGER.error("something went wrong trying to wait for the encryption key...", t);
+            state = KEY_DETECTED;
+            eventLoopGroup = new NioEventLoopGroup();
+            ServerBootstrap bootstrap = new ServerBootstrap();
+            bootstrap.group(eventLoopGroup)
+                    .channel(NioServerSocketChannel.class)
+                    .localAddress(new InetSocketAddress(port))
+                    .childHandler(new ChannelInitializer<SocketChannel>() {
+                        @Override
+                        protected void initChannel(SocketChannel ch) throws Exception {
+                            ch.pipeline().addLast(new HandshakePhase(exportProvider));
+                        }
+                    });
+            final ChannelFuture bind = bootstrap.bind();
+            ChannelFuture f;
+            try {
+                f = bind.sync();
+            } catch (InterruptedException e) {
+                throw new RuntimeException("unable to start without being interrupted...", e);
             }
+            LOGGER.info("started up minebd on port {} ", port);
+            final Channel channel = f.channel();
+            systemdUtil.sendNotify(); //tell systemd we are ready
+            state = STARTED;
         });
+    }
+
+    enum State {
+        IDLE, STARTING, KEY_DETECTED, STARTED, SHUTTINGDOWN, SHUTDOWN;
     }
 }

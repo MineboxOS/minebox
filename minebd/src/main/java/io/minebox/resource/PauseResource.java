@@ -34,7 +34,6 @@ public class PauseResource {
     }
 
     @PUT
-    @Path("/")
     @ApiOperation(value = "causes the MineBD deamon to not flush files for 1.5 seconds. this is to avoid having nonequal .dat files with equal last-write date",
             response = String.class)
 

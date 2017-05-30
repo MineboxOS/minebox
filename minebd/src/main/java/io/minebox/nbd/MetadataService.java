@@ -1,9 +1,9 @@
 package io.minebox.nbd;
 
 import java.io.File;
+import java.util.Collection;
 
 import com.google.inject.ImplementedBy;
-import io.minebox.nbd.ep.NullMetadataService;
 
 /**
  * Created by andreas on 27.04.17.
@@ -11,4 +11,10 @@ import io.minebox.nbd.ep.NullMetadataService;
 @ImplementedBy(MetadataServiceImpl.class)
 public interface MetadataService {
     boolean downloadIfPossible(File file);
+
+    boolean hasMetadata();
+
+    boolean connectedMetadata();
+
+    Collection<String> allFilenames();
 }

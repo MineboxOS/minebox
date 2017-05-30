@@ -34,7 +34,6 @@ public class SerialNoResource {
     }
 
     @GET
-    @Path("/")
     @Produces("text/plain")
     @PermitAll
     public Response getSerialNumber() {
