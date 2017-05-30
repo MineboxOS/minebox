@@ -10,8 +10,8 @@ mkdir -p $mountpath
 mount $nbdevice $mountpath
 
 # Enable quotas if they are not enabled (required by Rockstor).
-btrfs qgroup show $mountpath 2>&1 | grep 'quotas not enabled' > /dev/null
-if [ "$?" = "0" ]; then
+btrfs qgroup show $mountpath 2>&1 | grep 'qgroupid' > /dev/null
+if [ "$?" != "0" ]; then
   btrfs quota enable $mountpath
 fi
 
