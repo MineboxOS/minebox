@@ -30,6 +30,15 @@ export SIA_DIR=~/sia
 /usr/lib/minebox/uploader.sh
 
 ```
+Note that MUG calls it with the right options when in DEMO mode (see MUG systemd service).
+
+## demosiad.py
+A small Flask service to provide demo sia output to the MUG when in DEMO mode.
+Should run from the MUG virtualenv.
+
+## demosiad.sh
+A script to run demosiad.py in the MUG virtualenv (launched from systemd).
+
 
 ## Uploader details
 

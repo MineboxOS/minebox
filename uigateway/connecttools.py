@@ -13,7 +13,7 @@ MINEBD_URL="http://localhost:8080/v1/"
 MINEBD_AUTH_KEY_FILE="/etc/minebox/local-auth.key"
 METADATA_URL="https://metadata.minebox.io/v1/"
 LOCALDEMO_URL="http://localhost:8050/v1/"
-DEMOSIA_URL="http://localhost:9900/"
+DEMOSIAD_URL="http://localhost:9900/"
 
 
 def setOrigin(*args, **kwargs):
@@ -55,7 +55,10 @@ def getDemoURL():
 
 
 def getFromSia(api):
-    url = SIAD_URL + api
+    if 'DEMO' in environ:
+        url = DEMOSIAD_URL + api
+    else:
+        url = SIAD_URL + api
     # siad requires a specific UA header, so add that to defaults.
     headers = requests.utils.default_headers()
     headers.update({'User-Agent': 'Sia-Agent'})
@@ -80,7 +83,10 @@ def getFromSia(api):
 
 
 def postToSia(api, formData):
-    url = SIAD_URL + api
+    if 'DEMO' in environ:
+        url = DEMOSIAD_URL + api
+    else:
+        url = SIAD_URL + api
     # siad requires a specific UA header, so add that to defaults.
     headers = requests.utils.default_headers()
     headers.update({'User-Agent': 'Sia-Agent'})
