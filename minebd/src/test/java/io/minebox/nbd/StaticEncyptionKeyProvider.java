@@ -7,7 +7,7 @@ import io.minebox.nbd.encryption.EncyptionKeyProvider;
 /**
  * Created by andreas on 18.05.17.
  */
-class StaticEncyptionKeyProvider implements EncyptionKeyProvider {
+public class StaticEncyptionKeyProvider implements EncyptionKeyProvider {
     private final String keyForTesting;
 
     public StaticEncyptionKeyProvider(String keyForTesting) {

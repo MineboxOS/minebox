@@ -10,7 +10,7 @@ import javax.ws.rs.core.Response;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.minebox.nbd.Encryption;
+import io.minebox.nbd.SerialNumberService;
 import io.minebox.nbd.encryption.EncyptionKeyProvider;
 import io.swagger.annotations.Api;
 import org.slf4j.Logger;
@@ -23,13 +23,13 @@ import org.slf4j.LoggerFactory;
 public class SerialNoResource {
     public static final String PATH = "/serialnumber";
     private static final Logger LOGGER = LoggerFactory.getLogger(SerialNoResource.class);
-    private final Encryption encryption;
+    private final SerialNumberService serialNumberService;
     private final EncyptionKeyProvider encyptionKeyProvider;
 
 
     @Inject
-    public SerialNoResource(Encryption encryption, EncyptionKeyProvider encyptionKeyProvider) {
-        this.encryption = encryption;
+    public SerialNoResource(SerialNumberService serialNumberService, EncyptionKeyProvider encyptionKeyProvider) {
+        this.serialNumberService = serialNumberService;
         this.encyptionKeyProvider = encyptionKeyProvider;
     }
 
@@ -44,7 +44,7 @@ public class SerialNoResource {
                     .build();
         }
         return Response
-                .ok(encryption.getPublicIdentifier())
+                .ok(serialNumberService.getPublicIdentifier())
                 .build();
     }
 

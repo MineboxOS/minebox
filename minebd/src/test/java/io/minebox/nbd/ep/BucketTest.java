@@ -7,6 +7,8 @@ import com.codahale.metrics.MetricRegistry;
 import io.dropwizard.util.Size;
 import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.NullEncryption;
+import io.minebox.nbd.SerialNumberService;
+import io.minebox.nbd.StaticEncyptionKeyProvider;
 import io.minebox.nbd.TestUtil;
 import org.junit.Assert;
 import org.junit.Test;
@@ -31,7 +33,7 @@ public class BucketTest {
     @Test
     public void testExport() throws IOException {
         final MinebdConfig cfg = TestUtil.createSampleConfig();
-        final BucketFactory bucketFactory = new BucketFactory(cfg, new NullEncryption(), new NullMetadataService());
+        final BucketFactory bucketFactory = new BucketFactory(new SerialNumberService(new StaticEncyptionKeyProvider("testJunit")), cfg, new NullEncryption(), new NullMetadataService());
         final MineboxExport export = new MineboxExport(cfg, new MetricRegistry(), bucketFactory);
         export.open("test");
         export.write(0, ByteBuffer.wrap(new byte[]{1, 2, 3}), true);
@@ -44,7 +46,7 @@ public class BucketTest {
         MinebdConfig cfg = TestUtil.createSampleConfig();
         cfg.bucketSize = Size.megabytes(40);
         long bucketSize = cfg.bucketSize.toBytes();
-        final BucketFactory bucketFactory = new BucketFactory(cfg, new NullEncryption(), new NullMetadataService());
+        final BucketFactory bucketFactory = new BucketFactory(new SerialNumberService(new StaticEncyptionKeyProvider("testJunit")), cfg, new NullEncryption(), new NullMetadataService());
 
         final BucketFactory.BucketImpl underTest = (BucketFactory.BucketImpl) bucketFactory.create(0);
 

@@ -16,10 +16,13 @@ import com.google.inject.Inject;
 import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.Encryption;
 import io.minebox.nbd.MetadataService;
+import io.minebox.nbd.SerialNumberService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BucketFactory {
+    private static final Logger LOGGER = LoggerFactory.getLogger(BucketImpl.class);
+    private final SerialNumberService serialNumberService;
     private final String parentDir;
     private final long size;
     private final Encryption encryption;
@@ -27,16 +30,17 @@ public class BucketFactory {
     private File parentFolder;
 
     @Inject
-    public BucketFactory(MinebdConfig config, Encryption encryption, MetadataService metadataService) {
+    public BucketFactory(SerialNumberService serialNumberService, MinebdConfig config, Encryption encryption, MetadataService metadataService) {
+        this.serialNumberService = serialNumberService;
         this.parentDir = config.parentDir;
         this.size = config.bucketSize.toBytes();
         this.encryption = encryption;
         this.metadataService = metadataService;
     }
 
-    private File createParentFolder(Encryption encryption) {
+    private File createParentFolder(SerialNumberService serialNumberService) {
         if (this.parentFolder == null) {
-            parentFolder = new File(parentDir, encryption.getPublicIdentifier());
+            parentFolder = new File(parentDir, serialNumberService.getPublicIdentifier());
             parentFolder.mkdirs();
         }
         return parentFolder;
@@ -47,8 +51,6 @@ public class BucketFactory {
         return new BucketImpl(bucketIndex);
     }
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(BucketImpl.class);
-
     class BucketImpl implements Bucket {
 
         private final FileChannel channel;
@@ -57,18 +59,18 @@ public class BucketFactory {
          * highest valid offset, given minimum length of 1
          */
         private final long upperBound;
-        private RandomAccessFile randomAccessFile;
         private final String filename;
         private final long bucketNumber;
         //right now we try to keep track of the empty ranges but dont use them anywhere. there is a big optimisation opportunity here to minimize the amount of
         RangeSet<Long> emptyRange = TreeRangeSet.create(); //offsets in this bucket
+        private RandomAccessFile randomAccessFile;
 
         BucketImpl(long bucketNumber) {
             this.bucketNumber = bucketNumber;
             baseOffset = bucketNumber * size;
             upperBound = baseOffset + size - 1;
             filename = "minebox_v1_" + bucketNumber + ".dat";
-            final File parentFolder = createParentFolder(encryption);
+            final File parentFolder = createParentFolder(serialNumberService);
             final File file = new File(parentFolder, filename);
             LOGGER.debug("starting to monitor bucket {} with file {}", bucketNumber, file.getAbsolutePath());
             ensureFileExists(file);

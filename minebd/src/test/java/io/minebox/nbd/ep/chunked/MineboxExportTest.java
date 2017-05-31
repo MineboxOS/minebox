@@ -9,6 +9,8 @@ import io.dropwizard.util.Size;
 import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.Constants;
 import io.minebox.nbd.NullEncryption;
+import io.minebox.nbd.SerialNumberService;
+import io.minebox.nbd.StaticEncyptionKeyProvider;
 import io.minebox.nbd.ep.BucketFactory;
 import io.minebox.nbd.ep.MineboxExport;
 import io.minebox.nbd.ep.NullMetadataService;
@@ -23,6 +25,7 @@ import org.junit.Test;
  */
 public class MineboxExportTest {
 
+    public static final SerialNumberService SERIAL_NUMBER_SERVICE = new SerialNumberService(new StaticEncyptionKeyProvider("testJunit"));
     private static long startTime;
     private static MinebdConfig cfg;
 
@@ -32,6 +35,18 @@ public class MineboxExportTest {
         startTime = System.currentTimeMillis();
         cfg = new MinebdConfig();
         cfg.parentDir = "minedbTESTDat";
+    }
+
+    @AfterClass
+    public static void getMeStopped() throws IOException {
+        long current = System.currentTimeMillis();
+        System.out.println("Stopped - took me " + (current - startTime) + " sec.");
+        FileUtils.deleteDirectory(new File(cfg.parentDir));
+    }
+
+    public static MineboxExport buildMineboxExport(MinebdConfig cfg) {
+        final BucketFactory bucketFactory = new BucketFactory(SERIAL_NUMBER_SERVICE, cfg, new NullEncryption(), new NullMetadataService());
+        return new MineboxExport(cfg, new MetricRegistry(), bucketFactory);
     }
 
     @Test
@@ -45,15 +60,8 @@ public class MineboxExportTest {
         underTest.read(32 * Constants.MEGABYTE, 1024);
         underTest.read(111 * Constants.MEGABYTE, 1024);
 
-        final String[] files = new File(cfg.parentDir, NullEncryption.PUB_ID).list();
+        final String[] files = new File(cfg.parentDir, SERIAL_NUMBER_SERVICE.getPublicIdentifier()).list();
         Assert.assertEquals(2, files.length);
-    }
-
-    @AfterClass
-    public static void getMeStopped() throws IOException {
-        long current = System.currentTimeMillis();
-        System.out.println("Stopped - took me " + (current - startTime) + " sec.");
-        FileUtils.deleteDirectory(new File(cfg.parentDir));
     }
 
     @Test
@@ -84,10 +92,5 @@ public class MineboxExportTest {
         Assert.assertEquals(25, read.get(25));
 
 
-    }
-
-    public static MineboxExport buildMineboxExport(MinebdConfig cfg) {
-        final BucketFactory bucketFactory = new BucketFactory(cfg, new NullEncryption(), new NullMetadataService());
-        return new MineboxExport(cfg, new MetricRegistry(), bucketFactory);
     }
 }
