@@ -22,12 +22,11 @@ case "$1" in
 renter)
   case "$2" in
   delete)
-    echo "Not implmented."
-    exit 1
+    curl --fail --header "X-Auth-Token: ${SERVER_TOKEN}" -X DELETE ${SERVER_URI}file/$3
     ;;
   download)
     # TODO: Need to return failure if download isn't successful.
-    curl --fail --header "X-Auth-Token: ${SERVER_TOKEN}" -o $4 ${SERVER_URI}file/download/$3
+    curl --fail --header "X-Auth-Token: ${SERVER_TOKEN}" -o $4 ${SERVER_URI}file/$3
     if [ "$?" != "0" ]; then
       exit 1
     fi
