@@ -24,6 +24,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
 
     private final ExportProvider exportProvider;
     private final AtomicInteger numOperations = new AtomicInteger(0);
+    private final AtomicInteger pendingOperations = new AtomicInteger(0);
 
     private static class Error {
         public final static int EIO = 5;
@@ -53,7 +54,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                         if (!hasMin(in, 28))
                             return;
 
-                        receiveTransmissionCommand(ctx, in);
+                        readOperationParameters(ctx, in);
                         state = State.TM_RECEIVE_CMD_DATA;
                         break;
 
@@ -77,7 +78,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
     }
 
     private void processOperation(ChannelHandlerContext ctx, ByteBuf in) throws IOException {
-
+        pendingOperations.incrementAndGet();
         switch (cmdType) {
             case Protocol.NBD_CMD_READ: {
                 final long cmdOffset = this.cmdOffset;
@@ -173,7 +174,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
         }
     }
 
-    private void receiveTransmissionCommand(ChannelHandlerContext ctx, ByteBuf message) throws IOException {
+    private void readOperationParameters(ChannelHandlerContext ctx, ByteBuf message) throws IOException {
         if (message.readInt() != Protocol.NBD_REQUEST_MAGIC) {
             throw new IllegalArgumentException("Invalid request magic!");
         }
@@ -185,7 +186,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
         cmdLength = message.readUnsignedInt(); //needs to be treated as long
     }
 
-    private static void sendTransmissionSimpleReply(ChannelHandlerContext ctx, int error, long handle, ByteBuf data) {
+    private void sendTransmissionSimpleReply(ChannelHandlerContext ctx, int error, long handle, ByteBuf data) {
         ByteBuf bbr = ctx.alloc().buffer(16);
         bbr.writeInt(Protocol.REPLY_MAGIC);
         bbr.writeInt(error); // zero for okay
@@ -196,5 +197,9 @@ public class TransmissionPhase extends ByteToMessageDecoder {
             ctx.write(data);
         }
         ctx.flush();
+        final int pendingOperations = this.pendingOperations.decrementAndGet();
+        if (pendingOperations != 0 || error != 0) {
+            LOGGER.debug("pending operations: {}, error: {}", pendingOperations, error);
+        }
     }
 }
