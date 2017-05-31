@@ -8,7 +8,7 @@ import io.minebox.nbd.encryption.SymmetricEncryption;
 /**
  * Created by andreas on 11.04.17.
  */
-@ImplementedBy(SymmetricEncryption.class)
+@ImplementedBy(NullEncryption.class)
 public interface Encryption {
     ByteBuffer encrypt(long offset, ByteBuffer message);
 
