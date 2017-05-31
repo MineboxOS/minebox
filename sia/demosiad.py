@@ -34,6 +34,10 @@ def api_consensus():
       difficulty=1234
     )
 
+@app.route("/renter/files", methods=['GET'])
+def api_renter_files():
+    return jsonify(message="Not yet implemented."), 501
+
 @app.route("/wallet", methods=['GET'])
 def api_wallet():
     return jsonify(
