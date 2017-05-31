@@ -15,6 +15,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -61,12 +62,17 @@ public class MetadataServiceImpl implements MetadataService {
     private void init() {
         if (wasInit) return;
         wasInit = true;
-        final ImmutableList<String> metaData = loadMetaData(); //list of remote filenames
-        filenameLookup = Maps.uniqueIndex(metaData, input -> {
-            final ArrayList<String> segments = Lists.newArrayList(Splitter.on(".").split(input));
-            segments.remove(1); //remove timestamp
-            return Joiner.on(".").join(segments); // minebox_v1_0.dat
-        });
+        final ImmutableList<String> metaData = loadMetaData();
+        try {//list of remote filenames
+            filenameLookup = Maps.uniqueIndex(metaData, input -> {
+                final ArrayList<String> segments = Lists.newArrayList(Splitter.on(".").split(input));
+                segments.remove(1); //remove timestamp
+                return Joiner.on(".").join(segments); // minebox_v1_0.dat
+            });
+        } catch (IllegalArgumentException iae) {
+            LOGGER.error("unable to build metadata index since the files were non-unique");
+            filenameLookup = ImmutableMap.of();
+        }
     }
 
     private ImmutableList<String> loadMetaData() {
@@ -111,7 +117,9 @@ public class MetadataServiceImpl implements MetadataService {
     @Override
     public boolean downloadIfPossible(File file) {
         if (!wasInit) throw new IllegalStateException("i was not inited yet");
-        final String toDownload = filenameLookup.get(file.getName());
+        Preconditions.checkNotNull(file);
+        final String name = file.getName();
+        final String toDownload = filenameLookup.get(name);
         if (toDownload == null) {
             return false;
         } else {
