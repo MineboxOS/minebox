@@ -68,7 +68,7 @@ function RockstorLogin() {
 				//the cookie is set now
 				//calling to appliances
 				$.ajax({
-					url: CONFIG.urls.appliance,
+					url: CONFIG.urls.appliances,
 					method: 'POST',
 					dataType: 'json',
 					contentType: 'application/json',
