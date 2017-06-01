@@ -34,6 +34,43 @@ window.onload = function() {
       },
       {}
   );
+
+  document.getElementById("keybtn").onclick = function() {
+    fetchMUG("key", "PUT", "foobar",
+      function(aResult) {
+        document.getElementById("keyoutput").textContent = aResult["statusCode"] + (aResult["message"] ? ": " + aResult["message"] : "")
+      },
+      {}
+    );
+  };
+
+  document.getElementById("setupbtn").onclick = function() {
+    document.getElementById("setupoutput").textContent = ""
+
+    // First, set up a user via /setup_user, with a JSON request body.
+    fetchRockstor("setup_user", "POST", "json", '{"username":"mbuser","password":"mypass","is_active":true}',
+      function(aResult) {
+        document.getElementById("setupoutput").textContent += " " + aResult["statusCode"]
+
+        // Now that we have a user, log it as that one via /api/login (www-form-urlencoded body)
+        fetchRockstor("api/login", "POST", "form", 'username=mbuser&password=mypass',
+          function(aResult) {
+            document.getElementById("setupoutput").textContent += " " + aResult["statusCode"]
+
+            // Now that we are logged in, set the host name via /api/appliances (JSON request body)
+            fetchRockstor("api/appliances", "POST", "json", '{"hostname":"DemoMinebox","current_appliance":true}',
+              function(aResult) {
+                document.getElementById("setupoutput").textContent += " " + aResult["statusCode"]
+              },
+              {}
+            );
+          },
+          {}
+        );
+      },
+      {}
+    );
+  };
 }
 
 function fetchMUG(aEndpoint, aMethod, aSendData, aCallback, aCallbackForwards) {
@@ -64,3 +101,42 @@ function fetchMUG(aEndpoint, aMethod, aSendData, aCallback, aCallbackForwards) {
   }
 }
 
+function fetchRockstor(aEndpoint, aMethod, aDataFormat, aSendData, aCallback, aCallbackForwards) {
+  var XHR = new XMLHttpRequest();
+  XHR.onreadystatechange = function() {
+    if (XHR.readyState == 4) {
+      // State says we are fully loaded.
+      var result = {};
+      if (XHR.getResponseHeader("Content-Type") == "application/json") {
+        // Got a JSON object, see if we have success.
+        result = JSON.parse(XHR.responseText);
+      }
+      else {
+        result = {"success": true, "data": XHR.responseText};
+      }
+      result["statusCode"] = XHR.status;
+      aCallback(result, aCallbackForwards);
+    }
+  };
+  XHR.open(aMethod, "/" + aEndpoint, true);
+  if (aDataFormat == "json") { XHR.setRequestHeader("Content-Type", "application/json"); }
+  else if (aDataFormat == "form") { XHR.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); }
+  //XHR.setRequestHeader("Accept", "application/json");
+  // If a csrftoken cookie is set, send a header with the same value.
+  csrftoken = getCookieValue("csrftoken");
+  if (csrftoken) {
+    XHR.setRequestHeader("X-CSRFToken", csrftoken);
+  }
+  XHR.withCredentials = "true";
+  try {
+    XHR.send(aSendData); // Send actual form data.
+  }
+  catch (e) {
+    aCallback({"success": false, "statusCode": 500, "data": e}, aCallbackForwards);
+  }
+}
+
+function getCookieValue(aCookieName) {
+  var cmatch = document.cookie.match('(^|;)\\s*' + aCookieName + '\\s*=\\s*([^;]+)');
+  return cmatch ? cmatch.pop() : '';
+}

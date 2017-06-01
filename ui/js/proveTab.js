@@ -130,6 +130,7 @@ function proveTab() {
 
 	function validateEncryptionKey() {
 		//encryption key to array
+		encryptionKeyArray = []
 		for ( var n = 0; n < $encryptionKeyInputs.length; n++ ) {
 			encryptionKeyArray.push( $($encryptionKeyInputs[n]).val() );
 		}
@@ -146,29 +147,42 @@ function proveTab() {
 			encryptionKeyRequester.setURL( config.mug.url + 'key' );
 			encryptionKeyRequester.setMethod('PUT');
 			encryptionKeyRequester.setData(encryptionKeyString);
-			encryptionKeyRequester.run(function(response) {
-				console.log(response);
-				//loading witness
-				loadingWitness.stop();
+			encryptionKeyRequester.setContentType('text/plain; charset=UTF8');
+			encryptionKeyRequester.run(function(data) {
+				correct(data);
+			}, function(error) {
+				fail(error);
+			});
 
-				var response = true;
+			function correct(data) {
+				//call to the server completed successfully with a 2xx status code.
 
+				//emptying error field
 				$submitButton.siblings('.error').html('');
 
-				if ( response ) {
-					progressScreen.open();
-				} else {
-					$submitButton.siblings('.error').html('The key is not valid. Please check you have written everything correctly.');
+				progressScreen.open();
+			}
+
+			function fail(error) {
+				//the call to the server failed or returned an error
+				if ( error.code == 400 ) {
+					var notify = new Notify({message:'There is a key already set or no key was handed over.'});
+					notify.print();
+				} else if ( error.code == 500 ) {
+					var notify = new Notify({message:'Unknown error'});
+					notify.print();
+				} else if ( error.code == 503 ) {
+					var notify = new Notify({message:'MineBD not running.'});
+					notify.print();
 				}
-			}, function(error) {
-				console.log(error);
-				$('.prove-section .error').html('The private key you have provided is not correct (server said)');
+				$('.prove-section .error').html('Something went wrong. Try again in a few minutes.');
+
 				//loading witness
 				loadingWitness.stop();
-			})
+			}
 		} else {
 			//they do not match
-			$('.prove-section .error').html('The private key you have provided is not correct');
+			$('.prove-section .error').html('The private key you have provided does not match.');
 		}
 
 	}
