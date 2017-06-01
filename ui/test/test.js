@@ -45,12 +45,19 @@ window.onload = function() {
   };
 
   document.getElementById("setupbtn").onclick = function() {
+    document.getElementById("setupoutput").textContent = ""
+
+    // First, set up a user via /setup_user, with a JSON request body.
     fetchRockstor("setup_user", "POST", "json", '{"username":"mbuser","password":"mypass","is_active":true}',
       function(aResult) {
         document.getElementById("setupoutput").textContent += " " + aResult["statusCode"]
+
+        // Now that we have a user, log it as that one via /api/login (www-form-urlencoded body)
         fetchRockstor("api/login", "POST", "form", 'username=mbuser&password=mypass',
           function(aResult) {
             document.getElementById("setupoutput").textContent += " " + aResult["statusCode"]
+
+            // Now that we are logged in, set the host name via /api/appliances (JSON request body)
             fetchRockstor("api/appliances", "POST", "json", '{"hostname":"DemoMinebox","current_appliance":true}',
               function(aResult) {
                 document.getElementById("setupoutput").textContent += " " + aResult["statusCode"]
@@ -115,6 +122,7 @@ function fetchRockstor(aEndpoint, aMethod, aDataFormat, aSendData, aCallback, aC
   if (aDataFormat == "json") { XHR.setRequestHeader("Content-Type", "application/json"); }
   else if (aDataFormat == "form") { XHR.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); }
   //XHR.setRequestHeader("Accept", "application/json");
+  // If a csrftoken cookie is set, send a header with the same value.
   csrftoken = getCookieValue("csrftoken");
   if (csrftoken) {
     XHR.setRequestHeader("X-CSRFToken", csrftoken);
