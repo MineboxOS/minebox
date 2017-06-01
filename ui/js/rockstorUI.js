@@ -42,83 +42,56 @@ function RockstorLogin() {
 				is_active: true
 			})
 		})
-		.done(function(response) {
+		.done(function(data) {
 
 
 
 
 
-			if ( response.status >= 400 ) {
-				//something failed
-				var notify = new Notify({message:'We couldn\t setup the user.'});
-				notify.print();
-			} else {
-				//calling to login
+			//calling to login
+			$.ajax({
+				url: CONFIG.urls.login,
+				method: 'POST',
+				dataType: 'application/json',
+				data: {
+					username: info.username,
+					password: info.password
+				}
+			})
+			.done(function(data) {
+
+
+
+
+
+
+				//the cookie is set now
+				//calling to appliances
 				$.ajax({
-					url: CONFIG.urls.login,
+					url: CONFIG.urls.appliance,
 					method: 'POST',
 					dataType: 'application/json',
-					data: {
-						username: info.username,
-						password: info.password
-					}
+					contentType: 'application/json',
+					headers: {
+						"X-CSRFToken": Cookie.get('csrftoken')
+					},
+					data: JSON.stringify({
+						hostname: info.hostname,
+						current_appliance: true
+					})
 				})
-				.done(function(response) {
+				.done(function(data) {
 
 
 
 
-
-
-					//the cookie is set now
-					if ( response.status >= 400 ) {
-						//something failed
-						var notify = new Notify({message:'We couldn\t log you in.'});
-						notify.print();
-					} else {
-						//calling to appliances
-						$.ajax({
-							url: CONFIG.urls.appliance,
-							method: 'POST',
-							dataType: 'application/json',
-							contentType: 'application/json',
-							headers: {
-								"X-CSRFToken": Cookie.get('csrftoken')
-							},
-							data: JSON.stringify({
-								hostname: info.hostname,
-								current_appliance: true
-							})
-						})
-						.done(function(response) {
-
-
-
-
-							if ( response.status >= 400 ) {
-								//something failed
-								var notify = new Notify({message:'We couldn\t call to appliances.'});
-								notify.print();
-							} else {
-								//we're done
-								if ( cb ) {
-									cb();
-								}
-							}
-
-
-
-
-
-
-
-						}).
-						fail(function(err) {
-							//something failed
-							var notify = new Notify({message:'We couldn\t call to appliances.'});
-							notify.print();
-						});
+					//we're done
+					if ( cb ) {
+						cb();
 					}
+
+
+
 
 
 
@@ -126,10 +99,19 @@ function RockstorLogin() {
 				}).
 				fail(function(err) {
 					//something failed
-					var notify = new Notify({message:'We couldn\t log you in.'});
+					var notify = new Notify({message:'We couldn\t call to appliances.'});
 					notify.print();
 				});
-			}
+
+
+
+
+			}).
+			fail(function(err) {
+				//something failed
+				var notify = new Notify({message:'We couldn\t log you in.'});
+				notify.print();
+			});
 
 
 
