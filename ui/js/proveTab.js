@@ -148,34 +148,19 @@ function proveTab() {
 			encryptionKeyRequester.setMethod('PUT');
 			encryptionKeyRequester.setData(encryptionKeyString);
 			encryptionKeyRequester.setContentType('text/plain; charset=UTF8');
-			encryptionKeyRequester.run(function(response) {
-				correct(response);
+			encryptionKeyRequester.run(function(data) {
+				correct(data);
 			}, function(error) {
 				fail(error);
 			});
 
-			function correct(response) {
-				//call to the server completed successfully
-
-				//validating its response
-				var c; //acronym for "continue"
-				if ( response.status == 200 ) {
-					c = true;
-				} else {
-					c = false;
-				}
-				//loading witness
-				loadingWitness.stop();
+			function correct(data) {
+				//call to the server completed successfully with a 2xx status code.
 
 				//emptying error field
 				$submitButton.siblings('.error').html('');
 
-				//if c
-				if ( c ) {
-					progressScreen.open();
-				} else {
-					$submitButton.siblings('.error').html('The key is not valid. Please check you have written everything correctly.');
-				}
+				progressScreen.open();
 			}
 
 			function fail(error) {
