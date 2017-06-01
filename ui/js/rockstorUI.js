@@ -23,7 +23,7 @@ function RockstorLogin() {
 	}
 
 
-	function init() {
+	function init(cb) {
 
 
 		//updating users info
@@ -101,7 +101,9 @@ function RockstorLogin() {
 								notify.print();
 							} else {
 								//we're done
-								window.location.href = '/home';
+								if ( cb ) {
+									cb();
+								}
 							}
 
 
