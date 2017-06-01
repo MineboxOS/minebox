@@ -34,7 +34,7 @@ function ProgressScreen() {
 		var int = setInterval(interval, 3000);
 
 		interval();
-		function interval(cb) {
+		function interval() {
 			if ( n > 0) {
 				check( $($bootLog[n-1]) );
 			}
@@ -43,8 +43,7 @@ function ProgressScreen() {
 			if ( n == $bootLog.length ) {
 				clearInterval(int);
 				clearInterval(checkingInt);
-
-				if ( cb ) { cb }
+				if ( cb ) { cb() }
 			}
 
 			n++;
