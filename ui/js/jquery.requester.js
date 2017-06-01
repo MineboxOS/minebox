@@ -44,6 +44,7 @@ function Requester() {
     setURL: setURL,
     setData: setData,
     setType: setType,
+    setContentType: setContentType,
     abort: abort,
     run: run
   }
