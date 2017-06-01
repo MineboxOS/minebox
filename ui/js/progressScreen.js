@@ -15,6 +15,12 @@ function ProgressScreen() {
 			tabNavigator.disable();
 			//display progress screen
 			$progressScreenElement.fadeIn(300);
+
+			//call to rockstorLogin
+			rockstorLogin.init();
+
+			//faking "loading screen"
+			//bootLog();
 		});
 	}
 
