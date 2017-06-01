@@ -34,6 +34,14 @@ window.onload = function() {
       },
       {}
   );
+  document.getElementById("keybtn").onclick = function() {
+    fetchMUG("key", "PUT", "foobar",
+      function(aResult) {
+        document.getElementById("keyoutput").textContent = aResult["statusCode"] + (aResult["message"] ? ": " + aResult["message"] : "")
+      },
+      {}
+    );
+  };
 }
 
 function fetchMUG(aEndpoint, aMethod, aSendData, aCallback, aCallbackForwards) {

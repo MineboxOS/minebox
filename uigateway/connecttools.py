@@ -37,6 +37,8 @@ def setOrigin(*args, **kwargs):
             else:
                 origin = "https://%s:%s" % (myurlparts.hostname, originport)
             resp.headers["Access-Control-Allow-Origin"] = origin
+            if request.method == 'OPTIONS':
+                resp.headers["Access-Control-Allow-Methods"] = resp.headers['Allow']
             resp.headers["Access-Control-Allow-Credentials"] = "true"
             resp.headers["Vary"] = "Origin"
             return resp
