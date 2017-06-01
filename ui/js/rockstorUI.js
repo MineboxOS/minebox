@@ -73,7 +73,7 @@ function RockstorLogin() {
 					dataType: 'json',
 					contentType: 'application/json',
 					headers: {
-						"X-CSRFToken": Cookie.get('csrftoken')
+						"X-CSRFToken": Cookies.get('csrftoken')
 					},
 					data: JSON.stringify({
 						hostname: info.hostname,
