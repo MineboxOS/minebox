@@ -34,7 +34,7 @@ function RockstorLogin() {
 		$.ajax({
 			url: CONFIG.urls.setup,
 			method: 'POST',
-			dataType: 'application/json',
+			dataType: 'json',
 			contentType: 'application/json',
 			data: JSON.stringify({
 				username: info.username,
@@ -52,7 +52,7 @@ function RockstorLogin() {
 			$.ajax({
 				url: CONFIG.urls.login,
 				method: 'POST',
-				dataType: 'application/json',
+				dataType: 'json',
 				data: {
 					username: info.username,
 					password: info.password
@@ -70,7 +70,7 @@ function RockstorLogin() {
 				$.ajax({
 					url: CONFIG.urls.appliance,
 					method: 'POST',
-					dataType: 'application/json',
+					dataType: 'json',
 					contentType: 'application/json',
 					headers: {
 						"X-CSRFToken": Cookie.get('csrftoken')
