@@ -130,6 +130,7 @@ function proveTab() {
 
 	function validateEncryptionKey() {
 		//encryption key to array
+		encryptionKeyArray = []
 		for ( var n = 0; n < $encryptionKeyInputs.length; n++ ) {
 			encryptionKeyArray.push( $($encryptionKeyInputs[n]).val() );
 		}
@@ -146,6 +147,7 @@ function proveTab() {
 			encryptionKeyRequester.setURL( config.mug.url + 'key' );
 			encryptionKeyRequester.setMethod('PUT');
 			encryptionKeyRequester.setData(encryptionKeyString);
+			encryptionKeyRequester.setcontentType('text/plain; charset=UTF8');
 			encryptionKeyRequester.run(function(response) {
 				correct(response);
 			}, function(error) {

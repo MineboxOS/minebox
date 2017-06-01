@@ -18,6 +18,9 @@ function Requester() {
   function setType(type) {
     CONFIG.dataType = type;
   }
+  function setContentType(type) {
+    CONFIG.contentType = type;
+  }
 
   function abort() {
     xhr.abort();
