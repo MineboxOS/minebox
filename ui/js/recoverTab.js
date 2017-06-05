@@ -92,24 +92,62 @@ function recoverTab() {
 
 	//when user clicks on "continue button"
 	$restoreMineboxButton.on('click', function() {
-		privateKeyValidation(function() {
-			//once the server has validated the words and they are correct
-			//take the user to the progress screen
-			progressScreen.open();
-		});
+		privateKeyValidation();
 	});
 
-	function privateKeyValidation(cb) {
+
+	var encryptionKeyRequester = new Requester(),
+		encryptionKeyArray = [],
+		encryptionKeyString = '';
+
+	function privateKeyValidation() {
+		//encryption key to array
+		encryptionKeyArray = []
+		for ( var n = 0; n < $encryptionKeyInputs.length; n++ ) {
+			encryptionKeyArray.push( $($encryptionKeyInputs[n]).val() );
+		}
+		//storing it also in string
+		encryptionKeyString = encryptionKeyArray.join(' ');
+
+		//loading witness
 		loadingWitness.start();
-		//this function sends the twelve words to the server so they can be validated
-		//currently faking the result with "true" with a timeout
-		//when the server returns true, execute the callback cb();
-		setTimeout(function() {
-			if ( true && cb ) {
-				loadingWitness.stop();
-				cb();
+		//placing call
+		encryptionKeyRequester.setURL( config.mug.url + 'key' );
+		encryptionKeyRequester.setMethod('PUT');
+		encryptionKeyRequester.setData(encryptionKeyString);
+		encryptionKeyRequester.setContentType('text/plain; charset=UTF8');
+		encryptionKeyRequester.run(function(data) {
+			correct(data);
+		}, function(error) {
+			fail(error);
+		});
+
+		function correct(data) {
+			//call to the server completed successfully with a 2xx status code.
+
+			//emptying error field
+			$submitButton.siblings('.error').html('');
+
+			progressScreen.open('recover');
+		}
+
+		function fail(error) {
+			//the call to the server failed or returned an error
+			if ( error.code == 400 ) {
+				var notify = new Notify({message:'There is a key already set or no key was handed over.'});
+				notify.print();
+			} else if ( error.code == 500 ) {
+				var notify = new Notify({message:'Unknown error'});
+				notify.print();
+			} else if ( error.code == 503 ) {
+				var notify = new Notify({message:'MineBD not running.'});
+				notify.print();
 			}
-		}, 2000);
+			$('.recover-section .error').html('Something went wrong. Try again in a few minutes.');
+
+			//loading witness
+			loadingWitness.stop();
+		}
 	}
 
 }

@@ -3,8 +3,13 @@ function ProgressScreen() {
 
 	var $progressScreenElement = $('#progress-screen');
 	var loadingSpace = LoadingSpace();
+	var mineboxProcess = null;
 
-	function open() {
+	function open(pro) {
+
+		//updating mineboxProcess
+		mineboxProcess = pro;
+
 		//init loading space animation
 		loadingSpace.init();
 		//change hash
@@ -25,6 +30,10 @@ function ProgressScreen() {
 				});
 			});
 		});
+	}
+
+	function getProcess() {
+		return mineboxProcess;
 	}
 
 	function bootLog(cb) {
@@ -73,7 +82,8 @@ function ProgressScreen() {
 
 
 	return {
-		open: open
+		open: open,
+		getProcess: getProcess
 	}
 
 }

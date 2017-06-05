@@ -16,10 +16,17 @@ function RockstorLogin() {
 	var info = {};
 
 	function updateInfo() {
-		info.username = $('.register-section .register-username').val();
-		info.password = $('.register-section .register-password').val();
-		info.passwordRepeat = $('.register-section .register-password-repeat').val();
-		info.hostname = $('.register-section .register-hostname').val();
+		if ( progressScreen.getProcess() == 'register' ) {
+			info.username = $('.register-section .register-username').val();
+			info.password = $('.register-section .register-password').val();
+			info.passwordRepeat = $('.register-section .register-password-repeat').val();
+			info.hostname = $('.register-section .register-hostname').val();
+		} else if ( progressScreen.getProcess() == 'recover' ) {
+			info.username = 'minebox'
+			info.password = 'minebox';
+			info.passwordRepeat = 'minebox';
+			info.hostname = 'demo';
+		}
 	}
 
 
@@ -28,7 +35,6 @@ function RockstorLogin() {
 
 		//updating users info
 		updateInfo();
-
 
 		//calling to setup
 		$.ajax({

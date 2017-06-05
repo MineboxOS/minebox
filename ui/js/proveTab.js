@@ -137,7 +137,6 @@ function proveTab() {
 		//storing it also in string
 		encryptionKeyString = encryptionKeyArray.join(' ');
 
-		//faking server call here
 		//matching the generated key and the provided one are the same (checking agains register.seed)
 		if ( encryptionKeyString == register.seed ) {
 			//they match
@@ -160,7 +159,7 @@ function proveTab() {
 				//emptying error field
 				$submitButton.siblings('.error').html('');
 
-				progressScreen.open();
+				progressScreen.open('register');
 			}
 
 			function fail(error) {
