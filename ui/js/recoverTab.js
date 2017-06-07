@@ -126,7 +126,7 @@ function recoverTab() {
 			//call to the server completed successfully with a 2xx status code.
 
 			//emptying error field
-			$submitButton.siblings('.error').html('');
+			$restoreMineboxButton.siblings('.error').html('');
 
 			progressScreen.open('recover');
 		}
