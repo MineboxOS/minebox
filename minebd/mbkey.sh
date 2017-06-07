@@ -6,7 +6,7 @@
 KEY_FILE="/etc/minebox/minebox.key"
 
 # Make sure we are root.
-if [ $USER != 'root' ]; then
+if [ "$USER" != "root" ]; then
   echo "ERROR: You have to be root to run this script."
   exit 1
 fi
