@@ -71,6 +71,15 @@ window.onload = function() {
       {}
     );
   };
+
+  document.getElementById("backupbtn").onclick = function() {
+    fetchMUG("backup/start", "POST", "",
+      function(aResult) {
+        document.getElementById("backupoutput").textContent = aResult["statusCode"] + (aResult["message"] ? ": " + aResult["message"] : "")
+      },
+      {}
+    );
+  };
 }
 
 function fetchMUG(aEndpoint, aMethod, aSendData, aCallback, aCallbackForwards) {
