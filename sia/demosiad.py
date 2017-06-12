@@ -2,8 +2,9 @@
 
 from flask import Flask, request, jsonify, json
 from os import environ
+import re
 import logging
-from connecttools import getDemoURL, getFromMineBD
+from connecttools import getDemoURL, getFromMineBD, getFromMetadata
 
 
 # Define various constants.
@@ -36,7 +37,30 @@ def api_consensus():
 
 @app.route("/renter/files", methods=['GET'])
 def api_renter_files():
-    return jsonify(message="Not yet implemented."), 501
+    mdata, md_status_code = getFromMetadata('file/list')
+    if md_status_code >= 400:
+        return jsonify(mdata), md_status_code
+    files = []
+    for line in mdata["message"].splitlines():
+        usize, unit, fpath = line.split()
+        # Do not report files that do not match the .dat file pattern (e.g. backup zips).
+        if re.match(r'^minebox_.+\.dat$', fpath):
+            # Right now, the only unit we get from metadata service is MB.
+            if unit == "MB":
+                fsize = int(usize) * 2**20
+            else:
+                fsize = int(usize)
+
+            files.append({
+              "siapath": fpath,
+              "filesize": fsize,
+              "available": True,
+              "renewing": True,
+              "redundancy": 1,
+              "uploadprogress": 100,
+              "expiration": 60000
+            })
+    return jsonify(files=files), 200
 
 @app.route("/wallet", methods=['GET'])
 def api_wallet():
