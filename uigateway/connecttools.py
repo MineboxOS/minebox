@@ -137,6 +137,36 @@ def getFromMineBD(api):
         return {"message": str(e)}, 500
 
 
+def putToMineBD(api, formData, addHeaders = []):
+    url = MINEBD_URL + api
+    # siad requires a specific UA header, so add that to defaults.
+    with open(MINEBD_AUTH_KEY_FILE) as f:
+        local_key = f.read().rstrip()
+    # Add headers to default request.
+    headers = requests.utils.default_headers()
+    for header in addHeaders:
+        headers.update(header)
+    try:
+        response = requests.post(url, data=formData, headers=headers)
+        response = requests.put(url, auth=("user", local_key), data=formData)
+        if ('Content-Type' in response.headers
+            and re.match(r'^application/json',
+                         response.headers['Content-Type'])):
+            # create a dict generated from the JSON response.
+            mbdata = response.json()
+            if response.status_code >= 400:
+                # For error-ish codes, tell that they are from MineBD.
+                mbdata["messagesource"] = "MineBD"
+            return mbdata, response.status_code
+        else:
+            return {"message": response.text,
+                    "messagesource": "MineBD"}, response.status_code
+    except requests.ConnectionError as e:
+        return {"message": str(e)}, 503
+    except requests.RequestException as e:
+        return {"message": str(e)}, 500
+
+
 def getMetadataToken():
     if not hasattr(getMetadataToken, "token") or getMetadataToken.token is None:
         mbdata, mb_status_code = getFromMineBD('auth/getMetadataToken')

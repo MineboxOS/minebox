@@ -1,10 +1,20 @@
 #!/usr/bin/env python
 
+# Minebox backup service. See README.md in this directory for more info.
+
+# Uploading is a multi-step process (see README.md for details):
+# 0) Check prerequisites (sia running and sync, etc.)
+# 1) [not implemented] Create read-only snapshots of all subvolumes on upper layer.
+# 2) Create a read-only snapshot(s) on lower disk(s).
+# 3) Initiate uploads to sia where needed.
+# 4) Wait for finished uploads and, save/upload the metadata.
+# 5) Remove the snapshot(s).
+# 6) Remove backups if they are older than the last finished and fully available one.
+
 from flask import Flask, request, jsonify, json
 from os import environ
 import logging
-from connecttools import getDemoURL, getFromSia, postToSia
-
+from backuptools import *
 
 # Define various constants.
 REST_PORT=5100
@@ -22,6 +32,24 @@ def api_root():
     return jsonify(supported_urls=sorted(links, key=lambda rule: rule["url"])), 200
 
 
+@app.route("/trigger")
+def api_trigger():
+    success, errmsg = check_prerequisites()
+    if not success:
+        return jsonify(message=errmsg), 503
+    #snapshot_upper()
+    snapname = create_lower_snapshots()
+    initiate_uploads()
+    wait_for_uploads()
+    save_metadata()
+    remove_lower_snapshots()
+    remove_old_backups()
+    return jsonify(message="Not yet implemented."), 501
+
+
+@app.route("/status")
+def api_start():
+    return jsonify(message="Not yet implemented."), 501
 
 
 @app.errorhandler(404)
