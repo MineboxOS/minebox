@@ -1,0 +1,16 @@
+[Unit]
+Description=Minebox backup service
+After=sia.service
+
+[Service]
+Type=simple
+# Uncomment to put into demo mode.
+# Use "DEMO=local" for demoServer running on localhost,
+# anything else for using Minebox metadata server.
+#Environment="DEMO=metadata"
+ExecStart=/usr/lib/minebox/backup-service.sh
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target
