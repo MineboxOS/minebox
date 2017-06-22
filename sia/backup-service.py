@@ -39,10 +39,12 @@ def api_trigger():
         return jsonify(message=errmsg), 503
     #snapshot_upper()
     snapname = create_lower_snapshots()
-    initiate_uploads()
+    success, errmsg = initiate_uploads(snapname)
+    if not success:
+        return jsonify(message=errmsg), 503
     wait_for_uploads()
     save_metadata()
-    remove_lower_snapshots()
+    remove_lower_snapshots(snapname)
     remove_old_backups()
     return jsonify(message="Not yet implemented."), 501
 

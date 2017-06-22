@@ -1,7 +1,7 @@
 # Various tools around backups, mostly to get info about them.
 
-from flask import current_app
-from os import path, mkdir, makedirs
+from flask import current_app, json
+from os import path, stat, mkdir, makedirs, remove
 from glob import glob
 from zipfile import ZipFile
 import re
@@ -29,10 +29,10 @@ def snapshot_upper():
 
 def create_lower_snapshots():
     # Step 1: Create snapshot.
-    snapname=str(int(time.time()))
-    backupname="backup.%s" % snapname
+    snapname = str(int(time.time()))
+    backupname = "backup.%s" % snapname
 
-    metadir="%s/%s" % (METADATA_BASE, backupname)
+    metadir = path.join(METADATA_BASE, backupname)
     if not path.isdir(metadir):
       makedirs(metadir)
 
@@ -53,8 +53,46 @@ def create_lower_snapshots():
     mbdata, mb_status_code = putToMineBD('pause', '', [{'Content-Type': 'application/json'}, {'Accept': 'text/plain'}])
     return snapname
 
-def initiate_uploads():
-    return
+def initiate_uploads(snapname):
+    current_app.logger.info('Starting uploads.')
+    backupname = "backup.%s" % snapname
+    metadir = path.join(METADATA_BASE, backupname)
+    bfinfo_path = path.join(metadir, 'fileinfo')
+    if path.isfile(bfinfo_path):
+        remove(bfinfo_path)
+    sia_filedata, sia_status_code = getFromSia('renter/files')
+    if sia_status_code == 200:
+        siafiles = sia_filedata["files"]
+    else:
+        return False, "ERROR: sia daemon needs to be running for any uploads."
+
+    # We have a randomly named subdirectory containing the .dat files.
+    # As the random string is based on the wallet seed, we can be pretty sure there
+    # is only one and we can ignore the risk of catching multiple directories with
+    # the * wildcard.
+    backupfileinfo = []
+    for filepath in glob(path.join(DATADIR_MASK, 'snapshots', snapname, '*', '*.dat')):
+        fileinfo = stat(filepath)
+        # Only use files of non-zero size.
+        if fileinfo.st_size:
+            filename = path.basename(filepath)
+            (froot, fext) = path.splitext(filename)
+            sia_fname = '%s.%s%s' % (froot, int(fileinfo.st_mtime), fext)
+            if any(sf['siapath'] == sia_fname and sf['available'] for sf in siafiles):
+                current_app.logger.info('%s is part of the set but already uploaded.' % sia_fname)
+            elif any(sf['siapath'] == sia_fname for sf in siafiles):
+                current_app.logger.info('%s is part of the set but the upload is already in progress.' % sia_fname)
+            else:
+                current_app.logger.info('%s has to be uploaded, starting that.' % sia_fname)
+                siadata, sia_status_code = postToSia('renter/upload/%s' % sia_fname,
+                                                     {'source': filepath})
+                if sia_status_code != 204:
+                    return False, "ERROR: sia upload error %s: %s" % (sia_status_code, siadata['message'])
+            backupfileinfo.append({"siapath": sia_fname, "size": fileinfo.st_size})
+
+    with open(bfinfo_path, 'w') as outfile:
+        json.dump(backupfileinfo, outfile)
+    return True, ""
 
 def wait_for_uploads():
     return
@@ -62,7 +100,10 @@ def wait_for_uploads():
 def save_metadata():
     return
 
-def remove_lower_snapshots():
+def remove_lower_snapshots(snapname):
+    current_app.logger.info('Removing lower-level data snapshot(s) with name: %s' % snapname)
+    for snap in glob(path.join(DATADIR_MASK, 'snapshots', snapname)):
+        subprocess.call(['/usr/sbin/btrfs', 'subvolume', 'delete', snap])
     return
 
 def remove_old_backups():
