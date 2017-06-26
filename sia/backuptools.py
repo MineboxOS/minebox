@@ -23,14 +23,15 @@ def check_prerequisites():
         return False, "ERROR: sia daemon needs to be running for any uploads."
     return True, ""
 
-def snapshot_upper():
+def snapshot_upper(status):
     # TODO: See MIN-104.
     return
 
-def create_lower_snapshots():
+def create_lower_snapshots(status):
     # Step 1: Create snapshot.
-    snapname = str(int(time.time()))
-    backupname = "backup.%s" % snapname
+    snapname = status["snapname"]
+    status["message"] = "Creating backup files"
+    backupname = status["backupname"]
 
     metadir = path.join(METADATA_BASE, backupname)
     if not path.isdir(metadir):
@@ -51,11 +52,14 @@ def create_lower_snapshots():
       'Telling MineBD to pause (for 1.5s) to make sure no modified blocks exist with the same timestamp as in our snapshots.'
     )
     mbdata, mb_status_code = putToMineBD('pause', '', [{'Content-Type': 'application/json'}, {'Accept': 'text/plain'}])
-    return snapname
+    return
 
-def initiate_uploads(snapname):
+def initiate_uploads(status):
     current_app.logger.info('Starting uploads.')
-    backupname = "backup.%s" % snapname
+    status["message"] = "Starting uploads"
+    snapname = status["snapname"]
+    backupname = status["backupname"]
+
     metadir = path.join(METADATA_BASE, backupname)
     bfinfo_path = path.join(metadir, 'fileinfo')
     if path.isfile(bfinfo_path):
@@ -94,18 +98,23 @@ def initiate_uploads(snapname):
         json.dump(backupfileinfo, outfile)
     return True, ""
 
-def wait_for_uploads():
+def wait_for_uploads(status):
+    status["message"] = "Waiting for uploads to complete"
     return
 
-def save_metadata():
+def save_metadata(status):
+    status["message"] = "Saving metadata"
     return
 
-def remove_lower_snapshots(snapname):
+def remove_lower_snapshots(status):
+    snapname = status["snapname"]
+    status["message"] = "Cleaning up backup data"
     current_app.logger.info('Removing lower-level data snapshot(s) with name: %s' % snapname)
     for snap in glob(path.join(DATADIR_MASK, 'snapshots', snapname)):
         subprocess.call(['/usr/sbin/btrfs', 'subvolume', 'delete', snap])
     return
 
-def remove_old_backups():
+def remove_old_backups(status):
+    status["message"] = "Cleaning up old backups"
     return
 
