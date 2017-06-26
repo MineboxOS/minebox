@@ -1,8 +1,8 @@
 package io.minebox.siaseed;
 
-import com.google.common.collect.ImmutableList;
-
 import java.util.List;
+
+import com.google.common.collect.ImmutableList;
 
 public class MoneroSeed {
 
@@ -17,9 +17,10 @@ public class MoneroSeed {
         }
 
         for (int i = 0; i < str.length(); i += 8) {
-            int x = Integer.parseInt(str.substring(i, 8), 16);
+            final String token = str.substring(i, i + 8);
+            long x = Long.parseLong(token, 16);
             final double divX = Math.floor((double) x / dictSize);
-            int w1 = (x % dictSize);
+            int w1 = (int) (x % dictSize);
             int w2 = ((int) divX + w1) % dictSize;
             int w3 = ((int) Math.floor(divX / dictSize) + w2) % dictSize;
             b.add(dict.get(w1), dict.get(w2), dict.get(w3));
@@ -29,7 +30,7 @@ public class MoneroSeed {
             out.push(out[mn_get_checksum_index(out, wordset.prefix_len)]);
         }
         return out.join(' ');*/
-       return null;
+        return null;
     }
 
     public String mn_swap_endian_4byte(String str) {
