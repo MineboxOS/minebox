@@ -14,10 +14,13 @@
 from flask import Flask, request, jsonify, json
 from os import environ
 import logging
+import threading
 from backuptools import *
 
 # Define various constants.
 REST_PORT=5100
+
+threadstatus = {}
 
 app = Flask(__name__)
 
@@ -37,32 +40,66 @@ def api_trigger():
     success, errmsg = check_prerequisites()
     if not success:
         return jsonify(message=errmsg), 503
-    #snapshot_upper()
-    snapname = create_lower_snapshots()
-    success, errmsg = initiate_uploads(snapname)
-    if not success:
-        return jsonify(message=errmsg), 503
-    wait_for_uploads()
-    save_metadata()
-    remove_lower_snapshots(snapname)
-    remove_old_backups()
-    return jsonify(message="Not yet implemented."), 501
+    bevent = threading.Event()
+    bthread = threading.Thread(target=run_backup, args=(bevent,))
+    bthread.daemon = True
+    bthread.start()
+    bevent.wait() # Wait for thread being set up.
+    return jsonify(message="Backup started: %s." % bthread.name), 200
+
+
+def run_backup(startevent):
+    # The routes have implicit Flask application context, but the thread needs an explicit one.
+    # See http://flask.pocoo.org/docs/appcontext/#creating-an-application-context
+    with app.app_context():
+        snapname = str(int(time.time()))
+        app.logger.info('Started backup run: %s', snapname)
+        threading.current_thread().name = 'backup.%s' % snapname
+        threadstatus[threading.current_thread().name] = {
+          "snapname": snapname,
+          "backupname": "backup.%s" % snapname,
+          "ident": threading.current_thread().ident,
+          "finished": False,
+          "failed": False,
+          "message": "started",
+        }
+        # Tell main thread we are set up.
+        startevent.set()
+        # Now start the actual tasks.
+        #snapshot_upper()
+        create_lower_snapshots(threadstatus[threading.current_thread().name])
+        success, errmsg = initiate_uploads(threadstatus[threading.current_thread().name])
+        if not success:
+            threadstatus[threading.current_thread().name]["failed"] = True
+            threadstatus[threading.current_thread().name]["message"] = errmsg
+            return
+        wait_for_uploads(threadstatus[threading.current_thread().name])
+        save_metadata(threadstatus[threading.current_thread().name])
+        remove_lower_snapshots(threadstatus[threading.current_thread().name])
+        remove_old_backups(threadstatus[threading.current_thread().name])
 
 
 @app.route("/status")
 def api_start():
-    return jsonify(message="Not yet implemented."), 501
+    # This is a very temporary debug-style status output for now.
+    statusdata = {"threads": [], "backups": []}
+    for thread in threading.enumerate():
+        statusdata["threads"].append(thread.name)
+        app.logger.debug('Found thread: %s', thread.name)
+    for tname in threadstatus:
+        statusdata["backups"].append(threadstatus[tname])
+    return jsonify(statusdata), 200
 
 
 @app.errorhandler(404)
 def page_not_found(error):
     app.logger.error('Method not found: %s' % request.url)
-    return jsonify(error="Method not supported: "+ str(error)), 404
+    return jsonify(error="Method not supported: %s" % error), 404
 
 @app.errorhandler(500)
 def page_not_found(error):
     app.logger.error('Internal server error @ %s %s' % (request.url , str(error)))
-    return jsonify(error="Internal server error: "+ str(error)), 500
+    return jsonify(error="Internal server error: %s" % error), 500
 
 
 if __name__ == "__main__":
