@@ -4,6 +4,7 @@ from flask import request, make_response, current_app
 from functools import update_wrapper
 from urlparse import urlparse
 from os import environ
+import time
 import re
 import requests
 
@@ -147,7 +148,6 @@ def putToMineBD(api, formData, addHeaders = []):
     for header in addHeaders:
         headers.update(header)
     try:
-        response = requests.post(url, data=formData, headers=headers)
         response = requests.put(url, auth=("user", local_key), data=formData)
         if ('Content-Type' in response.headers
             and re.match(r'^application/json',
@@ -168,7 +168,14 @@ def putToMineBD(api, formData, addHeaders = []):
 
 
 def getMetadataToken():
-    if not hasattr(getMetadataToken, "token") or getMetadataToken.token is None:
+    # If we do not have a token or timestamp is older than 5 minutes,
+    # fetch a new token from MineBD (who uses metadata service for that).
+    # Note that Metadata tokens are valid for 10 minutes right now.
+    if (not hasattr(getMetadataToken, "token") or getMetadataToken.token is None
+        or getMetadataToken.timestamp < time.time() - 5 * 60):
+        # Always set the timestamp so we do not have to test above if it's set,
+        #  as it's only unset when token is also unset
+        getMetadataToken.timestamp = time.time()
         mbdata, mb_status_code = getFromMineBD('auth/getMetadataToken')
         if mb_status_code == 200:
             getMetadataToken.token = mbdata["message"]
@@ -188,6 +195,34 @@ def getFromMetadata(api):
         headers = requests.utils.default_headers()
         headers.update({'X-Auth-Token': token})
         response = requests.get(url, headers=headers)
+        if ('Content-Type' in response.headers
+            and re.match(r'^application/json',
+                         response.headers['Content-Type'])):
+            # create a dict generated from the JSON response.
+            mdata = response.json()
+            if response.status_code >= 400:
+                # For error-ish codes, tell that they are from MineBD.
+                mdata["messagesource"] = "Metadata"
+            return mdata, response.status_code
+        else:
+            return {"message": response.text,
+                    "messagesource": "Metadata"}, response.status_code
+    except requests.ConnectionError as e:
+        return {"message": str(e)}, 503
+    except requests.RequestException as e:
+        return {"message": str(e)}, 500
+
+
+def putToMetadata(api, formData):
+    url = getDemoURL() + api
+    token = getMetadataToken()
+    if token is None:
+        return {"message": "Error requesting metadata token."}, 500
+
+    try:
+        headers = requests.utils.default_headers()
+        headers.update({'X-Auth-Token': token})
+        response = requests.put(url, data=formData, headers=headers)
         if ('Content-Type' in response.headers
             and re.match(r'^application/json',
                          response.headers['Content-Type'])):

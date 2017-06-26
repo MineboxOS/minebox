@@ -13,6 +13,7 @@
 
 from flask import Flask, request, jsonify, json
 from os import environ
+import time
 import logging
 import threading
 from backuptools import *
@@ -83,7 +84,11 @@ def run_backup(startevent):
             threadstatus[threading.current_thread().name]["failed"] = True
             threadstatus[threading.current_thread().name]["message"] = errmsg
             return
-        save_metadata(threadstatus[threading.current_thread().name])
+        success, errmsg = save_metadata(threadstatus[threading.current_thread().name])
+        if not success:
+            threadstatus[threading.current_thread().name]["failed"] = True
+            threadstatus[threading.current_thread().name]["message"] = errmsg
+            return
         remove_lower_snapshots(threadstatus[threading.current_thread().name])
         remove_old_backups(threadstatus[threading.current_thread().name])
 

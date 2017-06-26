@@ -2,6 +2,7 @@
 
 from flask import current_app, json
 from os import path, stat, mkdir, makedirs, remove
+import shutil
 from glob import glob
 from zipfile import ZipFile
 import re
@@ -136,7 +137,31 @@ def wait_for_uploads(status):
 
 def save_metadata(status):
     status["message"] = "Saving metadata"
-    return
+    snapname = status["snapname"]
+    backupname = status["backupname"]
+    metadir = path.join(METADATA_BASE, backupname)
+    # Copy .sia files to metadata directory.
+    for bfile in status["backupfileinfo"]:
+        dest_siafile = path.join(metadir, "%s.sia" % bfile["siapath"])
+        if not path.isfile(dest_siafile):
+            shutil.copy2(path.join(SIA_DIR, "%s.sia" % bfile["siapath"]), metadir)
+    # Create a bundle of all metadata for this backup.
+    zipname = join(METADATA_BASE, "%s.zip" % backupname)
+    if path.isfile(zipname):
+        remove(zipname)
+    with ZipFile(zipname, 'w') as backupzip:
+        for bfile in status["backupfileinfo"]:
+            siafile = path.join(metadir, "%s.sia" % bfile["siapath"])
+            backupzip.write(siafile)
+        backupzip.write(path.join(metadir, 'fileinfo'))
+    # Upload metadata bundle.
+    current_app.logger.info("Upload metadata.")
+    with open(zipname) as zipfile:
+        zipdata = zipfile.read()
+        mdata, md_status_code = putToMetadata("file/%s.zip" % backupname, zipdata)
+        if md_status_code >= 400:
+            return False, mdata["message"]
+    return True, ""
 
 def remove_lower_snapshots(status):
     snapname = status["snapname"]

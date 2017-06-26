@@ -4,7 +4,8 @@ from flask import Flask, request, jsonify, json
 from os import environ
 import re
 import logging
-from connecttools import getDemoURL, getFromMineBD, getFromMetadata
+from connecttools import (getDemoURL, getFromMineBD,
+                          getFromMetadata, putToMetadata)
 
 
 # Define various constants.
@@ -61,6 +62,16 @@ def api_renter_files():
               "expiration": 60000
             })
     return jsonify(files=files), 200
+
+@app.route("/renter/upload/<siapath>", methods=['POST'])
+def api_renter_upload(siapath):
+    filename = request.form["source"]
+    with open(filename) as file:
+        fdata = file.read()
+        mdata, md_status_code = putToMetadata("file/%s" % siapath, fdata)
+        if md_status_code >= 400:
+            return jsonify(mdata), md_status_code
+    return "", 204
 
 @app.route("/wallet", methods=['GET'])
 def api_wallet():
