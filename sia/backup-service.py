@@ -59,6 +59,11 @@ def run_backup(startevent):
           "snapname": snapname,
           "backupname": "backup.%s" % snapname,
           "ident": threading.current_thread().ident,
+          "backupfileinfo": [],
+          "backupsize": None,
+          "uploadsize": None,
+          "uploadfiles": [],
+          "uploadprogress": 0,
           "finished": False,
           "failed": False,
           "message": "started",
@@ -73,7 +78,11 @@ def run_backup(startevent):
             threadstatus[threading.current_thread().name]["failed"] = True
             threadstatus[threading.current_thread().name]["message"] = errmsg
             return
-        wait_for_uploads(threadstatus[threading.current_thread().name])
+        success, errmsg = wait_for_uploads(threadstatus[threading.current_thread().name])
+        if not success:
+            threadstatus[threading.current_thread().name]["failed"] = True
+            threadstatus[threading.current_thread().name]["message"] = errmsg
+            return
         save_metadata(threadstatus[threading.current_thread().name])
         remove_lower_snapshots(threadstatus[threading.current_thread().name])
         remove_old_backups(threadstatus[threading.current_thread().name])

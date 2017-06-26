@@ -74,11 +74,15 @@ def initiate_uploads(status):
     # As the random string is based on the wallet seed, we can be pretty sure there
     # is only one and we can ignore the risk of catching multiple directories with
     # the * wildcard.
-    backupfileinfo = []
+    status["backupfileinfo"] = []
+    status["uploadfiles"] = []
+    status["backupsize"] = 0
+    status["uploadsize"] = 0
     for filepath in glob(path.join(DATADIR_MASK, 'snapshots', snapname, '*', '*.dat')):
         fileinfo = stat(filepath)
         # Only use files of non-zero size.
         if fileinfo.st_size:
+            status["backupsize"] += fileinfo.st_size
             filename = path.basename(filepath)
             (froot, fext) = path.splitext(filename)
             sia_fname = '%s.%s%s' % (froot, int(fileinfo.st_mtime), fext)
@@ -87,20 +91,48 @@ def initiate_uploads(status):
             elif any(sf['siapath'] == sia_fname for sf in siafiles):
                 current_app.logger.info('%s is part of the set but the upload is already in progress.' % sia_fname)
             else:
+                status["uploadsize"] += fileinfo.st_size
+                status["uploadfiles"].append(sia_fname)
                 current_app.logger.info('%s has to be uploaded, starting that.' % sia_fname)
                 siadata, sia_status_code = postToSia('renter/upload/%s' % sia_fname,
                                                      {'source': filepath})
                 if sia_status_code != 204:
                     return False, "ERROR: sia upload error %s: %s" % (sia_status_code, siadata['message'])
-            backupfileinfo.append({"siapath": sia_fname, "size": fileinfo.st_size})
+            status["backupfileinfo"].append({"siapath": sia_fname, "size": fileinfo.st_size})
 
     with open(bfinfo_path, 'w') as outfile:
-        json.dump(backupfileinfo, outfile)
+        json.dump(status["backupfileinfo"], outfile)
     return True, ""
 
 def wait_for_uploads(status):
     status["message"] = "Waiting for uploads to complete"
-    return
+    uploaded_size = 0
+    fully_available = False
+    while not fully_available and uploaded_size < status["uploadsize"]:
+        sia_filedata, sia_status_code = getFromSia('renter/files')
+        if sia_status_code == 200:
+            uploaded_size = 0
+            fully_available = True
+            sia_map = dict((d["siapath"], index) for (index, d) in enumerate(sia_filedata["files"]))
+            for bfile in status["backupfileinfo"]:
+                if bfile["siapath"] in sia_map:
+                    fdata = sia_filedata["files"][sia_map[bfile["siapath"]]]
+                    if fdata["siapath"] in status["uploadfiles"]:
+                        uploaded_size += fdata["filesize"] * fdata["uploadprogress"] / 100
+                    if not fdata["available"]:
+                        fully_available = False
+                elif re.match(r'.*\.dat$', bfile["siapath"]):
+                    fully_available = False
+                    current_app.logger.warn('File "%s" not found on Sia!', bfile["siapath"])
+                else:
+                    current_app.logger.debug('File "%s" not on Sia and not matching watched names.', bfile["siapath"])
+            status["uploadprogress"] = uploaded_size / status["uploadsize"] * 100
+            if not fully_available and uploaded_size < status["uploadsize"]:
+                # Sleep 5 minutes.
+                time.sleep(5 * 60)
+        else:
+            return False, "ERROR: Sia daemon needs to be running for any uploads."
+    return True, ""
 
 def save_metadata(status):
     status["message"] = "Saving metadata"
