@@ -5,7 +5,7 @@ import os
 import re
 import logging
 from connecttools import (getDemoURL, getFromMineBD,
-                          getFromMetadata, putToMetadata)
+                          getFromMetadata, putToMetadata, deleteFromMetadata)
 
 
 # Define various constants.
@@ -76,6 +76,17 @@ def api_renter_upload(siapath):
     siafname = os.path.join(SIA_DIR, "renter", "%s.sia" % siapath)
     with open(siafname, 'a') as siafile:
         os.utime(siafname, None)
+    return "", 204
+
+@app.route("/renter/delete/<siapath>", methods=['POST'])
+def api_renter_delete(siapath):
+    mdata, md_status_code = deleteFromMetadata("file/%s" % siapath)
+    if md_status_code >= 400:
+        return jsonify(mdata), md_status_code
+    # Delete .sia file as well.
+    siafname = os.path.join(SIA_DIR, "renter", "%s.sia" % siapath)
+    if os.path.isfile(siafname):
+        os.remove(siafname)
     return "", 204
 
 @app.route("/wallet", methods=['GET'])

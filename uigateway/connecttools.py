@@ -241,6 +241,34 @@ def putToMetadata(api, formData):
         return {"message": str(e)}, 500
 
 
+def deleteFromMetadata(api):
+    url = getDemoURL() + api
+    token = getMetadataToken()
+    if token is None:
+        return {"message": "Error requesting metadata token."}, 500
+
+    try:
+        headers = requests.utils.default_headers()
+        headers.update({'X-Auth-Token': token})
+        response = requests.delete(url, headers=headers)
+        if ('Content-Type' in response.headers
+            and re.match(r'^application/json',
+                         response.headers['Content-Type'])):
+            # create a dict generated from the JSON response.
+            mdata = response.json()
+            if response.status_code >= 400:
+                # For error-ish codes, tell that they are from MineBD.
+                mdata["messagesource"] = "Metadata"
+            return mdata, response.status_code
+        else:
+            return {"message": response.text,
+                    "messagesource": "Metadata"}, response.status_code
+    except requests.ConnectionError as e:
+        return {"message": str(e)}, 503
+    except requests.RequestException as e:
+        return {"message": str(e)}, 500
+
+
 def checkLogin():
     csrftoken = request.cookies.get('csrftoken')
     sessionid = request.cookies.get('sessionid')

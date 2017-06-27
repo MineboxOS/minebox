@@ -90,7 +90,14 @@ def run_backup(startevent):
             threadstatus[threading.current_thread().name]["message"] = errmsg
             return
         remove_lower_snapshots(threadstatus[threading.current_thread().name])
-        remove_old_backups(threadstatus[threading.current_thread().name])
+        success, errmsg = remove_old_backups(threadstatus[threading.current_thread().name],
+                                             get_running_backups())
+        if not success:
+            threadstatus[threading.current_thread().name]["failed"] = True
+            threadstatus[threading.current_thread().name]["message"] = errmsg
+            return
+        threadstatus[threading.current_thread().name]["finished"] = True
+        threadstatus[threading.current_thread().name]["message"] = "done"
 
 
 @app.route("/status")
@@ -103,6 +110,12 @@ def api_start():
     for tname in threadstatus:
         statusdata["backups"].append(threadstatus[tname])
     return jsonify(statusdata), 200
+
+
+def get_running_backups():
+    return [threadstatus[thread.name]["snapname"]
+            for thread in threading.enumerate()
+              if thread.name in threadstatus ]
 
 
 @app.errorhandler(404)

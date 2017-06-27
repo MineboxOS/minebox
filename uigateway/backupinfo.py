@@ -124,7 +124,8 @@ def getFiles(backupname):
         is_finished = True
         with ZipFile(zipname, 'r') as backupzip:
             backupfiles = [re.sub(r'.*backup\.\d+\/(.*)\.sia$', r'\1', f)
-                           for f in backupzip.namelist()]
+                           for f in backupzip.namelist()
+                             if f.endswith(".sia")]
     elif isdir(dirname):
         backupfiles = []
         is_finished = False

@@ -4,6 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
+User=sia
 ExecStart=/root/minebox-client-tools_vm/sia/demosiad.sh
 Restart=on-failure
 RestartSec=30
