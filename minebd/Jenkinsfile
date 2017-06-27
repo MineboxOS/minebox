@@ -3,7 +3,7 @@ node ("rockstor") {
    def mvnHome
    stage('Checkout') { // for display purposes
       checkout( [ $class: 'GitSCM'
-                , branches: [[name: env.BRANCH_NAME]]
+                , branches: [[name: '*/${GIT_BRANCH}']]
                 , doGenerateSubmoduleConfigurations: false
                 , extensions: []
                 , submoduleCfg: []
