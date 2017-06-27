@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from flask import Flask, request, jsonify, json
-from os import environ
+import os
 import re
 import logging
 from connecttools import (getDemoURL, getFromMineBD,
@@ -66,11 +66,16 @@ def api_renter_files():
 @app.route("/renter/upload/<siapath>", methods=['POST'])
 def api_renter_upload(siapath):
     filename = request.form["source"]
+    # Upload the local file. Note that this reads all its data into memory.
     with open(filename) as file:
         fdata = file.read()
         mdata, md_status_code = putToMetadata("file/%s" % siapath, fdata)
         if md_status_code >= 400:
             return jsonify(mdata), md_status_code
+    # Do the equivalent of a "touch <path>.sia"
+    siafname = os.path.join(SIA_DIR, "renter", "%s.sia" % siapath)
+    with open(siafname, 'a') as siafile:
+        os.utime(siafname, None)
     return "", 204
 
 @app.route("/wallet", methods=['GET'])
@@ -103,7 +108,7 @@ def page_not_found(error):
 
 
 if __name__ == "__main__":
-    if 'DEBUG' in environ:
+    if 'DEBUG' in os.environ:
         app.debug = True
     if not app.debug:
         # In production mode, add log handler to sys.stderr.

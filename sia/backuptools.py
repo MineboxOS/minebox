@@ -9,7 +9,8 @@ import re
 import time
 import subprocess
 
-from connecttools import getDemoURL, getFromSia, postToSia, putToMineBD
+from connecttools import (getDemoURL, getFromSia, postToSia, putToMineBD,
+                          putToMetadata)
 from backupinfo import *
 
 SIA_DIR="/mnt/lower1/sia"
@@ -144,7 +145,7 @@ def save_metadata(status):
     for bfile in status["backupfileinfo"]:
         dest_siafile = path.join(metadir, "%s.sia" % bfile["siapath"])
         if not path.isfile(dest_siafile):
-            shutil.copy2(path.join(SIA_DIR, "%s.sia" % bfile["siapath"]), metadir)
+            shutil.copy2(path.join(SIA_DIR, "renter", "%s.sia" % bfile["siapath"]), metadir)
     # Create a bundle of all metadata for this backup.
     zipname = join(METADATA_BASE, "%s.zip" % backupname)
     if path.isfile(zipname):
