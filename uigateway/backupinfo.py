@@ -2,6 +2,7 @@
 
 from flask import current_app
 from os.path import isfile, isdir, join
+import os
 from glob import glob
 from zipfile import ZipFile
 import re
@@ -110,8 +111,42 @@ def getList():
                   for f in glob(join(METADATA_BASE, "backup.*"))
                     if (isfile(f) and f.endswith(".zip")) or
                        isdir(f) ]
-    backuplist.sort()
+    # Sort most-recent-first.
+    backuplist.sort(reverse=True)
     return backuplist
+
+
+def getBackupsToRestart():
+    # Look at existing backups and find out which ones are unfinished and
+    # should be restarted.
+    restartlist = []
+    backuplist = getList()
+    prevsnap = None
+    prevsnap_exists = None
+    for snapname in backuplist:
+        backupfiles, is_finished = getFiles(snapname)
+        snapshot_exists = False
+        if glob(os.path.join(DATADIR_MASK, 'snapshots', snapname)):
+            snapshot_exists = True
+        # Always add the most recent backup if it's unfinished and the
+        # lower-level snapshot exists.
+        if snapshot_exists and not prevsnap and not is_finished:
+            restartlist.append(snapname)
+        # Break on the first finished backup, add previous one (oldest
+        # unfinished) unless it's already in the list.
+        if is_finished or snapname == backuplist[-1]:
+            if prevsnap_exists and prevsnap and not prevsnap in restartlist:
+                 restartlist.append(prevsnap)
+            break
+        # If we arrive at the last item of the list, add if it's unfinished.
+        if snapname == backuplist[-1]:
+            if snapshot_exists and not snapname in restartlist:
+                 restartlist.append(snapname)
+            break
+        # Remember snapname for next cycle.
+        prevsnap = snapname
+        prevsnap_exists = snapshot_exists
+    return restartlist
 
 
 def getFiles(backupname):

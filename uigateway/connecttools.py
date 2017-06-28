@@ -12,6 +12,7 @@ import requests
 SIAD_URL="http://localhost:9980/"
 MINEBD_URL="http://localhost:8080/v1/"
 MINEBD_AUTH_KEY_FILE="/etc/minebox/local-auth.key"
+BACKUPSERVICE_URL="http://localhost:5100/"
 METADATA_URL="https://metadata.minebox.io/v1/"
 LOCALDEMO_URL="http://localhost:8050/v1/"
 DEMOSIAD_URL="http://localhost:9900/"
@@ -107,6 +108,28 @@ def postToSia(api, formData):
         else:
             return {"message": response.text,
                     "messagesource": "sia"}, response.status_code
+    except requests.ConnectionError as e:
+        return {"message": str(e)}, 503
+    except requests.RequestException as e:
+        return {"message": str(e)}, 500
+
+
+def getFromBackupService(api):
+    url = BACKUPSERVICE_URL + api
+    try:
+        response = requests.get(url)
+        if ('Content-Type' in response.headers
+            and re.match(r'^application/json',
+                         response.headers['Content-Type'])):
+            # create a dict generated from the JSON response.
+            bsdata = response.json()
+            if response.status_code >= 400:
+                # For error-ish codes, tell that they are from Sia.
+                bsdata["messagesource"] = "backupservice"
+            return bsdata, response.status_code
+        else:
+            return {"message": response.text,
+                    "messagesource": "backupservice"}, response.status_code
     except requests.ConnectionError as e:
         return {"message": str(e)}, 503
     except requests.RequestException as e:

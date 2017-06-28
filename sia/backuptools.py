@@ -178,8 +178,6 @@ def remove_lower_snapshots(status):
 def remove_old_backups(status, activebackups):
     status["message"] = "Cleaning up old backups"
     allbackupnames = getList()
-    # Reverse-sort the list here as we need to go through them latest-first.
-    allbackupnames.sort(reverse=True)
     sia_filedata, sia_status_code = getFromSia('renter/files')
     if sia_status_code == 200:
         sia_map = dict((d["siapath"], index) for (index, d) in enumerate(sia_filedata["files"]))

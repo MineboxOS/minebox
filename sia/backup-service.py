@@ -17,6 +17,7 @@ import time
 import logging
 import threading
 from backuptools import *
+from backupinfo import getBackupsToRestart
 
 # Define various constants.
 REST_PORT=5100
@@ -24,6 +25,12 @@ REST_PORT=5100
 threadstatus = {}
 
 app = Flask(__name__)
+
+
+@app.before_first_request
+def before_first_request():
+    restart_backups()
+
 
 @app.route("/")
 def api_root():
@@ -49,12 +56,17 @@ def api_trigger():
     return jsonify(message="Backup started: %s." % bthread.name), 200
 
 
-def run_backup(startevent):
+def run_backup(startevent, snapname=None):
     # The routes have implicit Flask application context, but the thread needs an explicit one.
     # See http://flask.pocoo.org/docs/appcontext/#creating-an-application-context
     with app.app_context():
-        snapname = str(int(time.time()))
-        app.logger.info('Started backup run: %s', snapname)
+        if not snapname:
+            snapname = str(int(time.time()))
+            restarted = False
+            app.logger.info('Started backup run: %s', snapname)
+        else:
+            app.logger.info('Restarting backup run: %s', snapname)
+            restarted = True
         threading.current_thread().name = 'backup.%s' % snapname
         threadstatus[threading.current_thread().name] = {
           "snapname": snapname,
@@ -67,29 +79,40 @@ def run_backup(startevent):
           "uploadprogress": 0,
           "finished": False,
           "failed": False,
+          "restarted": restarted,
           "message": "started",
         }
         # Tell main thread we are set up.
         startevent.set()
+
         # Now start the actual tasks.
-        #snapshot_upper()
-        create_lower_snapshots(threadstatus[threading.current_thread().name])
+        if not restarted:
+            # Snapshotting is only done on newly started backups, not on restarts.
+            # Create upper-level snapshots.
+            #snapshot_upper()
+            # Create lower-level snapshot(s).
+            create_lower_snapshots(threadstatus[threading.current_thread().name])
+        # Start uploads.
         success, errmsg = initiate_uploads(threadstatus[threading.current_thread().name])
         if not success:
             threadstatus[threading.current_thread().name]["failed"] = True
             threadstatus[threading.current_thread().name]["message"] = errmsg
             return
+        # Wait for uploads to complete.
         success, errmsg = wait_for_uploads(threadstatus[threading.current_thread().name])
         if not success:
             threadstatus[threading.current_thread().name]["failed"] = True
             threadstatus[threading.current_thread().name]["message"] = errmsg
             return
+        # Create and save metadata bundle.
         success, errmsg = save_metadata(threadstatus[threading.current_thread().name])
         if not success:
             threadstatus[threading.current_thread().name]["failed"] = True
             threadstatus[threading.current_thread().name]["message"] = errmsg
             return
+        # We're done, remove lower-level snapshot(s).
         remove_lower_snapshots(threadstatus[threading.current_thread().name])
+        # Clean up old backups (locally and on the network).
         success, errmsg = remove_old_backups(threadstatus[threading.current_thread().name],
                                              get_running_backups())
         if not success:
@@ -112,10 +135,33 @@ def api_start():
     return jsonify(statusdata), 200
 
 
+@app.route("/ping")
+def api_ping():
+    # This can be called to just have the service run something.
+    # For example, we need to do this early after booting to restart backups
+    # if needed (via @app.before_first_request).
+    return "", 204
+
+
 def get_running_backups():
     return [threadstatus[thread.name]["snapname"]
             for thread in threading.enumerate()
               if thread.name in threadstatus ]
+
+
+def restart_backups():
+    with app.app_context():
+        active_backups = get_running_backups()
+        app.logger.debug('Active backups: %s', active_backups)
+        for snapname in getBackupsToRestart():
+            app.logger.debug('%s should be restarted...', snapname)
+            if not snapname in active_backups:
+                bevent = threading.Event()
+                bthread = threading.Thread(target=run_backup, args=(bevent,snapname))
+                bthread.daemon = True
+                bthread.start()
+                bevent.wait() # Wait for thread being set up.
+                app.logger.debug('%s was restarted.', snapname)
 
 
 @app.errorhandler(404)

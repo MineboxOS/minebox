@@ -10,7 +10,8 @@ import subprocess
 import pwd
 import backupinfo
 from connecttools import (setOrigin, checkLogin, getDemoURL,
-                          getFromSia, postToSia, getFromMineBD)
+                          getFromSia, postToSia, getFromMineBD,
+                          getFromBackupService)
 
 
 # Define various constants.
@@ -88,28 +89,8 @@ def api_backup_start():
     # Doc: *** TBD - not documented yet***
     if not checkLogin():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    # See if the consensus is synced as we know that uploader requires that.
-    siadata, sia_status_code = getFromSia('consensus')
-    if sia_status_code >= 400:
-        return jsonify(siadata), sia_status_code
-    if not siadata["synced"]:
-        return jsonify(message="Sia consensus is not fully synced, try again later."), 503
-    # TBD: Make sure MineBD is not running a restore.
-    # DEMO: set environment variables for uploader to demo services.
-    if 'DEMO' in environ:
-        environ['SIAC'] = DEMOSIAC_CMD
-        environ['METADATA_URL'] = getDemoURL()
-        environ['SERVER_URI'] = getDemoURL()
-    # Make uploader start a new upload.
-    starttime = time.time()
-    subprocess.call([UPLOADER_CMD])
-    # A metadata directory with the pidfile should exist very soon after starting the uploader.
-    time.sleep(10)
-    lastbackup = backupinfo.getList().pop()
-    if starttime < lastbackup:
-        return jsonify(message="Backup started.", name=lastbackup), 200
-    else:
-        return jsonify(message="Error starting backup."), 500
+    bsdata, bs_status_code = getFromBackupService('trigger')
+    return jsonify(bsdata), bs_status_code
 
 
 @app.route("/key/status", methods=['GET'])
