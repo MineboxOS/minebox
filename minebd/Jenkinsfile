@@ -19,7 +19,7 @@ node ("rockstor") {
              ./gradlew shadowJar
            """
    }
-   stage('Store JAR') {
+   stage('Store JAR in archive') {
       archive 'minebd/build/libs/*.jar'
    }
    stage('Check Build Environment') {
@@ -36,7 +36,18 @@ node ("rockstor") {
              rpmbuild -bb minebd/minebd.spec
           """
    }
-   stage('Store JAR') {
+   stage('Store RPM in archive') {
       archive 'RPMS/x86_64/*.rpm'
+   }
+   stage('Prepare Repo') {
+      sh """yum install -y createrepo
+            createrepo --database 'RPMS/x86_64'
+         """
+   }
+   stage('Store Repo in archive') {
+      sh """cd RPMS/x86_64
+            tar -cjf ../../repo.tgz *
+         """
+      archive 'repo.tgz'
    }
 }
