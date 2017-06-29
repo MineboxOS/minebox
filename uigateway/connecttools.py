@@ -18,7 +18,7 @@ LOCALDEMO_URL="http://localhost:8050/v1/"
 DEMOSIAD_URL="http://localhost:9900/"
 
 
-def setOrigin(*args, **kwargs):
+def set_origin(*args, **kwargs):
     def decorator(f):
         def wrapped_function(*args, **kwargs):
             if request.method == 'OPTIONS':
@@ -52,13 +52,13 @@ def setOrigin(*args, **kwargs):
     return decorator
 
 
-def getDemoURL():
+def get_demo_url():
     if 'DEMO' in environ and environ['DEMO'] == 'local':
         return LOCALDEMO_URL
     return METADATA_URL
 
 
-def getFromSia(api):
+def get_from_sia(api):
     if 'DEMO' in environ:
         url = DEMOSIAD_URL + api
     else:
@@ -86,7 +86,7 @@ def getFromSia(api):
         return {"message": str(e)}, 500
 
 
-def postToSia(api, formData):
+def post_to_sia(api, formData):
     if 'DEMO' in environ:
         url = DEMOSIAD_URL + api
     else:
@@ -114,7 +114,7 @@ def postToSia(api, formData):
         return {"message": str(e)}, 500
 
 
-def getFromBackupService(api):
+def get_from_backupservice(api):
     url = BACKUPSERVICE_URL + api
     try:
         response = requests.get(url)
@@ -136,7 +136,7 @@ def getFromBackupService(api):
         return {"message": str(e)}, 500
 
 
-def getFromMineBD(api):
+def get_from_minebd(api):
     url = MINEBD_URL + api
     # siad requires a specific UA header, so add that to defaults.
     with open(MINEBD_AUTH_KEY_FILE) as f:
@@ -161,7 +161,7 @@ def getFromMineBD(api):
         return {"message": str(e)}, 500
 
 
-def putToMineBD(api, formData, addHeaders = []):
+def put_to_minebd(api, formData, addHeaders = []):
     url = MINEBD_URL + api
     # siad requires a specific UA header, so add that to defaults.
     with open(MINEBD_AUTH_KEY_FILE) as f:
@@ -190,27 +190,27 @@ def putToMineBD(api, formData, addHeaders = []):
         return {"message": str(e)}, 500
 
 
-def getMetadataToken():
+def _get_metadata_token():
     # If we do not have a token or timestamp is older than 5 minutes,
     # fetch a new token from MineBD (who uses metadata service for that).
     # Note that Metadata tokens are valid for 10 minutes right now.
-    if (not hasattr(getMetadataToken, "token") or getMetadataToken.token is None
-        or getMetadataToken.timestamp < time.time() - 5 * 60):
+    if (not hasattr(_get_metadata_token, "token") or _get_metadata_token.token is None
+        or _get_metadata_token.timestamp < time.time() - 5 * 60):
         # Always set the timestamp so we do not have to test above if it's set,
         #  as it's only unset when token is also unset
-        getMetadataToken.timestamp = time.time()
-        mbdata, mb_status_code = getFromMineBD('auth/getMetadataToken')
+        _get_metadata_token.timestamp = time.time()
+        mbdata, mb_status_code = get_from_minebd('auth/_get_metadata_token')
         if mb_status_code == 200:
-            getMetadataToken.token = mbdata["message"]
+            _get_metadata_token.token = mbdata["message"]
         else:
             current_app.logger.error('Error %s getting metadata token from MineBD: %s' % (mb_status_code,  mbdata["message"]))
-            getMetadataToken.token = None
-    return getMetadataToken.token
+            _get_metadata_token.token = None
+    return _get_metadata_token.token
 
 
-def getFromMetadata(api):
-    url = getDemoURL() + api
-    token = getMetadataToken()
+def get_from_metadata(api):
+    url = get_demo_url() + api
+    token = _get_metadata_token()
     if token is None:
         return {"message": "Error requesting metadata token."}, 500
 
@@ -236,9 +236,9 @@ def getFromMetadata(api):
         return {"message": str(e)}, 500
 
 
-def putToMetadata(api, formData):
-    url = getDemoURL() + api
-    token = getMetadataToken()
+def put_to_metadata(api, formData):
+    url = get_demo_url() + api
+    token = _get_metadata_token()
     if token is None:
         return {"message": "Error requesting metadata token."}, 500
 
@@ -264,9 +264,9 @@ def putToMetadata(api, formData):
         return {"message": str(e)}, 500
 
 
-def deleteFromMetadata(api):
-    url = getDemoURL() + api
-    token = getMetadataToken()
+def delete_from_metadata(api):
+    url = get_demo_url() + api
+    token = _get_metadata_token()
     if token is None:
         return {"message": "Error requesting metadata token."}, 500
 
@@ -292,7 +292,7 @@ def deleteFromMetadata(api):
         return {"message": str(e)}, 500
 
 
-def checkLogin():
+def check_login():
     csrftoken = request.cookies.get('csrftoken')
     sessionid = request.cookies.get('sessionid')
     user_api = "https://localhost/api/commands/current-user"

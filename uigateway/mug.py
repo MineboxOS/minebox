@@ -9,9 +9,9 @@ import time
 import subprocess
 import pwd
 import backupinfo
-from connecttools import (setOrigin, checkLogin, getDemoURL,
-                          getFromSia, postToSia, getFromMineBD,
-                          getFromBackupService)
+from connecttools import (set_origin, check_login, get_demo_url,
+                          get_from_sia, post_to_sia, get_from_minebd,
+                          get_from_backupservice)
 
 
 # Define various constants.
@@ -28,7 +28,7 @@ H_PER_SC=1e24 # hastings per siacoin
 app = Flask(__name__)
 
 @app.route("/")
-@setOrigin()
+@set_origin()
 def api_root():
     links = []
     for rule in app.url_map.iter_rules():
@@ -40,20 +40,20 @@ def api_root():
 
 
 @app.route("/backup/list", methods=['GET'])
-@setOrigin()
+@set_origin()
 def api_backup_list():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backuplist
-    if not checkLogin():
+    if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     metalist = backupinfo.get_list()
     return jsonify(metalist), 200
 
 
 @app.route("/backup/<backupname>/status", methods=['GET'])
-@setOrigin()
+@set_origin()
 def api_backup_status(backupname):
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backup1493807150status
-    if not checkLogin():
+    if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     if backupname == "last":
         backupname = backupinfo.get_latest()
@@ -66,10 +66,10 @@ def api_backup_status(backupname):
 
 
 @app.route("/backup/all/status", methods=['GET'])
-@setOrigin()
+@set_origin()
 def api_backup_all_status():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backupallstatus
-    if not checkLogin():
+    if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     backuplist = backupinfo.get_list()
 
@@ -82,47 +82,47 @@ def api_backup_all_status():
 
 
 @app.route("/backup/start", methods=['POST'])
-@setOrigin()
+@set_origin()
 def api_backup_start():
     # Doc: *** TBD - not documented yet***
-    if not checkLogin():
+    if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    bsdata, bs_status_code = getFromBackupService('trigger')
+    bsdata, bs_status_code = get_from_backupservice('trigger')
     return jsonify(bsdata), bs_status_code
 
 
 @app.route("/key/status", methods=['GET'])
-@setOrigin()
+@set_origin()
 def api_key_status():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-keystatus
-    if not checkLogin():
+    if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     return jsonify(message="Not yet implemented."), 501
 
 
 @app.route("/key/generate", methods=['GET'])
-@setOrigin()
+@set_origin()
 def api_key_generate():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-keygenerate
-    mbdata, mb_status_code = getFromMineBD('keys/asJson')
+    mbdata, mb_status_code = get_from_minebd('keys/asJson')
     # For the moment, just blindly hand over the result from MineBD.
     return jsonify(mbdata), mb_status_code
 
 
 @app.route("/key/verify", methods=['POST'])
-@setOrigin()
+@set_origin()
 def api_key_verify():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-post-keyverify
-    if not checkLogin():
+    if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     return jsonify(message="Not yet implemented."), 501
 
 
 @app.route("/key", methods=['PUT'])
-@setOrigin()
+@set_origin()
 def api_key_put():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-put-key
-    mbdata, mb_status_code = getFromMineBD('serialnumber')
+    mbdata, mb_status_code = get_from_minebd('serialnumber')
     if mb_status_code == 200:
         return jsonify(message="File system is already encrypted, cannot set key."), 400
     elif "messagesource" in mbdata and mbdata["messagesource"] == "MineBD":
@@ -140,32 +140,32 @@ def api_key_put():
 
 
 @app.route("/key", methods=['POST'])
-@setOrigin()
+@set_origin()
 def api_key_post():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-post-key
-    if not checkLogin():
+    if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     return jsonify(message="Not yet implemented."), 501
 
 
 @app.route("/consensus", methods=['GET'])
-@setOrigin()
+@set_origin()
 def api_consensus():
     # Doc: *** TBD - not documented yet***
-    if not checkLogin():
+    if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    siadata, status_code = getFromSia('consensus')
+    siadata, status_code = get_from_sia('consensus')
     # For now, just return the info from Sia directly.
     return jsonify(siadata), status_code
 
 
 @app.route("/contracts", methods=['GET'])
-@setOrigin()
+@set_origin()
 def api_contracts():
     # Doc: *** not documented yet***
-    if not checkLogin():
+    if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    siadata, sia_status_code = getFromSia('renter/contracts')
+    siadata, sia_status_code = get_from_sia('renter/contracts')
     if sia_status_code >= 400:
         return jsonify(siadata), sia_status_code
     # Create a summary similar to what `siac renter contracts` presents.
@@ -187,10 +187,10 @@ def api_contracts():
 
 
 @app.route("/status", methods=['GET'])
-@setOrigin()
+@set_origin()
 def api_status():
     # Doc: *** TBD - not documented yet***
-    username = checkLogin()
+    username = check_login()
     outdata = {}
     if username:
         outdata["logged_in"] = True
@@ -199,7 +199,7 @@ def api_status():
         outdata["logged_in"] = False
         outdata["user"] = None
 
-    mbdata, mb_status_code = getFromMineBD('serialnumber')
+    mbdata, mb_status_code = get_from_minebd('serialnumber')
     if mb_status_code == 200:
         outdata["minebd_running"] = True
         outdata["minebd_encrypted"] = True
@@ -229,7 +229,7 @@ def api_status():
         outdata["backup_type"] = "sia_demo"
     else:
         outdata["backup_type"] = "sia"
-    consdata, cons_status_code = getFromSia('consensus')
+    consdata, cons_status_code = get_from_sia('consensus')
     if cons_status_code == 200:
         outdata["sia_daemon_running"] = True
         outdata["consensus_height"] = consdata["height"]
@@ -238,7 +238,7 @@ def api_status():
         outdata["sia_daemon_running"] = False
         outdata["consensus_height"] = None
         outdata["consensus_synced"] = None
-    walletdata, wallet_status_code = getFromSia('wallet')
+    walletdata, wallet_status_code = get_from_sia('wallet')
     if username and wallet_status_code == 200:
         outdata["wallet_unlocked"] = walletdata["unlocked"]
         outdata["wallet_encrypted"] = walletdata["encrypted"]
@@ -255,12 +255,12 @@ def api_status():
 
 
 @app.route("/wallet/status", methods=['GET'])
-@setOrigin()
+@set_origin()
 def api_wallet_status():
     # Doc: *** not documented yet***
-    if not checkLogin():
+    if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    siadata, sia_status_code = getFromSia('wallet')
+    siadata, sia_status_code = get_from_sia('wallet')
     if sia_status_code >= 400:
         return jsonify(siadata), sia_status_code
     walletdata = {
@@ -282,14 +282,14 @@ def api_wallet_status():
 
 
 @app.route("/wallet/unlock", methods=['POST'])
-@setOrigin()
+@set_origin()
 def api_wallet_unlock():
     # Doc: *** not documented yet***
-    if not checkLogin():
+    if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     # Make sure we only hand parameters to siad that it supports.
     pwd = request.form["encryptionpassword"]
-    siadata, status_code = postToSia('wallet/unlock', {"encryptionpassword": pwd})
+    siadata, status_code = post_to_sia('wallet/unlock', {"encryptionpassword": pwd})
     if status_code == 204:
         # This (No Content) should be the default returned on success.
         return jsonify(message="Wallet unlocked."), 200
@@ -298,13 +298,13 @@ def api_wallet_unlock():
 
 
 @app.errorhandler(404)
-@setOrigin()
+@set_origin()
 def page_not_found(error):
     app.logger.error('Method not found: %s' % request.url)
     return jsonify(error="Method not supported: "+ str(error)), 404
 
 @app.errorhandler(500)
-@setOrigin()
+@set_origin()
 def page_not_found(error):
     app.logger.error('Internal server error @ %s %s' % (request.url , str(error)))
     return jsonify(error="Internal server error: "+ str(error)), 500

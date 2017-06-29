@@ -4,8 +4,9 @@ from flask import Flask, request, jsonify, json
 import os
 import re
 import logging
-from connecttools import (getDemoURL, getFromMineBD,
-                          getFromMetadata, putToMetadata, deleteFromMetadata)
+from connecttools import (get_demo_url, get_from_minebd,
+                          get_from_metadata, put_to_metadata,
+                          delete_from_metadata)
 
 
 # Define various constants.
@@ -38,7 +39,7 @@ def api_consensus():
 
 @app.route("/renter/files", methods=['GET'])
 def api_renter_files():
-    mdata, md_status_code = getFromMetadata('file/list')
+    mdata, md_status_code = get_from_metadata('file/list')
     if md_status_code >= 400:
         return jsonify(mdata), md_status_code
     files = []
@@ -69,7 +70,7 @@ def api_renter_upload(siapath):
     # Upload the local file. Note that this reads all its data into memory.
     with open(filename) as file:
         fdata = file.read()
-        mdata, md_status_code = putToMetadata("file/%s" % siapath, fdata)
+        mdata, md_status_code = put_to_metadata("file/%s" % siapath, fdata)
         if md_status_code >= 400:
             return jsonify(mdata), md_status_code
     # Do the equivalent of a "touch <path>.sia"
@@ -80,7 +81,7 @@ def api_renter_upload(siapath):
 
 @app.route("/renter/delete/<siapath>", methods=['POST'])
 def api_renter_delete(siapath):
-    mdata, md_status_code = deleteFromMetadata("file/%s" % siapath)
+    mdata, md_status_code = delete_from_metadata("file/%s" % siapath)
     if md_status_code >= 400:
         return jsonify(mdata), md_status_code
     # Delete .sia file as well.

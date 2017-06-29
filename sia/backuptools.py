@@ -10,8 +10,8 @@ import re
 import time
 import subprocess
 
-from connecttools import (getDemoURL, getFromSia, postToSia, putToMineBD,
-                          putToMetadata)
+from connecttools import (get_demo_url, get_from_sia, post_to_sia,
+                          put_to_minebd, put_to_metadata)
 from backupinfo import *
 
 SIA_DIR="/mnt/lower1/sia"
@@ -19,7 +19,7 @@ MINEBD_STORAGE_PATH="/mnt/storage"
 
 def check_prerequisites():
     # Step 0: Check if prerequisites are met to make backups.
-    consdata, cons_status_code = getFromSia('consensus')
+    consdata, cons_status_code = get_from_sia('consensus')
     if cons_status_code == 200:
         if not consdata["synced"]:
           return False, "ERROR: sia seems not to be synced. Please again when the consensus is synced."
@@ -72,7 +72,7 @@ def create_lower_snapshots(status):
     current_app.logger.info(
       'Telling MineBD to pause (for 1.5s) to make sure no modified blocks exist with the same timestamp as in our snapshots.'
     )
-    mbdata, mb_status_code = putToMineBD('pause', '', [{'Content-Type': 'application/json'}, {'Accept': 'text/plain'}])
+    mbdata, mb_status_code = put_to_minebd('pause', '', [{'Content-Type': 'application/json'}, {'Accept': 'text/plain'}])
     return
 
 def initiate_uploads(status):
@@ -85,7 +85,7 @@ def initiate_uploads(status):
     bfinfo_path = path.join(metadir, 'fileinfo')
     if path.isfile(bfinfo_path):
         remove(bfinfo_path)
-    sia_filedata, sia_status_code = getFromSia('renter/files')
+    sia_filedata, sia_status_code = get_from_sia('renter/files')
     if sia_status_code == 200:
         siafiles = sia_filedata["files"]
     else:
@@ -115,8 +115,8 @@ def initiate_uploads(status):
                 status["uploadsize"] += fileinfo.st_size
                 status["uploadfiles"].append(sia_fname)
                 current_app.logger.info('%s has to be uploaded, starting that.' % sia_fname)
-                siadata, sia_status_code = postToSia('renter/upload/%s' % sia_fname,
-                                                     {'source': filepath})
+                siadata, sia_status_code = post_to_sia('renter/upload/%s' % sia_fname,
+                                                       {'source': filepath})
                 if sia_status_code != 204:
                     return False, "ERROR: sia upload error %s: %s" % (sia_status_code, siadata['message'])
             status["backupfileinfo"].append({"siapath": sia_fname, "size": fileinfo.st_size})
@@ -132,7 +132,7 @@ def wait_for_uploads(status):
     # Loop and sleep as long as the backup is not fully available and uploaded.
     # TODO: here and for the sleep below, we should actually use *or*.
     while not fully_available and uploaded_size < status["uploadsize"]:
-        sia_filedata, sia_status_code = getFromSia('renter/files')
+        sia_filedata, sia_status_code = get_from_sia('renter/files')
         if sia_status_code == 200:
             uploaded_size = 0
             fully_available = True
@@ -180,7 +180,7 @@ def save_metadata(status):
     current_app.logger.info("Upload metadata.")
     with open(zipname) as zipfile:
         zipdata = zipfile.read()
-        mdata, md_status_code = putToMetadata("file/%s.zip" % backupname, zipdata)
+        mdata, md_status_code = put_to_metadata("file/%s.zip" % backupname, zipdata)
         if md_status_code >= 400:
             return False, mdata["message"]
     return True, ""
@@ -196,7 +196,7 @@ def remove_lower_snapshots(status):
 def remove_old_backups(status, activebackups):
     status["message"] = "Cleaning up old backups"
     allbackupnames = get_list()
-    sia_filedata, sia_status_code = getFromSia('renter/files')
+    sia_filedata, sia_status_code = get_from_sia('renter/files')
     if sia_status_code == 200:
         sia_map = dict((d["siapath"], index) for (index, d) in enumerate(sia_filedata["files"]))
     else:
@@ -242,7 +242,7 @@ def remove_old_backups(status, activebackups):
         current_app.logger.info("Removing unneeded files from Sia network")
         for siafile in sia_filedata["files"]:
             if not siafile["siapath"] in keepfiles:
-                siadata, sia_status_code = postToSia("renter/delete/%s" % siafile["siapath"], "")
+                siadata, sia_status_code = post_to_sia("renter/delete/%s" % siafile["siapath"], "")
                 if sia_status_code != 204:
                     return False, "ERROR: sia delete error %s: %s" % (sia_status_code, siadata['message'])
 

@@ -6,7 +6,7 @@ import os
 from glob import glob
 from zipfile import ZipFile
 import re
-from connecttools import getFromSia
+from connecttools import get_from_sia
 
 
 DATADIR_MASK="/mnt/lower*/data"
@@ -37,7 +37,7 @@ def get_status(backupname):
             prev_backupfiles, prev_finished = get_files(backuplist[currentidx - 1])
         else:
             prev_backupfiles = None
-        sia_filedata, sia_status_code = getFromSia('renter/files')
+        sia_filedata, sia_status_code = get_from_sia('renter/files')
         if sia_status_code == 200:
             # create a dict generated from the JSON response.
             files = 0
