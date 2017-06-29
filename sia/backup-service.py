@@ -17,7 +17,7 @@ import time
 import logging
 import threading
 from backuptools import *
-from backupinfo import getBackupsToRestart
+from backupinfo import getBackupsToRestart, get_latest
 
 # Define various constants.
 REST_PORT=5100
@@ -89,7 +89,7 @@ def run_backup(startevent, snapname=None):
         if not restarted:
             # Snapshotting is only done on newly started backups, not on restarts.
             # Create upper-level snapshots.
-            #snapshot_upper()
+            snapshot_upper(threadstatus[threading.current_thread().name])
             # Create lower-level snapshot(s).
             create_lower_snapshots(threadstatus[threading.current_thread().name])
         # Start uploads.
@@ -140,6 +140,17 @@ def api_ping():
     # This can be called to just have the service run something.
     # For example, we need to do this early after booting to restart backups
     # if needed (via @app.before_first_request).
+    # Also, trigger a backup if the latest is older than 24h.
+    timenow = int(time.time())
+    timelatest = int(get_latest())
+    if timelatest < timenow - 24 * 3600:
+        success, errmsg = check_prerequisites()
+        if success:
+            bevent = threading.Event()
+            bthread = threading.Thread(target=run_backup, args=(bevent,))
+            bthread.daemon = True
+            bthread.start()
+            bevent.wait() # Wait for thread being set up.
     return "", 204
 
 

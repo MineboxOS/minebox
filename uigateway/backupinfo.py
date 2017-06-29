@@ -116,6 +116,11 @@ def getList():
     return backuplist
 
 
+def get_latest():
+    backuplist = getList()
+    return backuplist[0] if backuplist else None
+
+
 def getBackupsToRestart():
     # Look at existing backups and find out which ones are unfinished and
     # should be restarted.

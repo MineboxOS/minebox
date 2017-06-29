@@ -56,9 +56,7 @@ def api_backup_status(backupname):
     if not checkLogin():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     if backupname == "last":
-        backuplist = backupinfo.getList()
-        if len(backuplist):
-            backupname = backuplist.pop()
+        backupname = backupinfo.get_latest()
     elif not re.match(r'^\d+$', backupname):
         return jsonify(error="Illegal backup name."), 400
 

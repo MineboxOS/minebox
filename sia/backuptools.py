@@ -15,6 +15,7 @@ from connecttools import (getDemoURL, getFromSia, postToSia, putToMineBD,
 from backupinfo import *
 
 SIA_DIR="/mnt/lower1/sia"
+MINEBD_STORAGE_PATH="/mnt/storage"
 
 def check_prerequisites():
     # Step 0: Check if prerequisites are met to make backups.
@@ -27,13 +28,30 @@ def check_prerequisites():
     return True, ""
 
 def snapshot_upper(status):
-    # TODO: See MIN-104.
+    current_app.logger.info('Creating snapshots of stored data.')
+    status["message"] = "Creating snapshots of stored data"
+    snapname = status["snapname"]
+    upper_subvols = []
+    outlines = subprocess.check_output(['/usr/sbin/btrfs', 'subvolume', 'list', MINEBD_STORAGE_PATH]).splitlines()
+    for line in outlines:
+        current_app.logger.info(line)
+        matches = re.match(r"^ID ([0-9]+).*gen ([0-9]+).*top level ([0-9]+).*path (.+)$", line)
+        toplevel = int(matches.group(3))  # 3rd parenthesis expression
+        subpath = matches.group(4)        # 4th parenthesis expression
+        if toplevel == 5 and not subpath.startswith("snapshots/"):
+            upper_subvols.append(subpath)
+
+    for subvol in upper_subvols:
+        if not path.isdir(path.join(MINEBD_STORAGE_PATH, 'snapshots', subvol)):
+            makedirs(path.join(MINEBD_STORAGE_PATH, 'snapshots', subvol))
+        subprocess.call(['/usr/sbin/btrfs', 'subvolume', 'snapshot', '-r',
+                         os.path.join(MINEBD_STORAGE_PATH, subvol),
+                         os.path.join(MINEBD_STORAGE_PATH, 'snapshots', subvol, snapname)])
     return
 
 def create_lower_snapshots(status):
-    # Step 1: Create snapshot.
-    snapname = status["snapname"]
     status["message"] = "Creating backup files"
+    snapname = status["snapname"]
     backupname = status["backupname"]
 
     metadir = path.join(METADATA_BASE, backupname)
