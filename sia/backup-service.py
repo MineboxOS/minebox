@@ -17,7 +17,7 @@ import time
 import logging
 import threading
 from backuptools import *
-from backupinfo import getBackupsToRestart, get_latest
+from backupinfo import get_backups_to_restart, get_latest
 
 # Define various constants.
 REST_PORT=5100
@@ -164,7 +164,7 @@ def restart_backups():
     with app.app_context():
         active_backups = get_running_backups()
         app.logger.debug('Active backups: %s', active_backups)
-        for snapname in getBackupsToRestart():
+        for snapname in get_backups_to_restart():
             app.logger.debug('%s should be restarted...', snapname)
             if not snapname in active_backups:
                 bevent = threading.Event()

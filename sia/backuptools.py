@@ -195,7 +195,7 @@ def remove_lower_snapshots(status):
 
 def remove_old_backups(status, activebackups):
     status["message"] = "Cleaning up old backups"
-    allbackupnames = getList()
+    allbackupnames = get_list()
     sia_filedata, sia_status_code = getFromSia('renter/files')
     if sia_status_code == 200:
         sia_map = dict((d["siapath"], index) for (index, d) in enumerate(sia_filedata["files"]))
@@ -206,7 +206,7 @@ def remove_old_backups(status, activebackups):
     for backupname in allbackupnames:
         if not keepset_complete:
             # We don't have all files to keep yet, see if this is our "golden" backup.
-            backupfiles, is_finished = getFiles(backupname)
+            backupfiles, is_finished = get_files(backupname)
             current_app.logger.info("Keeping %s backup %s" %
                                     ("finished" if is_finished else "unfinished",
                                      backupname))

@@ -45,7 +45,7 @@ def api_backup_list():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backuplist
     if not checkLogin():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    metalist = backupinfo.getList()
+    metalist = backupinfo.get_list()
     return jsonify(metalist), 200
 
 
@@ -60,7 +60,7 @@ def api_backup_status(backupname):
     elif not re.match(r'^\d+$', backupname):
         return jsonify(error="Illegal backup name."), 400
 
-    backupstatus, status_code = backupinfo.getStatus(backupname)
+    backupstatus, status_code = backupinfo.get_status(backupname)
 
     return jsonify(backupstatus), status_code
 
@@ -71,11 +71,11 @@ def api_backup_all_status():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backupallstatus
     if not checkLogin():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    backuplist = backupinfo.getList()
+    backuplist = backupinfo.get_list()
 
     statuslist = []
     for backupname in backuplist:
-        backupstatus, status_code = backupinfo.getStatus(backupname)
+        backupstatus, status_code = backupinfo.get_status(backupname)
         statuslist.append(backupstatus)
 
     return jsonify(statuslist), 200

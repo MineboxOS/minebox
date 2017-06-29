@@ -14,8 +14,8 @@ METADATA_BASE="/mnt/lower1/mineboxmeta"
 UPLOADER_CMD="/usr/lib/minebox/uploader-bg.sh"
 
 
-def getStatus(backupname):
-    backupfiles, is_finished = getFiles(backupname)
+def get_status(backupname):
+    backupfiles, is_finished = get_files(backupname)
     if backupfiles is None:
         return {"message": "No backup found with that name."}, 404
 
@@ -31,10 +31,10 @@ def getStatus(backupname):
         metadata = "PENDING"
         fully_available = False
     else:
-        backuplist = getList()
+        backuplist = get_list()
         currentidx = backuplist.index(backupname)
         if currentidx > 0:
-            prev_backupfiles, prev_finished = getFiles(backuplist[currentidx - 1])
+            prev_backupfiles, prev_finished = get_files(backuplist[currentidx - 1])
         else:
             prev_backupfiles = None
         sia_filedata, sia_status_code = getFromSia('renter/files')
@@ -106,7 +106,7 @@ def getStatus(backupname):
     }, status_code
 
 
-def getList():
+def get_list():
     backuplist = [re.sub(r'.*backup\.(\d+)(\.zip)?', r'\1', f)
                   for f in glob(join(METADATA_BASE, "backup.*"))
                     if (isfile(f) and f.endswith(".zip")) or
@@ -117,19 +117,19 @@ def getList():
 
 
 def get_latest():
-    backuplist = getList()
+    backuplist = get_list()
     return backuplist[0] if backuplist else None
 
 
-def getBackupsToRestart():
+def get_backups_to_restart():
     # Look at existing backups and find out which ones are unfinished and
     # should be restarted.
     restartlist = []
-    backuplist = getList()
+    backuplist = get_list()
     prevsnap = None
     prevsnap_exists = None
     for snapname in backuplist:
-        backupfiles, is_finished = getFiles(snapname)
+        backupfiles, is_finished = get_files(snapname)
         snapshot_exists = False
         if glob(os.path.join(DATADIR_MASK, 'snapshots', snapname)):
             snapshot_exists = True
@@ -154,7 +154,7 @@ def getBackupsToRestart():
     return restartlist
 
 
-def getFiles(backupname):
+def get_files(backupname):
     backupfiles = None
     is_finished = None
     zipname = join(METADATA_BASE, "backup.%s.zip" % backupname)
