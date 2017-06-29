@@ -11,6 +11,9 @@
 # 5) Remove the snapshot(s).
 # 6) Remove backups if they are older than the last finished and fully available one.
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 from flask import Flask, request, jsonify, json
 from os import environ
 import time

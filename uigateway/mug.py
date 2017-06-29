@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 from flask import Flask, request, jsonify, json
 from os.path import ismount
 from os import environ
