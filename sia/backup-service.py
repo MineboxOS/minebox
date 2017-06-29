@@ -51,12 +51,17 @@ def api_trigger():
     success, errmsg = check_prerequisites()
     if not success:
         return jsonify(message=errmsg), 503
+    bthread = start_backup_thread()
+    return jsonify(message="Backup started: %s." % bthread.name), 200
+
+
+def start_backup_thread(snapname=None):
     bevent = threading.Event()
-    bthread = threading.Thread(target=run_backup, args=(bevent,))
+    bthread = threading.Thread(target=run_backup, args=(bevent,snapname))
     bthread.daemon = True
     bthread.start()
     bevent.wait() # Wait for thread being set up.
-    return jsonify(message="Backup started: %s." % bthread.name), 200
+    return bthread
 
 
 def run_backup(startevent, snapname=None):
@@ -155,11 +160,7 @@ def api_ping():
     if timelatest < timenow - 24 * 3600:
         success, errmsg = check_prerequisites()
         if success:
-            bevent = threading.Event()
-            bthread = threading.Thread(target=run_backup, args=(bevent,))
-            bthread.daemon = True
-            bthread.start()
-            bevent.wait() # Wait for thread being set up.
+            bthread = start_backup_thread()
     return "", 204
 
 
@@ -176,12 +177,8 @@ def restart_backups():
         for snapname in get_backups_to_restart():
             app.logger.debug('%s should be restarted...', snapname)
             if not snapname in active_backups:
-                bevent = threading.Event()
-                bthread = threading.Thread(target=run_backup, args=(bevent,snapname))
-                bthread.daemon = True
-                bthread.start()
-                bevent.wait() # Wait for thread being set up.
-                app.logger.debug('%s was restarted.', snapname)
+                bthread = start_backup_thread(snapname)
+                app.logger.debug('%s was restarted.', bthread.name)
 
 
 @app.errorhandler(404)
