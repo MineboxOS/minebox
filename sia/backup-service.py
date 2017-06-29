@@ -21,6 +21,7 @@ import logging
 import threading
 from backuptools import *
 from backupinfo import get_backups_to_restart, get_latest
+from connecttools import get_from_sia
 
 # Define various constants.
 REST_PORT=5100
@@ -154,7 +155,27 @@ def api_ping():
     # This can be called to just have the service run something.
     # For example, we need to do this early after booting to restart backups
     # if needed (via @app.before_first_request).
-    # Also, trigger a backup if the latest is older than 24h.
+
+    # Check for synced sia consensus as a prerequisite.
+    consdata, cons_status_code = get_from_sia('consensus')
+    if cons_status_code == 200:
+        if not consdata["synced"]:
+            # Return early, we need a synced consensus to do anything.
+            return "", 204
+    else:
+        return jsonify(message="ERROR: sia daemon is not running."), 503
+
+    # See if sia is fully set up and do init tasks if needed.
+    walletdata, wallet_status_code = get_from_sia('wallet')
+    if wallet_status_code == 200:
+        if not walletdata["encrypted"]:
+            # We need to seed the wallet and set up allowances, etc.
+            setup_sia_system()
+        if not walletdata["unlocked"]:
+            # We should unlock the wallet so new contracts can be made.
+            unlock_sia_wallet()
+
+    # Trigger a backup if the latest is older than 24h.
     timenow = int(time.time())
     timelatest = int(get_latest())
     if timelatest < timenow - 24 * 3600:
@@ -179,6 +200,18 @@ def restart_backups():
             if not snapname in active_backups:
                 bthread = start_backup_thread(snapname)
                 app.logger.debug('%s was restarted.', bthread.name)
+
+
+def setup_sia_system():
+    # We may start long-running tasks here so we may want to do them in their own thread.
+    # We also need to make sure to not init the same process multiple times.
+    return
+
+
+def unlock_sia_wallet():
+    # We may start long-running tasks here so we may want to do them in their own thread.
+    # We also need to make sure to not init the same process multiple times.
+    return
 
 
 @app.errorhandler(404)
