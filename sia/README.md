@@ -1,36 +1,30 @@
 # sia tools
 ## systemd/
-Contains the service file(s) needed to run the sia daemon (and potentially other sia-related processes).
+Contains the service file(s) needed to run the sia daemon (and potentially other
+sia-related processes, like the backup service).
 
-## uploader.sh
-The Minebox uploader. Handles creation of a consistent backup of the lower layer of the Minebox storage.
-This script is long-running (as it waits for uploads to complete) and is designed to run in the background.
-Output is written into syslog, of called from a foreground shell, it also outputs to stderr in addition.
-If run without parameter, it creates a new bakup.
-If a snapshot name (timestamp) is handed over, it continues the given backup from where it stopped.
+## cron.d/
+Contains the cron tabs needed for sia and related tools (e.g. backup service).
+
+## backup-service.py
+The Minebox backup service (previously "uploader"). Handles creation of a
+consistent backup of the lower layer of the Minebox storage.
+This is a background service with a REST API that starts long-running threads
+(as it waits for uploads to complete) and also takes care of some other
+sia/backup-related tasks like restarting backups after a precess termination or
+reboot, unlocking the wallet or even setting up the sia environment on a new box.
+Its "ping" endpoint is being called by cron every 5 minutes to trigger those
+tasks.
  
 ![](https://bitbucket.org/mineboxgmbh/minebox-client-tools/downloads/uploader.sequence.png){width=100%}
 
-## uploader-bg.sh
-Run uploader.sh in the background, detached from the current shell (can be closed and it will continue to run).
-Takes the same parameter(s) as uploader.sh and forwards that.
+## backup-service.sh
+This script has commands to start the backup service as well as to issue a
+"ping" or trigger a new backup "manually" from the command line. Execute it
+without options to get more help.
 
-## uploader-screen.sh
-Run uploader.sh in a screen window (named "uploader"). This is mostly for development.
-Takes the same parameter(s) as uploader.sh and forwards that.
-
-## demosiac.sh
-A small shim script to fake siac for demos without sia working reliably (or fast).
-Can be used in uploader by handing over as an environment variable, e.g.
-```
-export SIAC=~/minebox-client-tools_vm/sia/demosiac.sh
-export METADATA_URL="http://localhost:8050/v1/file/"
-export SERVER_URI=$METADATA_URL
-export SIA_DIR=~/sia
-/usr/lib/minebox/uploader.sh
-
-```
-Note that MUG calls it with the right options when in DEMO mode (see MUG systemd service).
+## backuptools.py
+A python module with functions needed by the backup service.
 
 ## demosiad.py
 A small Flask service to provide demo sia output to the MUG when in DEMO mode.
@@ -58,7 +52,8 @@ Questions & tasks:
 * Are old files on sia cleaned up or are they just timing out at some point?  
   --> We should only keep the most recent finished backup.
 * Do we care to have things on the upper level being snapshotted?
-  If so, how do we do that?
+  If so, how do we do that?  
+  --> The backup-service does that as the first step of doing a backup.
 * How/where to actually upload the metadata?  
   --> REST API @ minebox.io, with Authentication, encryption, signing. TBD.
 * Do we need to include all of renter/ in the backup metadata bundles (what
@@ -71,11 +66,12 @@ Questions & tasks:
   --> No, because comparing all blocks of the whole snapshot for backing is
       too slow (needs sequential reads of all data).
 * Do we run uploader as a permanent-on daemon or one-shot process?  
-  --> one-shot
+  --> backup-service daemon
 * What to do with instances where uploader was prematurely terminated?
   How do we handle previously unfinished uploads (when/how do we restart, do
   we run multiple forked processes for them, etc.)?  
-  --> Right now, needs manually re-starting uploader with the snapshot name
+  --> Right now, the oldest and the newest backup run are restarted by the
+      backup-service.
 * How do we get/save the wallet seed?  
   --> Minebd takes care of that
 * Are there circumstances where the wallet needs to be unlocked when uploading?  
@@ -84,7 +80,7 @@ Questions & tasks:
   --> Right now, stick with 100% redundancy.
 * We need (web) UI for SIA details and uploader progress, how do we integrate
   that?  
-  --> Target to run Minebox UI as a Rock-on and have that integrated there.
+  --> Target to have that integrated in Minebox UI.
 * Upload can take over all your outgoing bandwidth (and take it for a longer
   time after upload is said to be finished), is this a problem?
 * Can we do some kind of traffic shaping/prioritization of sia to ensure the
@@ -97,9 +93,6 @@ Questions & tasks:
   If that speed continues over 24 h, that makes ~1.5 GB/day.
 * TODO: Report when finished (via email?)
 * TODO: Should we also check allowance before uploading?
-* TODO: Delete files from older backups when we are done.
-* TODO: Set metadata upload to real Minebox metadata service/API (and include
-        authentication).
 
 ## Unlocking wallet
 
