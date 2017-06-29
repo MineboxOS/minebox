@@ -95,7 +95,7 @@ def get_status(backupname):
 
     return {
       "name": backupname,
-      "time_snapshot": backupname,
+      "time_snapshot": int(backupname),
       "status": status,
       "metadata": metadata,
       "numFiles": files,
