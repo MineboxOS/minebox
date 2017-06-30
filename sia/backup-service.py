@@ -171,7 +171,7 @@ def api_ping():
         if not walletdata["encrypted"]:
             # We need to seed the wallet and set up allowances, etc.
             setup_sia_system()
-        if not walletdata["unlocked"]:
+        elif not walletdata["unlocked"]:
             # We should unlock the wallet so new contracts can be made.
             unlock_sia_wallet()
 
@@ -205,12 +205,20 @@ def restart_backups():
 def setup_sia_system():
     # We may start long-running tasks here so we may want to do them in their own thread.
     # We also need to make sure to not init the same process multiple times.
+    # 0) Get wallet seed from MineBD (see MIN-128).
+    # 1) Init the wallet with that seed.
+    # 2) Unlock the wallet, using the seed as password.
+    # 3) Fetch our initial allotment of siacoins from Minebox (if applicable).
+    # 4) Set an allowance for renting, so that we can start uploading backups.
+    # 5) Set up sia hosting (see MIN-129).
     return
 
 
 def unlock_sia_wallet():
     # We may start long-running tasks here so we may want to do them in their own thread.
     # We also need to make sure to not init the same process multiple times.
+    # 0) Get wallet seed from MineBD (see MIN-128).
+    # 2) Unlock the wallet, using the seed as password.
     return
 
 
