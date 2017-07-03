@@ -56,6 +56,59 @@ def api_trigger():
     return jsonify(message="Backup started: %s." % bthread.name), 200
 
 
+@app.route("/status")
+def api_start():
+    # This is a very temporary debug-style status output for now.
+    statusdata = {"active": get_running_backups(), "all": []}
+    for tname in threadstatus:
+        statusdata["all"].append({
+          "name": threadstatus[tname]["snapname"],
+          "time_snapshot": int(threadstatus[tname]["snapname"]),
+          "message": threadstatus[tname]["message"],
+          "finished": threadstatus[tname]["finished"],
+          "failed": threadstatus[tname]["failed"],
+          "size": threadstatus[tname]["backupsize"],
+          "upload_size": threadstatus[tname]["uploadsize"],
+          "upload_progress": threadstatus[tname]["uploadprogress"],
+        })
+    return jsonify(statusdata), 200
+
+
+@app.route("/ping")
+def api_ping():
+    # This can be called to just have the service run something.
+    # For example, we need to do this early after booting to restart backups
+    # if needed (via @app.before_first_request).
+
+    # Check for synced sia consensus as a prerequisite.
+    consdata, cons_status_code = get_from_sia('consensus')
+    if cons_status_code == 200:
+        if not consdata["synced"]:
+            # Return early, we need a synced consensus to do anything.
+            return "", 204
+    else:
+        return jsonify(message="ERROR: sia daemon is not running."), 503
+
+    # See if sia is fully set up and do init tasks if needed.
+    walletdata, wallet_status_code = get_from_sia('wallet')
+    if wallet_status_code == 200:
+        if not walletdata["encrypted"]:
+            # We need to seed the wallet and set up allowances, etc.
+            setup_sia_system()
+        elif not walletdata["unlocked"]:
+            # We should unlock the wallet so new contracts can be made.
+            unlock_sia_wallet()
+
+    # Trigger a backup if the latest is older than 24h.
+    timenow = int(time.time())
+    timelatest = int(get_latest())
+    if timelatest < timenow - 24 * 3600:
+        success, errmsg = check_prerequisites()
+        if success:
+            bthread = start_backup_thread()
+    return "", 204
+
+
 def start_backup_thread(snapname=None):
     bevent = threading.Event()
     bthread = threading.Thread(target=run_backup, args=(bevent,snapname))
@@ -130,59 +183,6 @@ def run_backup(startevent, snapname=None):
             return
         threadstatus[threading.current_thread().name]["finished"] = True
         threadstatus[threading.current_thread().name]["message"] = "done"
-
-
-@app.route("/status")
-def api_start():
-    # This is a very temporary debug-style status output for now.
-    statusdata = {"active": get_running_backups(), "all": []}
-    for tname in threadstatus:
-        statusdata["all"].append({
-          "name": threadstatus[tname]["snapname"],
-          "time_snapshot": int(threadstatus[tname]["snapname"]),
-          "message": threadstatus[tname]["message"],
-          "finished": threadstatus[tname]["finished"],
-          "failed": threadstatus[tname]["failed"],
-          "size": threadstatus[tname]["backupsize"],
-          "upload_size": threadstatus[tname]["uploadsize"],
-          "upload_progress": threadstatus[tname]["uploadprogress"],
-        })
-    return jsonify(statusdata), 200
-
-
-@app.route("/ping")
-def api_ping():
-    # This can be called to just have the service run something.
-    # For example, we need to do this early after booting to restart backups
-    # if needed (via @app.before_first_request).
-
-    # Check for synced sia consensus as a prerequisite.
-    consdata, cons_status_code = get_from_sia('consensus')
-    if cons_status_code == 200:
-        if not consdata["synced"]:
-            # Return early, we need a synced consensus to do anything.
-            return "", 204
-    else:
-        return jsonify(message="ERROR: sia daemon is not running."), 503
-
-    # See if sia is fully set up and do init tasks if needed.
-    walletdata, wallet_status_code = get_from_sia('wallet')
-    if wallet_status_code == 200:
-        if not walletdata["encrypted"]:
-            # We need to seed the wallet and set up allowances, etc.
-            setup_sia_system()
-        elif not walletdata["unlocked"]:
-            # We should unlock the wallet so new contracts can be made.
-            unlock_sia_wallet()
-
-    # Trigger a backup if the latest is older than 24h.
-    timenow = int(time.time())
-    timelatest = int(get_latest())
-    if timelatest < timenow - 24 * 3600:
-        success, errmsg = check_prerequisites()
-        if success:
-            bthread = start_backup_thread()
-    return "", 204
 
 
 def get_running_backups():
