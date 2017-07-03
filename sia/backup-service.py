@@ -2,15 +2,6 @@
 
 # Minebox backup service. See README.md in this directory for more info.
 
-# Uploading is a multi-step process (see README.md for details):
-# 0) Check prerequisites (sia running and sync, etc.)
-# 1) [not implemented] Create read-only snapshots of all subvolumes on upper layer.
-# 2) Create a read-only snapshot(s) on lower disk(s).
-# 3) Initiate uploads to sia where needed.
-# 4) Wait for finished uploads and, save/upload the metadata.
-# 5) Remove the snapshot(s).
-# 6) Remove backups if they are older than the last finished and fully available one.
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -20,6 +11,7 @@ import time
 import logging
 import threading
 from backuptools import *
+from siatools import *
 from backupinfo import get_backups_to_restart, get_latest
 from connecttools import get_from_sia
 
@@ -49,7 +41,7 @@ def api_root():
 
 @app.route("/trigger")
 def api_trigger():
-    success, errmsg = check_prerequisites()
+    success, errmsg = check_backup_prerequisites()
     if not success:
         return jsonify(message=errmsg), 503
     bthread = start_backup_thread()
@@ -103,7 +95,7 @@ def api_ping():
     timenow = int(time.time())
     timelatest = int(get_latest())
     if timelatest < timenow - 24 * 3600:
-        success, errmsg = check_prerequisites()
+        success, errmsg = check_backup_prerequisites()
         if success:
             bthread = start_backup_thread()
     return "", 204
@@ -146,6 +138,15 @@ def run_backup(startevent, snapname=None):
         }
         # Tell main thread we are set up.
         startevent.set()
+
+        # Doing backups is a multi-step process (see README.md for details):
+        # 0) Check prerequisites (sia running and sync, etc.) - done outside the thread.
+        # 1) Create read-only snapshots of all subvolumes on upper layer.
+        # 2) Create a read-only snapshot(s) on lower disk(s).
+        # 3) Initiate uploads to sia where needed.
+        # 4) Wait for finished uploads and, save/upload the metadata.
+        # 5) Remove the snapshot(s).
+        # 6) Remove backups if they are older than the last finished and fully available one.
 
         # Now start the actual tasks.
         if not restarted:
@@ -203,23 +204,83 @@ def restart_backups():
 
 
 def setup_sia_system():
-    # We may start long-running tasks here so we may want to do them in their own thread.
+    # We may start long-running tasks here so we do them in their own thread.
     # We also need to make sure to not init the same process multiple times.
-    # 0) Get wallet seed from MineBD (see MIN-128).
-    # 1) Init the wallet with that seed.
-    # 2) Unlock the wallet, using the seed as password.
-    # 3) Fetch our initial allotment of siacoins from Minebox (if applicable).
-    # 4) Set an allowance for renting, so that we can start uploading backups.
-    # 5) Set up sia hosting (see MIN-129).
-    return
+    if [thread.name for thread in threading.enumerate()
+          if thread.name.startswith("sia.") ]:
+        # Some kind of sia thread is running, return early.
+        return None
+
+    sevent = threading.Event()
+    sthread = threading.Thread(target=run_sia_setup, args=(sevent,))
+    sthread.daemon = True
+    sthread.start()
+    sevent.wait() # Wait for thread being set up.
+    return sthread.name
+
+
+def run_sia_setup(startevent):
+    # The routes have implicit Flask application context, but the thread needs an explicit one.
+    # See http://flask.pocoo.org/docs/appcontext/#creating-an-application-context
+    with app.app_context():
+        threading.current_thread().name = "sia.setup"
+        # Tell main thread we are set up.
+        startevent.set()
+        # Do the initial setup of the sia system, so uploading and hosting files works.
+        # 0) Check if sia is running and consensus in sync.
+        # 1) Get wallet seed from MineBD.
+        # 2) Init the wallet with that seed.
+        # 3) Unlock the wallet, using the seed as password.
+        # 4) Fetch our initial allotment of siacoins from Minebox (if applicable).
+        # 5) Set an allowance for renting, so that we can start uploading backups.
+        # 6) Set up sia hosting.
+        success, errmsg = check_sia_sync()
+        if not success:
+            app.logger.error(errmsg)
+            app.logger.info("Exiting sia setup because sia is not ready, will try again on next ping.")
+            return
+        seed = get_seed()
+        init_wallet(seed)
+        unlock_wallet(seed)
+        fetch_siacoins()
+        set_allowance()
+        #set_up_hosting()
 
 
 def unlock_sia_wallet():
-    # We may start long-running tasks here so we may want to do them in their own thread.
+    # We may start long-running tasks here so we do them in their own thread.
     # We also need to make sure to not init the same process multiple times.
-    # 0) Get wallet seed from MineBD (see MIN-128).
-    # 2) Unlock the wallet, using the seed as password.
-    return
+    if [thread.name for thread in threading.enumerate()
+          if thread.name.startswith("sia.") ]:
+        # Some kind of sia thread is running, return early.
+        return None
+
+    sevent = threading.Event()
+    sthread = threading.Thread(target=run_wallet_unlock, args=(sevent,))
+    sthread.daemon = True
+    sthread.start()
+    sevent.wait() # Wait for thread being set up.
+    return sthread.name
+
+
+def run_wallet_unlock(startevent):
+    # The routes have implicit Flask application context, but the thread needs an explicit one.
+    # See http://flask.pocoo.org/docs/appcontext/#creating-an-application-context
+    with app.app_context():
+        threading.current_thread().name = "sia.wallet-unlock"
+        # Tell main thread we are set up.
+        startevent.set()
+        # Do the initial setup of the sia system, so uploading and hosting files works.
+        # 0) Check if sia is running and consensus in sync.
+        # 1) Get wallet seed from MineBD.
+        # 2) Unlock the wallet, using the seed as password.
+        success, errmsg = check_sia_sync()
+        if not success:
+            app.logger.error(errmsg)
+            app.logger.info("Exiting wallet unlock because sia is not ready, will try again on next ping.")
+            return
+        seed = get_seed()
+        unlock_wallet(seed)
 
 
 @app.errorhandler(404)

@@ -16,18 +16,17 @@ import subprocess
 from connecttools import (get_demo_url, get_from_sia, post_to_sia,
                           put_to_minebd, put_to_metadata)
 from backupinfo import *
+from siatools import check_sia_sync
 
 SIA_DIR="/mnt/lower1/sia"
 MINEBD_STORAGE_PATH="/mnt/storage"
 
-def check_prerequisites():
-    # Step 0: Check if prerequisites are met to make backups.
-    consdata, cons_status_code = get_from_sia('consensus')
-    if cons_status_code == 200:
-        if not consdata["synced"]:
-          return False, "ERROR: sia seems not to be synced. Please again when the consensus is synced."
-    else:
-        return False, "ERROR: sia daemon needs to be running for any uploads."
+def check_backup_prerequisites():
+    # Check if prerequisites are met to make backups.
+    success, errmsg = check_sia_sync()
+    if not success:
+        return False, errmsg
+    # Potentially check things other than sia.
     return True, ""
 
 def snapshot_upper(status):
