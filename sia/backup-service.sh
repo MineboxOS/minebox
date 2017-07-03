@@ -4,8 +4,8 @@
 case "$1" in
 start)
   cd /usr/lib/minebox
-  source mug/bin/activate
-  mug/backup-service.py
+  source mbvenv/bin/activate
+  mbvenv/backup-service.py
   ;;
 ping)
   curl --fail "http://localhost:5100/ping"
