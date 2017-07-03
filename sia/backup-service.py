@@ -240,10 +240,16 @@ def run_sia_setup(startevent):
             app.logger.info("Exiting sia setup because sia is not ready, will try again on next ping.")
             return
         seed = get_seed()
-        init_wallet(seed)
-        unlock_wallet(seed)
+        if not seed:
+            app.logger.error("Did not get a useful seed, cannot initialize the sia wallet.")
+            return
+        if not init_wallet(seed):
+            return
+        if not unlock_wallet(seed):
+            return
         fetch_siacoins()
-        set_allowance()
+        if not set_allowance():
+            return
         #set_up_hosting()
 
 
@@ -280,7 +286,10 @@ def run_wallet_unlock(startevent):
             app.logger.info("Exiting wallet unlock because sia is not ready, will try again on next ping.")
             return
         seed = get_seed()
-        unlock_wallet(seed)
+        if not seed:
+            app.logger.error("Did not get a useful seed, cannot unlock the sia wallet.")
+            return
+        unlock_wallet(seed) # No need to catch a failure here.
 
 
 @app.errorhandler(404)
