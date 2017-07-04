@@ -65,7 +65,9 @@ def api_backup_status(backupname):
 
     if backupname:
         backupstatus, status_code = backupinfo.get_status(backupname)
-    if not backupname or status_code == 404:
+    else:
+        status_code = 404
+    if status_code == 404:
         # Use different error message with 404.
         backupstatus = {"message": "No backup found with that name or its file info is missing."}
 
