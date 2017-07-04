@@ -46,8 +46,8 @@ def get_status(backupname):
     else:
         backuplist = get_list()
         currentidx = backuplist.index(backupname)
-        if currentidx > 0:
-            prev_backupfiles, prev_finished = get_files(backuplist[currentidx - 1])
+        if currentidx < len(backuplist) - 1:
+            prev_backupfiles, prev_finished = get_files(backuplist[currentidx + 1])
         else:
             prev_backupfiles = None
         sia_filedata, sia_status_code = get_from_sia('renter/files')
