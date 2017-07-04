@@ -19,10 +19,10 @@ INFO_FILENAME="fileinfo"
 
 
 def get_status(backupname):
-    backupfiles, is_finished = get_files(backupname)
+    backupfileinfo, is_finished = get_fileinfo(backupname)
 
     status_code = 200
-    if backupfiles is None:
+    if backupfileinfo is None:
         # This backup has no file info available or doesn't exist.
         status_code = 404
         files = -1
@@ -33,7 +33,7 @@ def get_status(backupname):
         status = "ERROR"
         metadata = "ERROR"
         fully_available = False
-    elif len(backupfiles) < 1:
+    elif len(backupfileinfo) < 1:
         # Before uploads are scheduled, we find a backup but no files.
         files = -1
         total_size = -1
@@ -60,10 +60,10 @@ def get_status(backupname):
             rel_pct_size = 0
             fully_available = True
             sia_map = dict((d["siapath"], index) for (index, d) in enumerate(sia_filedata["files"]))
-            for fname in backupfiles:
-                if fname in sia_map:
+            for finfo in backupfileinfo:
+                if finfo["siapath"] in sia_map:
                     files += 1
-                    fdata = sia_filedata["files"][sia_map[fname]]
+                    fdata = sia_filedata["files"][sia_map[finfo["siapath"]]]
                     # For now, report all files.
                     # We may want to only report files not included in previous backups.
                     total_size += fdata["filesize"]
@@ -73,12 +73,13 @@ def get_status(backupname):
                         rel_pct_size += fdata["filesize"] * fdata["uploadprogress"] / 100
                     if not fdata["available"]:
                         fully_available = False
-                elif re.match(r'.*\.dat$', fname):
+                elif re.match(r'.*\.dat$', finfo["siapath"]):
                     files += 1
+                    total_size += finfo["size"]
                     fully_available = False
-                    current_app.logger.warn('File %s not found on Sia!', fname)
+                    current_app.logger.warn('File %s not found on Sia!', finfo["siapath"])
                 else:
-                    current_app.logger.debug('File "%s" not on Sia and not matching watched names.', fname)
+                    current_app.logger.debug('File "%s" not on Sia and not matching watched names.', finfo["siapath"])
             # If size is 0, we report 100% progress.
             # This is really needed for relative as otherwise a backup with no
             # difference to the previous would never go to 100%.
@@ -95,7 +96,7 @@ def get_status(backupname):
             else:
                 status = "PENDING"
         else:
-            current_app.logger.error("Error %s getting Sia files: %s", status_code, str(sia_filedata))
+            current_app.logger.error("Error %s getting Sia files: %s", status_code, sia_filedata["message"])
             status_code = 503
             files = -1
             total_size = -1
@@ -194,6 +195,7 @@ def get_fileinfo(backupname):
         backupfileinfo = []
         is_finished = True
         with ZipFile(zipname, 'r') as backupzip:
-            with open(INFO_FILENAME) as json_file:
-                backupfileinfo = json.load(json_file)
+            if INFO_FILENAME in backupzip.namelist():
+                with backupzip.open(INFO_FILENAME) as json_file:
+                    backupfileinfo = json.load(json_file)
     return backupfileinfo, is_finished
