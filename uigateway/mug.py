@@ -63,8 +63,9 @@ def api_backup_status(backupname):
     elif not re.match(r'^\d+$', backupname):
         return jsonify(error="Illegal backup name."), 400
 
-    backupstatus, status_code = backupinfo.get_status(backupname)
-    if status_code == 404:
+    if backupname:
+        backupstatus, status_code = backupinfo.get_status(backupname)
+    if not backupname or status_code == 404:
         # Use different error message with 404.
         backupstatus = {"message": "No backup found with that name or its file info is missing."}
 

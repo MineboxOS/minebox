@@ -93,7 +93,8 @@ def api_ping():
 
     # Trigger a backup if the latest is older than 24h.
     timenow = int(time.time())
-    timelatest = int(get_latest())
+    latestbackup = get_latest()
+    timelatest = int(latestbackup) if latestbackup else 0
     if timelatest < timenow - 24 * 3600:
         success, errmsg = check_backup_prerequisites()
         if success:
