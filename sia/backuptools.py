@@ -175,9 +175,10 @@ def save_metadata(status):
         remove(zipname)
     with ZipFile(zipname, 'w') as backupzip:
         for bfile in status["backupfileinfo"]:
-            siafile = path.join(metadir, "%s.sia" % bfile["siapath"])
-            backupzip.write(siafile)
-        backupzip.write(path.join(metadir, INFO_FILENAME))
+            siafilename = "%s.sia" % bfile["siapath"]
+            siafile = path.join(metadir, siafilename)
+            backupzip.write(siafile, siafilename)
+        backupzip.write(path.join(metadir, INFO_FILENAME), INFO_FILENAME)
     # Upload metadata bundle.
     current_app.logger.info("Upload metadata.")
     with open(zipname) as zipfile:

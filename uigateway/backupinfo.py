@@ -85,8 +85,6 @@ def get_status(backupname):
             # difference to the previous would never go to 100%.
             progress = total_pct_size / total_size * 100 if total_size else 100
             rel_progress = rel_pct_size / rel_size * 100 if rel_size else 100
-            # We don't upload metadata atm, so always flag it as pending.
-            metadata = "PENDING"
             if is_finished and fully_available:
                 status = "FINISHED"
             elif is_finished and not fully_available:
@@ -95,6 +93,15 @@ def get_status(backupname):
                 status = "UPLOADING"
             else:
                 status = "PENDING"
+            if is_finished:
+                # Assume metadata is always uploaded when we are finished.
+                # As right now we report finished only if we have a .zip but no
+                # directory, and we delete the directory only after metadata
+                # upload is done, this is actually the case.
+                metadata = "FINISHED"
+            else:
+                # Otherwise, always report pending metadata.
+                metadata = "PENDING"
         else:
             current_app.logger.error("Error %s getting Sia files: %s", status_code, sia_filedata["message"])
             status_code = 503
@@ -195,7 +202,13 @@ def get_fileinfo(backupname):
         backupfileinfo = []
         is_finished = True
         with ZipFile(zipname, 'r') as backupzip:
+            # The infofname_long is a workaround for misconstructed zips before July 4, 2017.
+            # TODO: remove this workaround again once we have some backup history with correct zips.
+            infofname_long = str(join(dirname, INFO_FILENAME))[1:]
             if INFO_FILENAME in backupzip.namelist():
                 with backupzip.open(INFO_FILENAME) as json_file:
+                    backupfileinfo = json.load(json_file)
+            elif infofname_long in backupzip.namelist():
+                with backupzip.open(infofname_long) as json_file:
                     backupfileinfo = json.load(json_file)
     return backupfileinfo, is_finished
