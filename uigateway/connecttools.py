@@ -202,7 +202,7 @@ def _get_metadata_token():
         # Always set the timestamp so we do not have to test above if it's set,
         #  as it's only unset when token is also unset
         _get_metadata_token.timestamp = time.time()
-        mbdata, mb_status_code = get_from_minebd('auth/_get_metadata_token')
+        mbdata, mb_status_code = get_from_minebd('auth/getMetadataToken')
         if mb_status_code == 200:
             _get_metadata_token.token = mbdata["message"]
         else:
