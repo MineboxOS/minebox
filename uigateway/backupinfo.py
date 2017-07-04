@@ -3,7 +3,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-from flask import current_app
+from flask import current_app, json
 from os.path import isfile, isdir, join
 import os
 from glob import glob
@@ -15,15 +15,25 @@ from connecttools import get_from_sia
 DATADIR_MASK="/mnt/lower*/data"
 METADATA_BASE="/mnt/lower1/mineboxmeta"
 UPLOADER_CMD="/usr/lib/minebox/uploader-bg.sh"
+INFO_FILENAME="fileinfo"
 
 
 def get_status(backupname):
     backupfiles, is_finished = get_files(backupname)
-    if backupfiles is None:
-        return {"message": "No backup found with that name."}, 404
 
     status_code = 200
-    if len(backupfiles) < 1:
+    if backupfiles is None:
+        # This backup has no file info available or doesn't exist.
+        status_code = 404
+        files = -1
+        total_size = -1
+        rel_size = -1
+        progress = 100 if is_finished else 0
+        rel_progress = 100 if is_finished else 0
+        status = "ERROR"
+        metadata = "ERROR"
+        fully_available = False
+    elif len(backupfiles) < 1:
         # Before uploads are scheduled, we find a backup but no files.
         files = -1
         total_size = -1
@@ -114,6 +124,9 @@ def get_list():
                   for f in glob(join(METADATA_BASE, "backup.*"))
                     if (isfile(f) and f.endswith(".zip")) or
                        isdir(f) ]
+    # Converting to a set eliminates duplicates.
+    # Convert back to list for type consistency.
+    backuplist = list(set(backuplist))
     # Sort most-recent-first.
     backuplist.sort(reverse=True)
     return backuplist
@@ -142,13 +155,13 @@ def get_backups_to_restart():
             restartlist.append(snapname)
         # Break on the first finished backup, add previous one (oldest
         # unfinished) unless it's already in the list.
-        if is_finished or snapname == backuplist[-1]:
+        if is_finished:
             if prevsnap_exists and prevsnap and not prevsnap in restartlist:
                  restartlist.append(prevsnap)
             break
         # If we arrive at the last item of the list, add if it's unfinished.
         if snapname == backuplist[-1]:
-            if snapshot_exists and not snapname in restartlist:
+            if snapshot_exists and not is_finished and not snapname in restartlist:
                  restartlist.append(snapname)
             break
         # Remember snapname for next cycle.
@@ -159,21 +172,28 @@ def get_backups_to_restart():
 
 def get_files(backupname):
     backupfiles = None
+    backupfileinfo, is_finished = get_fileinfo(backupname)
+    if backupfileinfo:
+        backupfiles = [fi["siapath"] for fi in backupfileinfo]
+    return backupfiles, is_finished
+
+
+def get_fileinfo(backupname):
+    backupfileinfo = None
     is_finished = None
     zipname = join(METADATA_BASE, "backup.%s.zip" % backupname)
     dirname = join(METADATA_BASE, "backup.%s" % backupname)
-    if isfile(zipname):
-        backupfiles = []
+    if isdir(dirname):
+        backupfileinfo = []
+        is_finished = False
+        bfinfo_path = join(dirname, INFO_FILENAME)
+        if isfile(bfinfo_path):
+            with open(bfinfo_path) as json_file:
+                backupfileinfo = json.load(json_file)
+    elif isfile(zipname):
+        backupfileinfo = []
         is_finished = True
         with ZipFile(zipname, 'r') as backupzip:
-            backupfiles = [re.sub(r'.*backup\.\d+\/(.*)\.sia$', r'\1', f)
-                           for f in backupzip.namelist()
-                             if f.endswith(".sia")]
-    elif isdir(dirname):
-        backupfiles = []
-        is_finished = False
-        flist = join(dirname, "files")
-        if isfile(flist):
-            with open(flist) as f:
-                backupfiles = [line.rstrip('\n') for line in f]
-    return backupfiles, is_finished
+            with open(INFO_FILENAME) as json_file:
+                backupfileinfo = json.load(json_file)
+    return backupfileinfo, is_finished

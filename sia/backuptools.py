@@ -84,7 +84,7 @@ def initiate_uploads(status):
     backupname = status["backupname"]
 
     metadir = path.join(METADATA_BASE, backupname)
-    bfinfo_path = path.join(metadir, 'fileinfo')
+    bfinfo_path = path.join(metadir, INFO_FILENAME)
     if path.isfile(bfinfo_path):
         remove(bfinfo_path)
     sia_filedata, sia_status_code = get_from_sia('renter/files')
@@ -177,7 +177,7 @@ def save_metadata(status):
         for bfile in status["backupfileinfo"]:
             siafile = path.join(metadir, "%s.sia" % bfile["siapath"])
             backupzip.write(siafile)
-        backupzip.write(path.join(metadir, 'fileinfo'))
+        backupzip.write(path.join(metadir, INFO_FILENAME))
     # Upload metadata bundle.
     current_app.logger.info("Upload metadata.")
     with open(zipname) as zipfile:
@@ -185,6 +185,9 @@ def save_metadata(status):
         mdata, md_status_code = put_to_metadata("file/%s.zip" % backupname, zipdata)
         if md_status_code >= 400:
             return False, mdata["message"]
+    # Remove metadata directory, leave zip around.
+    if path.isfile(zipname) and path.isdir(metadir):
+        shutil.rmtree(metadir)
     return True, ""
 
 def remove_lower_snapshots(status):

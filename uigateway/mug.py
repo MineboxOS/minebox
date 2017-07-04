@@ -64,6 +64,9 @@ def api_backup_status(backupname):
         return jsonify(error="Illegal backup name."), 400
 
     backupstatus, status_code = backupinfo.get_status(backupname)
+    if status_code == 404:
+        # Use different error message with 404.
+        backupstatus = {"message": "No backup found with that name or its file info is missing."}
 
     return jsonify(backupstatus), status_code
 
