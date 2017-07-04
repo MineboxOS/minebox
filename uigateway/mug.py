@@ -15,6 +15,7 @@ import backupinfo
 from connecttools import (set_origin, check_login, get_demo_url,
                           get_from_sia, post_to_sia, get_from_minebd,
                           get_from_backupservice)
+from siatools import H_PER_SC, SEC_PER_BLOCK
 
 
 # Define various constants.
@@ -26,7 +27,6 @@ MINEBD_STORAGE_PATH="/mnt/storage"
 UPLOADER_CMD=backupinfo.UPLOADER_CMD
 DEMOSIAC_CMD="/root/minebox-client-tools_vm/sia/demosiac.sh"
 MBKEY_CMD="/usr/lib/minebox/mbkey.sh"
-H_PER_SC=1e24 # hastings per siacoin
 
 app = Flask(__name__)
 
@@ -190,6 +190,28 @@ def api_contracts():
           "height_end": contract["endheight"],
         })
     return jsonify(contractlist), 200
+
+
+@app.route("/transactions", methods=['GET'])
+@set_origin()
+def api_transactions():
+    # Doc: *** not documented yet***
+    if not check_login():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+    consdata, cons_status_code = get_from_sia('consensus')
+    if cons_status_code == 200:
+        consensus_height = consdata["height"]
+    else:
+        return jsonify(consdata), cons_status_code
+    blocks_per_day = 24 * 3600 / SEC_PER_BLOCK
+    offset = int(request.args.get('offsetdays') or 0) * blocks_per_day
+    endheight = int(consensus_height - offset)
+    startheight = int(endheight - blocks_per_day)
+    siadata, sia_status_code = get_from_sia("wallet/transactions?startheight=%s&endheight=%s" % (startheight, endheight))
+    if sia_status_code >= 400:
+        return jsonify(siadata), sia_status_code
+    # For now, just return the info from Sia directly.
+    return jsonify(siadata), sia_status_code
 
 
 @app.route("/status", methods=['GET'])
