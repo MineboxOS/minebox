@@ -212,3 +212,8 @@ def get_fileinfo(backupname):
                 with backupzip.open(infofname_long) as json_file:
                     backupfileinfo = json.load(json_file)
     return backupfileinfo, is_finished
+
+
+def is_finished(backupname):
+    backupfileinfo, is_finished = get_fileinfo(backupname)
+    return is_finished

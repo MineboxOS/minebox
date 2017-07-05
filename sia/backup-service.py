@@ -12,7 +12,7 @@ import logging
 import threading
 from backuptools import *
 from siatools import *
-from backupinfo import get_backups_to_restart, get_latest
+from backupinfo import get_backups_to_restart, get_latest, is_finished
 from connecttools import get_from_sia
 
 # Define various constants.
@@ -98,6 +98,16 @@ def api_ping():
         success, errmsg = check_backup_prerequisites()
         if success:
             bthread = start_backup_thread()
+
+    # If no backup is active but the most recent one is not finished,
+    # perform a restart of backups.
+    active_backups = get_running_backups()
+    if not active_backups:
+        snapname = get_latest()
+        if snapname:
+            if not is_finished(snapname):
+                restart_backups()
+
     return "", 204
 
 
