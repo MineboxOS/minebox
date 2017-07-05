@@ -84,6 +84,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 final long cmdOffset = this.cmdOffset;
                 final long cmdLength = this.cmdLength;
                 final long cmdHandle = this.cmdHandle;
+                LOGGER.debug("reading from {} length {}", cmdOffset, cmdLength);
                 Runnable operation = () -> {
                     ByteBuf data = null;
                     int err = 0;
@@ -105,6 +106,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 final long cmdOffset = this.cmdOffset;
                 final long cmdLength = this.cmdLength;
                 final long cmdHandle = this.cmdHandle;
+                LOGGER.debug("writing to {} length {}", cmdOffset, cmdLength);
 
                 final ByteBuf buf;
                 try {
@@ -131,6 +133,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 break;
             }
             case Protocol.NBD_CMD_DISC: {
+                LOGGER.debug("got command disc " + Protocol.NBD_CMD_DISC);
                 ctx.channel().close(); //
                 break;
             }
@@ -159,6 +162,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 final long cmdOffset = this.cmdOffset;
                 final long cmdLength = this.cmdLength;
                 final long cmdHandle = this.cmdHandle;
+                LOGGER.debug("trimming from {} length {}", cmdOffset, cmdLength);
 
                 int err = 0;
                 try {
