@@ -21,7 +21,8 @@ def check_sia_sync():
     return True, ""
 
 def get_seed():
-    # Get wallet seed from MineBD (see MIN-128).
+    current_app.logger.info("Fetch seed from MineBD.")
+    # Get wallet seed from MineBD.
     seed = None
     mbdata, mb_status_code = get_from_minebd('siawalletseed')
     if mb_status_code == 200:
@@ -29,6 +30,7 @@ def get_seed():
     return seed
 
 def init_wallet(seed):
+    current_app.logger.info("Initialize sia wallet.")
     siadata, sia_status_code = post_to_sia('wallet/init/seed',
                                            {"encryptionpassword": seed,
                                             "seed": seed})
@@ -40,6 +42,7 @@ def init_wallet(seed):
     return True
 
 def unlock_wallet(seed):
+    current_app.logger.info("Unlocking sia wallet.")
     siadata, sia_status_code = post_to_sia('wallet/unlock',
                                            {"encryptionpassword": seed})
     if sia_status_code >= 400:
@@ -50,10 +53,12 @@ def unlock_wallet(seed):
     return True
 
 def fetch_siacoins():
+    current_app.logger.info("TODO: Fetch base allotment of coins from Minebox.")
     # We need the Minebox sia faucet service for this (See MIN-130).
     return
 
 def set_allowance():
+    current_app.logger.info("TODO: Set an allowance for renting out files.")
     # The funds are in hastings, the period in blocks.
     allowance_funds = 0 * H_PER_SC
     allowance_period = 6 * 30 * 24 * 3600 / SEC_PER_BLOCK # 6 months
@@ -68,5 +73,6 @@ def set_allowance():
     return True
 
 def set_up_hosting():
+    current_app.logger.info("TODO: Set up sia hosting.")
     # TODO: Set up sia hosting (see MIN-129).
     return

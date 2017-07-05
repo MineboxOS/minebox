@@ -153,6 +153,7 @@ def wait_for_uploads(status):
                     current_app.logger.debug('File "%s" not on Sia and not matching watched names.', bfile["siapath"])
             status["uploadprogress"] = 100.0 * uploaded_size / status["uploadsize"]
             if not fully_available and uploaded_size < status["uploadsize"]:
+                current_app.logger.info('Uploads are not yet complete, wait 5 minutes.')
                 # Sleep 5 minutes.
                 time.sleep(5 * 60)
         else:
