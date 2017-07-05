@@ -1,6 +1,7 @@
 package io.minebox.siaseed;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Assert;
@@ -18,12 +19,9 @@ public class EngDictTest {
 
         final List<String> encoded = new MoneroSeed().mn_encode(hexStr);
 
-        final Blake2b.Digest digest = Blake2b.Digest.newInstance((new Blake2b.Param()).setDigestLength(20));
+        final Blake2b.Digest digest = Blake2b.Digest.newInstance((new Blake2b.Param()).setDigestLength(32));
         final byte[] blake2 = digest.digest(value.toByteArray());
-        final byte[] expected = {125, 12, -121, -19, 57, 28, -116, 127, -34, 65, 80, -118, 70, -1, 27, -13, 101, -80, 103, -86};
-        Assert.assertEquals(expected, blake2);
-
-
+        final byte[] expected = {113, 113, 76, 105, -66, 72, 20, -70, 105, -45, -102, 17, 41, -7, 116, 24, -92, 20, 59, -35, -51, 92, -35, 91, 34, -2, -40, 78, -45, -21, 93, 114};
+        Assert.assertEquals(Arrays.toString(expected), Arrays.toString(blake2));
     }
-
 }
