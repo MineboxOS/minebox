@@ -148,6 +148,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 try {
                     exportProvider.flush();
                 } catch (Exception e) {
+                    LOGGER.error("error during flush", e);
                     err = Error.EIO;
                 } finally {
                     sendTransmissionSimpleReply(ctx, err, cmdHandle, null);
@@ -163,6 +164,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 try {
                     exportProvider.trim(cmdOffset, cmdLength);
                 } catch (Exception e) {
+                    LOGGER.error("error during trim", e);
                     err = Error.EIO;
                 } finally {
                     sendTransmissionSimpleReply(ctx, err, cmdHandle, null);
