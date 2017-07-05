@@ -73,13 +73,12 @@ def api_ping():
     # if needed (via @app.before_first_request).
 
     # Check for synced sia consensus as a prerequisite.
-    consdata, cons_status_code = get_from_sia('consensus')
-    if cons_status_code == 200:
-        if not consdata["synced"]:
-            # Return early, we need a synced consensus to do anything.
-            return "", 204
-    else:
-        return jsonify(message="ERROR: sia daemon is not running."), 503
+    success, errmsg = check_sia_sync()
+    if not success:
+        # Return early, we need a synced consensus to do anything.
+        app.logger.debug(errmsg)
+        app.logger.info("Exiting because sia is not ready, let's check again on next ping.")
+        return "", 204
 
     # See if sia is fully set up and do init tasks if needed.
     walletdata, wallet_status_code = get_from_sia('wallet')
