@@ -50,7 +50,7 @@ def api_trigger():
 
 @app.route("/status")
 def api_start():
-    # This is a very temporary debug-style status output for now.
+    # This status output is mainly thought for MUG who can forward a slice to UI.
     statusdata = {"backup_active": get_running_backups(),
                   "backup_info": [],
                   "helper_active": get_running_helpers()}
@@ -58,6 +58,8 @@ def api_start():
         statusdata["backup_info"].append({
           "name": threadstatus[tname]["snapname"],
           "time_snapshot": int(threadstatus[tname]["snapname"]),
+          "time_start_step": int(threadstatus[tname]["starttime_step"]),
+          "step": threadstatus[tname]["step"],
           "message": threadstatus[tname]["message"],
           "finished": threadstatus[tname]["finished"],
           "failed": threadstatus[tname]["failed"],
@@ -109,6 +111,16 @@ def api_ping():
         if snapname:
             if not is_finished(snapname):
                 restart_backups()
+    else:
+        # If the upload step is stuck (taking longer than 30 minutes),
+        # we should restart the sia service.
+        # See https://github.com/NebulousLabs/Sia/issues/1605
+        for tname in threadstatus:
+            if (threadstatus[tname]["snapname"] in active_backups
+                and threadstatus[tname]["step"] == "initiate uploads"
+                and threadstatus[tname]["starttime_step"] < time.time() - 30 * 60):
+                # This would return True for success but already logs errors.
+                restart_sia()
 
     return "", 204
 
@@ -143,9 +155,12 @@ def run_backup(startevent, snapname=None):
           "uploadsize": None,
           "uploadfiles": [],
           "uploadprogress": 0,
+          "starttime_thread": time.time(),
+          "starttime_step": time.time(),
           "finished": False,
           "failed": False,
           "restarted": restarted,
+          "step": "init",
           "message": "started",
         }
         # Tell main thread we are set up.

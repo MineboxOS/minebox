@@ -4,6 +4,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from flask import current_app, json
+import subprocess
 
 from connecttools import get_from_sia, post_to_sia, get_from_minebd
 
@@ -76,3 +77,12 @@ def set_up_hosting():
     current_app.logger.info("TODO: Set up sia hosting.")
     # TODO: Set up sia hosting (see MIN-129).
     return
+
+def restart_sia():
+    current_app.logger.info("Restarting sia service.")
+    retcode = subprocess.call(['/usr/bin/systemctl', 'restart', 'sia'])
+    if retcode != 0:
+        current_app.logger.error("Restarting sia failed with return code %s." % retcode)
+        return False
+    # If the return code is 0, we get here and return True (success).
+    return True

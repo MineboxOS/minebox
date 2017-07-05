@@ -12,6 +12,7 @@ from zipfile import ZipFile
 import re
 import time
 import subprocess
+import sys
 
 from connecttools import (get_demo_url, get_from_sia, post_to_sia,
                           put_to_minebd, put_to_metadata)
@@ -19,7 +20,6 @@ from backupinfo import *
 from siatools import check_sia_sync
 
 SIA_DIR="/mnt/lower1/sia"
-MINEBD_STORAGE_PATH="/mnt/storage"
 
 def check_backup_prerequisites():
     # Check if prerequisites are met to make backups.
@@ -32,6 +32,9 @@ def check_backup_prerequisites():
 def snapshot_upper(status):
     current_app.logger.info('Creating snapshots of stored data.')
     status["message"] = "Creating snapshots of stored data"
+    # for step, use current fuction name with spaces instead of underscores
+    status["step"] = sys._getframe().f_code.co_name.replace("_", " ")
+    status["starttime_step"] = time.time()
     snapname = status["snapname"]
     upper_subvols = []
     outlines = subprocess.check_output(['/usr/sbin/btrfs', 'subvolume', 'list', MINEBD_STORAGE_PATH]).splitlines()
@@ -53,6 +56,8 @@ def snapshot_upper(status):
 
 def create_lower_snapshots(status):
     status["message"] = "Creating backup files"
+    status["step"] = sys._getframe().f_code.co_name.replace("_", " ")
+    status["starttime_step"] = time.time()
     snapname = status["snapname"]
     backupname = status["backupname"]
 
@@ -80,6 +85,8 @@ def create_lower_snapshots(status):
 def initiate_uploads(status):
     current_app.logger.info('Starting uploads.')
     status["message"] = "Starting uploads"
+    status["step"] = sys._getframe().f_code.co_name.replace("_", " ")
+    status["starttime_step"] = time.time()
     snapname = status["snapname"]
     backupname = status["backupname"]
 
@@ -129,8 +136,12 @@ def initiate_uploads(status):
 
 def wait_for_uploads(status):
     status["message"] = "Waiting for uploads to complete"
+    status["step"] = sys._getframe().f_code.co_name.replace("_", " ")
+    status["starttime_step"] = time.time()
     uploaded_size = 0
     fully_available = False
+    if not status["backupfileinfo"]:
+        return False, "ERROR: Backup file info is missing."
     # Loop and sleep as long as the backup is not fully available and uploaded.
     # TODO: here and for the sleep below, we should actually use *or*.
     while not fully_available and uploaded_size < status["uploadsize"]:
@@ -153,7 +164,7 @@ def wait_for_uploads(status):
                     current_app.logger.debug('File "%s" not on Sia and not matching watched names.', bfile["siapath"])
             status["uploadprogress"] = 100.0 * uploaded_size / status["uploadsize"]
             if not fully_available and uploaded_size < status["uploadsize"]:
-                current_app.logger.info('Uploads are not yet complete, wait 5 minutes.')
+                current_app.logger.info("Uploads are not yet complete (%s%%), wait 5 minutes." % int(status["uploadprogress"]))
                 # Sleep 5 minutes.
                 time.sleep(5 * 60)
         else:
@@ -162,6 +173,8 @@ def wait_for_uploads(status):
 
 def save_metadata(status):
     status["message"] = "Saving metadata"
+    status["step"] = sys._getframe().f_code.co_name.replace("_", " ")
+    status["starttime_step"] = time.time()
     snapname = status["snapname"]
     backupname = status["backupname"]
     metadir = path.join(METADATA_BASE, backupname)
@@ -195,6 +208,8 @@ def save_metadata(status):
 def remove_lower_snapshots(status):
     snapname = status["snapname"]
     status["message"] = "Cleaning up backup data"
+    status["step"] = sys._getframe().f_code.co_name.replace("_", " ")
+    status["starttime_step"] = time.time()
     current_app.logger.info('Removing lower-level data snapshot(s) with name: %s' % snapname)
     for snap in glob(path.join(DATADIR_MASK, 'snapshots', snapname)):
         subprocess.call(['/usr/sbin/btrfs', 'subvolume', 'delete', snap])
@@ -202,6 +217,8 @@ def remove_lower_snapshots(status):
 
 def remove_old_backups(status, activebackups):
     status["message"] = "Cleaning up old backups"
+    status["step"] = sys._getframe().f_code.co_name.replace("_", " ")
+    status["starttime_step"] = time.time()
     allbackupnames = get_list()
     sia_filedata, sia_status_code = get_from_sia('renter/files')
     if sia_status_code == 200:
