@@ -8,10 +8,10 @@ start)
   mbvenv/backup-service.py
   ;;
 ping)
-  curl --fail "http://localhost:5100/ping"
+  curl --fail --silent --show-error "http://localhost:5100/ping"
   ;;
 trigger)
-  curl --fail "http://localhost:5100/trigger"
+  curl --fail --silent --show-error "http://localhost:5100/trigger"
   ;;
 *)
   echo "Script for controlling the Minebox Backup Service"
