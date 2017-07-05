@@ -6,7 +6,7 @@
 KEY_FILE="/etc/minebox/minebox.key"
 
 # Make sure we are root.
-if [ "$USER" != "root" ]; then
+if [[ $EUID > 0 ]]; then
   echo "ERROR: You have to be root to run this script."
   exit 1
 fi
