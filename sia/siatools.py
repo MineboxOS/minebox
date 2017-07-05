@@ -25,7 +25,7 @@ def get_seed():
     seed = None
     mbdata, mb_status_code = get_from_minebd('siawalletseed')
     if mb_status_code == 200:
-        seed = mbdata["seed"]
+        seed = mbdata["message"]
     return seed
 
 def init_wallet(seed):
