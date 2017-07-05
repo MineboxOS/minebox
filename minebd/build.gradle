@@ -79,7 +79,7 @@ dependencies {
 //    jmh 'org.openjdk.jmh:jmh-generator-annprocess:0.9'
 //    jmh sourceSets.test.output
 
-    testCompile 'com.github.apetersson:Blake2b:0.1'
+    compile 'com.github.apetersson:Blake2b:0.1'
 
 
 }
