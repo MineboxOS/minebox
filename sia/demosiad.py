@@ -1,10 +1,15 @@
 #!/usr/bin/env python
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 from flask import Flask, request, jsonify, json
-from os import environ
+import os
 import re
 import logging
-from connecttools import getDemoURL, getFromMineBD, getFromMetadata
+from connecttools import (get_demo_url, get_from_minebd,
+                          get_from_metadata, put_to_metadata,
+                          delete_from_metadata)
 
 
 # Define various constants.
@@ -37,7 +42,7 @@ def api_consensus():
 
 @app.route("/renter/files", methods=['GET'])
 def api_renter_files():
-    mdata, md_status_code = getFromMetadata('file/list')
+    mdata, md_status_code = get_from_metadata('file/list')
     if md_status_code >= 400:
         return jsonify(mdata), md_status_code
     files = []
@@ -61,6 +66,32 @@ def api_renter_files():
               "expiration": 60000
             })
     return jsonify(files=files), 200
+
+@app.route("/renter/upload/<siapath>", methods=['POST'])
+def api_renter_upload(siapath):
+    filename = request.form["source"]
+    # Upload the local file. Note that this reads all its data into memory.
+    with open(filename) as file:
+        fdata = file.read()
+        mdata, md_status_code = put_to_metadata("file/%s" % siapath, fdata)
+        if md_status_code >= 400:
+            return jsonify(mdata), md_status_code
+    # Do the equivalent of a "touch <path>.sia"
+    siafname = os.path.join(SIA_DIR, "renter", "%s.sia" % siapath)
+    with open(siafname, 'a') as siafile:
+        os.utime(siafname, None)
+    return "", 204
+
+@app.route("/renter/delete/<siapath>", methods=['POST'])
+def api_renter_delete(siapath):
+    mdata, md_status_code = delete_from_metadata("file/%s" % siapath)
+    if md_status_code >= 400:
+        return jsonify(mdata), md_status_code
+    # Delete .sia file as well.
+    siafname = os.path.join(SIA_DIR, "renter", "%s.sia" % siapath)
+    if os.path.isfile(siafname):
+        os.remove(siafname)
+    return "", 204
 
 @app.route("/wallet", methods=['GET'])
 def api_wallet():
@@ -92,7 +123,7 @@ def page_not_found(error):
 
 
 if __name__ == "__main__":
-    if 'DEBUG' in environ:
+    if 'DEBUG' in os.environ:
         app.debug = True
     if not app.debug:
         # In production mode, add log handler to sys.stderr.

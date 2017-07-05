@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 from flask import request, make_response, current_app
 from functools import update_wrapper
 from urlparse import urlparse
 from os import environ
+import time
 import re
 import requests
 
@@ -11,12 +15,13 @@ import requests
 SIAD_URL="http://localhost:9980/"
 MINEBD_URL="http://localhost:8080/v1/"
 MINEBD_AUTH_KEY_FILE="/etc/minebox/local-auth.key"
+BACKUPSERVICE_URL="http://localhost:5100/"
 METADATA_URL="https://metadata.minebox.io/v1/"
 LOCALDEMO_URL="http://localhost:8050/v1/"
 DEMOSIAD_URL="http://localhost:9900/"
 
 
-def setOrigin(*args, **kwargs):
+def set_origin(*args, **kwargs):
     def decorator(f):
         def wrapped_function(*args, **kwargs):
             if request.method == 'OPTIONS':
@@ -50,13 +55,13 @@ def setOrigin(*args, **kwargs):
     return decorator
 
 
-def getDemoURL():
+def get_demo_url():
     if 'DEMO' in environ and environ['DEMO'] == 'local':
         return LOCALDEMO_URL
     return METADATA_URL
 
 
-def getFromSia(api):
+def get_from_sia(api):
     if 'DEMO' in environ:
         url = DEMOSIAD_URL + api
     else:
@@ -84,7 +89,7 @@ def getFromSia(api):
         return {"message": str(e)}, 500
 
 
-def postToSia(api, formData):
+def post_to_sia(api, formData):
     if 'DEMO' in environ:
         url = DEMOSIAD_URL + api
     else:
@@ -112,7 +117,29 @@ def postToSia(api, formData):
         return {"message": str(e)}, 500
 
 
-def getFromMineBD(api):
+def get_from_backupservice(api):
+    url = BACKUPSERVICE_URL + api
+    try:
+        response = requests.get(url)
+        if ('Content-Type' in response.headers
+            and re.match(r'^application/json',
+                         response.headers['Content-Type'])):
+            # create a dict generated from the JSON response.
+            bsdata = response.json()
+            if response.status_code >= 400:
+                # For error-ish codes, tell that they are from Sia.
+                bsdata["messagesource"] = "backupservice"
+            return bsdata, response.status_code
+        else:
+            return {"message": response.text,
+                    "messagesource": "backupservice"}, response.status_code
+    except requests.ConnectionError as e:
+        return {"message": str(e)}, 503
+    except requests.RequestException as e:
+        return {"message": str(e)}, 500
+
+
+def get_from_minebd(api):
     url = MINEBD_URL + api
     # siad requires a specific UA header, so add that to defaults.
     with open(MINEBD_AUTH_KEY_FILE) as f:
@@ -137,7 +164,7 @@ def getFromMineBD(api):
         return {"message": str(e)}, 500
 
 
-def putToMineBD(api, formData, addHeaders = []):
+def put_to_minebd(api, formData, addHeaders = []):
     url = MINEBD_URL + api
     # siad requires a specific UA header, so add that to defaults.
     with open(MINEBD_AUTH_KEY_FILE) as f:
@@ -147,7 +174,6 @@ def putToMineBD(api, formData, addHeaders = []):
     for header in addHeaders:
         headers.update(header)
     try:
-        response = requests.post(url, data=formData, headers=headers)
         response = requests.put(url, auth=("user", local_key), data=formData)
         if ('Content-Type' in response.headers
             and re.match(r'^application/json',
@@ -167,20 +193,27 @@ def putToMineBD(api, formData, addHeaders = []):
         return {"message": str(e)}, 500
 
 
-def getMetadataToken():
-    if not hasattr(getMetadataToken, "token") or getMetadataToken.token is None:
-        mbdata, mb_status_code = getFromMineBD('auth/getMetadataToken')
+def _get_metadata_token():
+    # If we do not have a token or timestamp is older than 5 minutes,
+    # fetch a new token from MineBD (who uses metadata service for that).
+    # Note that Metadata tokens are valid for 10 minutes right now.
+    if (not hasattr(_get_metadata_token, "token") or _get_metadata_token.token is None
+        or _get_metadata_token.timestamp < time.time() - 5 * 60):
+        # Always set the timestamp so we do not have to test above if it's set,
+        #  as it's only unset when token is also unset
+        _get_metadata_token.timestamp = time.time()
+        mbdata, mb_status_code = get_from_minebd('auth/getMetadataToken')
         if mb_status_code == 200:
-            getMetadataToken.token = mbdata["message"]
+            _get_metadata_token.token = mbdata["message"]
         else:
             current_app.logger.error('Error %s getting metadata token from MineBD: %s' % (mb_status_code,  mbdata["message"]))
-            getMetadataToken.token = None
-    return getMetadataToken.token
+            _get_metadata_token.token = None
+    return _get_metadata_token.token
 
 
-def getFromMetadata(api):
-    url = getDemoURL() + api
-    token = getMetadataToken()
+def get_from_metadata(api):
+    url = get_demo_url() + api
+    token = _get_metadata_token()
     if token is None:
         return {"message": "Error requesting metadata token."}, 500
 
@@ -206,7 +239,63 @@ def getFromMetadata(api):
         return {"message": str(e)}, 500
 
 
-def checkLogin():
+def put_to_metadata(api, formData):
+    url = get_demo_url() + api
+    token = _get_metadata_token()
+    if token is None:
+        return {"message": "Error requesting metadata token."}, 500
+
+    try:
+        headers = requests.utils.default_headers()
+        headers.update({'X-Auth-Token': token})
+        response = requests.put(url, data=formData, headers=headers)
+        if ('Content-Type' in response.headers
+            and re.match(r'^application/json',
+                         response.headers['Content-Type'])):
+            # create a dict generated from the JSON response.
+            mdata = response.json()
+            if response.status_code >= 400:
+                # For error-ish codes, tell that they are from MineBD.
+                mdata["messagesource"] = "Metadata"
+            return mdata, response.status_code
+        else:
+            return {"message": response.text,
+                    "messagesource": "Metadata"}, response.status_code
+    except requests.ConnectionError as e:
+        return {"message": str(e)}, 503
+    except requests.RequestException as e:
+        return {"message": str(e)}, 500
+
+
+def delete_from_metadata(api):
+    url = get_demo_url() + api
+    token = _get_metadata_token()
+    if token is None:
+        return {"message": "Error requesting metadata token."}, 500
+
+    try:
+        headers = requests.utils.default_headers()
+        headers.update({'X-Auth-Token': token})
+        response = requests.delete(url, headers=headers)
+        if ('Content-Type' in response.headers
+            and re.match(r'^application/json',
+                         response.headers['Content-Type'])):
+            # create a dict generated from the JSON response.
+            mdata = response.json()
+            if response.status_code >= 400:
+                # For error-ish codes, tell that they are from MineBD.
+                mdata["messagesource"] = "Metadata"
+            return mdata, response.status_code
+        else:
+            return {"message": response.text,
+                    "messagesource": "Metadata"}, response.status_code
+    except requests.ConnectionError as e:
+        return {"message": str(e)}, 503
+    except requests.RequestException as e:
+        return {"message": str(e)}, 500
+
+
+def check_login():
     csrftoken = request.cookies.get('csrftoken')
     sessionid = request.cookies.get('sessionid')
     user_api = "https://localhost/api/commands/current-user"

@@ -1,0 +1,53 @@
+#!groovy
+node ("rockstor") {
+   def mvnHome
+   stage('Checkout') { // for display purposes
+      checkout( [ $class: 'GitSCM'
+                , branches: [[name: '*/master']]
+                , doGenerateSubmoduleConfigurations: false
+                , extensions: []
+                , submoduleCfg: []
+                , userRemoteConfigs: [[credentialsId: '0c80fc94-d6f5-489b-a850-30e0deb2273f', url: 'git@bitbucket.org:mineboxgmbh/minebox-client-tools.git']]
+                ])
+   }
+   stage('Build JAR') {
+       sh """cd minebd
+
+             ./gradlew build
+
+             # Generate a .jar with all dependencies.
+             ./gradlew shadowJar
+           """
+   }
+   stage('Store JAR in archive') {
+      archive 'minebd/build/libs/*.jar'
+   }
+   stage('Check Build Environment') {
+       sh """yum install -y rpmdevtools
+             rpmdev-setuptree
+          """
+   }
+   stage('Build RPM') {
+       
+       sh """mkdir -p SOURCES
+             mkdir -p BUILD
+             mkdir -p RPMS
+             cp minebd/build/libs/minebd-1.0-SNAPSHOT-all.jar SOURCES
+             rpmbuild -bb minebd/minebd.spec
+          """
+   }
+   stage('Store RPM in archive') {
+      archive 'RPMS/x86_64/*.rpm'
+   }
+   stage('Prepare Repo') {
+      sh """yum install -y createrepo
+            createrepo --database 'RPMS/x86_64'
+         """
+   }
+   stage('Store Repo in archive') {
+      sh """cd RPMS/x86_64
+            tar -cjf ../../repo.tgz *
+         """
+      archive 'repo.tgz'
+   }
+}
