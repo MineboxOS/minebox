@@ -186,7 +186,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
         cmdLength = message.readUnsignedInt(); //needs to be treated as long
     }
 
-    private void sendTransmissionSimpleReply(ChannelHandlerContext ctx, int error, long handle, ByteBuf data) {
+    private synchronized void sendTransmissionSimpleReply(ChannelHandlerContext ctx, int error, long handle, ByteBuf data) {
         ByteBuf bbr = ctx.alloc().buffer(16);
         bbr.writeInt(Protocol.REPLY_MAGIC);
         bbr.writeInt(error); // zero for okay
