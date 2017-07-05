@@ -51,9 +51,11 @@ def api_trigger():
 @app.route("/status")
 def api_start():
     # This is a very temporary debug-style status output for now.
-    statusdata = {"active": get_running_backups(), "all": []}
+    statusdata = {"backup_active": get_running_backups(),
+                  "backup_info": [],
+                  "helper_active": get_running_helpers()}
     for tname in threadstatus:
-        statusdata["all"].append({
+        statusdata["backup_info"].append({
           "name": threadstatus[tname]["snapname"],
           "time_snapshot": int(threadstatus[tname]["snapname"]),
           "message": threadstatus[tname]["message"],
@@ -200,6 +202,12 @@ def get_running_backups():
     return [threadstatus[thread.name]["snapname"]
             for thread in threading.enumerate()
               if thread.name in threadstatus ]
+
+
+def get_running_helpers():
+    return [thread.name
+            for thread in threading.enumerate()
+              if thread.name.startswith("sia.") ]
 
 
 def restart_backups():
