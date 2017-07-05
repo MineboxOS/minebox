@@ -186,15 +186,17 @@ public class TransmissionPhase extends ByteToMessageDecoder {
         cmdLength = message.readUnsignedInt(); //needs to be treated as long
     }
 
-    private synchronized void sendTransmissionSimpleReply(ChannelHandlerContext ctx, int error, long handle, ByteBuf data) {
+    private void sendTransmissionSimpleReply(ChannelHandlerContext ctx, int error, long handle, ByteBuf data) {
         ByteBuf bbr = ctx.alloc().buffer(16);
-        bbr.writeInt(Protocol.REPLY_MAGIC);
-        bbr.writeInt(error); // zero for okay
-        bbr.writeLong(handle);
+        synchronized (this) {
+            bbr.writeInt(Protocol.REPLY_MAGIC);
+            bbr.writeInt(error); // zero for okay
+            bbr.writeLong(handle);
 
-        ctx.write(bbr);
-        if (data != null) {
-            ctx.write(data);
+            ctx.write(bbr);
+            if (data != null) {
+                ctx.write(data);
+            }
         }
         ctx.flush();
         final int pendingOperations = this.pendingOperations.decrementAndGet();
