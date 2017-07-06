@@ -117,9 +117,11 @@ def initiate_uploads(status):
             (froot, fext) = path.splitext(filename)
             sia_fname = '%s.%s%s' % (froot, int(fileinfo.st_mtime), fext)
             if any(sf['siapath'] == sia_fname and sf['available'] for sf in siafiles):
-                current_app.logger.info('%s is part of the set but already uploaded.' % sia_fname)
+                current_app.logger.info("%s is part of the set and already uploaded." % sia_fname)
             elif any(sf['siapath'] == sia_fname for sf in siafiles):
-                current_app.logger.info('%s is part of the set but the upload is already in progress.' % sia_fname)
+                status["uploadsize"] += fileinfo.st_size
+                status["uploadfiles"].append(sia_fname)
+                current_app.logger.info("%s is part of the set and the upload is already in progress." % sia_fname)
             else:
                 status["uploadsize"] += fileinfo.st_size
                 status["uploadfiles"].append(sia_fname)
@@ -143,8 +145,9 @@ def wait_for_uploads(status):
     if not status["backupfileinfo"]:
         return False, "ERROR: Backup file info is missing."
     # Loop and sleep as long as the backup is not fully available and uploaded.
-    # TODO: here and for the sleep below, we should actually use *or*.
-    while not fully_available and uploaded_size < status["uploadsize"]:
+    # TODO: target progress should probably be 99% (or even 100%)
+    #       but until sia 1.3 release, we need 66% here due to redundancy change.
+    while not fully_available or status["uploadprogress"] < 66:
         sia_filedata, sia_status_code = get_from_sia('renter/files')
         if sia_status_code == 200:
             uploaded_size = 0
@@ -162,8 +165,8 @@ def wait_for_uploads(status):
                     current_app.logger.warn('File "%s" not found on Sia!', bfile["siapath"])
                 else:
                     current_app.logger.debug('File "%s" not on Sia and not matching watched names.', bfile["siapath"])
-            status["uploadprogress"] = 100.0 * uploaded_size / status["uploadsize"]
-            if not fully_available and uploaded_size < status["uploadsize"]:
+            current_app.logger.debug('Now fully available: %s, progress: %s' % (fully_available, status["uploadprogress"]))
+            if not fully_available or status["uploadprogress"] < 66:
                 current_app.logger.info("Uploads are not yet complete (%s%%), wait 5 minutes." % int(status["uploadprogress"]))
                 # Sleep 5 minutes.
                 time.sleep(5 * 60)

@@ -211,6 +211,8 @@ def run_backup(startevent, snapname=None):
             return
         threadstatus[threading.current_thread().name]["finished"] = True
         threadstatus[threading.current_thread().name]["message"] = "done"
+        threadstatus[threading.current_thread().name]["step"] = "complete"
+        threadstatus[threading.current_thread().name]["starttime_step"] = time.time()
 
 
 def get_running_backups():
