@@ -4,7 +4,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from flask import Flask, request, jsonify, json
-from os.path import ismount
+from os.path import ismount, isfile
 from os import environ
 import re
 import logging
@@ -20,6 +20,7 @@ from siatools import H_PER_SC, SEC_PER_BLOCK
 
 # Define various constants.
 REST_PORT=5000
+CONFIG_JSON_PATH="/etc/minebox/mug_config.json"
 # TODO: The Rockstor certs are at a different location in production!
 SSL_CERT="/root/rockstor-core_vm/certs/rockstor.cert"
 SSL_KEY="/root/rockstor-core_vm/certs/rockstor.key"
@@ -28,7 +29,24 @@ UPLOADER_CMD=backupinfo.UPLOADER_CMD
 DEMOSIAC_CMD="/root/minebox-client-tools_vm/sia/demosiac.sh"
 MBKEY_CMD="/usr/lib/minebox/mbkey.sh"
 
+config = {}
+
 app = Flask(__name__)
+
+
+@app.before_first_request
+def before_first_request():
+    global config
+    # Read configuration from JSON file.
+    if isfile(CONFIG_JSON_PATH):
+        with open(CONFIG_JSON_PATH) as json_file:
+            config = json.load(json_file)
+    # Set default values.
+    if not "allowed_cors_hosts" in config:
+        config["allowed_cors_hosts"] = []
+    # Copy those values to the Flask app that may be used in imports.
+    app.config["allowed_cors_hosts"] = config["allowed_cors_hosts"]
+
 
 @app.route("/")
 @set_origin()

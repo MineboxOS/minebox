@@ -33,14 +33,18 @@ def set_origin(*args, **kwargs):
             # Use host we are running on but respect port of requsting origin,
             # so port forwarders work.
             myurlparts = urlparse(request.url_root)
+            originhost = myurlparts.hostname
             if "Origin" in request.headers:
-                originport = urlparse(request.headers["Origin"]).port
+                req_originparts = urlparse(request.headers["Origin"])
+                if req_originparts.hostname in current_app.config["allowed_cors_hosts"]:
+                    originhost = req_originparts.hostname
+                originport = req_originparts.port
             else:
                 originport = None
             if originport is None:
-                origin = "https://%s" % (myurlparts.hostname)
+                origin = "https://%s" % (originhost)
             else:
-                origin = "https://%s:%s" % (myurlparts.hostname, originport)
+                origin = "https://%s:%s" % (originhost, originport)
             resp.headers["Access-Control-Allow-Origin"] = origin
             if request.method == 'OPTIONS':
                 resp.headers["Access-Control-Allow-Methods"] = resp.headers['Allow']
