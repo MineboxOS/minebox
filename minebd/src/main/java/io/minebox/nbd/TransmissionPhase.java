@@ -84,7 +84,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 final long cmdOffset = this.cmdOffset;
                 final long cmdLength = this.cmdLength;
                 final long cmdHandle = this.cmdHandle;
-                LOGGER.debug("reading from {} length {}", cmdOffset, cmdLength);
+//                LOGGER.debug("reading from {} length {} handle {}", cmdOffset, cmdLength, cmdHandle);
                 Runnable operation = () -> {
                     ByteBuf data = null;
                     int err = 0;
@@ -92,6 +92,17 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                         //FIXME: use FUA/sync flag correctly
                         ByteBuffer bb = exportProvider.read(cmdOffset, Ints.checkedCast(cmdLength));
                         data = Unpooled.wrappedBuffer(bb);
+                        final int actuallyRead = data.writerIndex() - data.readerIndex();
+                        if (actuallyRead != cmdLength) {
+
+                            LOGGER.error("responding to from {} length {} handle {}", cmdOffset, actuallyRead, cmdHandle);
+                            final String msg = "i messed up and tried to return the wrong about of read data.. " +
+                                    "from " + cmdOffset +
+                                    " length " + actuallyRead +
+                                    " requested " + cmdLength +
+                                    " handle " + cmdHandle;
+                            throw new IllegalStateException(msg);
+                        }
                     } catch (Exception e) {
                         LOGGER.error("error during read", e);
                         err = Error.EIO;
@@ -194,11 +205,10 @@ public class TransmissionPhase extends ByteToMessageDecoder {
 
     private void sendTransmissionSimpleReply(ChannelHandlerContext ctx, int error, long handle, ByteBuf data) {
         ByteBuf bbr = ctx.alloc().buffer(16);
+        bbr.writeInt(Protocol.REPLY_MAGIC);
+        bbr.writeInt(error); // zero for okay
+        bbr.writeLong(handle);
         synchronized (this) {
-            bbr.writeInt(Protocol.REPLY_MAGIC);
-            bbr.writeInt(error); // zero for okay
-            bbr.writeLong(handle);
-
             ctx.write(bbr);
             if (data != null) {
                 ctx.write(data);
