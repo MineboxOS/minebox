@@ -47,12 +47,10 @@ def api_renter_files():
         return jsonify(mdata), md_status_code
     files = []
     for fdata in mdata:
-        app.logger.info(fdata)
-        app.logger.info(mdata[fdata])
         # Do not report files that do not match the .dat file pattern (e.g. backup zips).
-        if re.match(r'^minebox_.+\.dat$', fdata["filename"]):
+        if re.match(r'^minebox_.+\.dat$', fdata["name"]):
             files.append({
-              "siapath": fdata["filename"],
+              "siapath": fdata["name"],
               "filesize": fdata["size"],
               "available": True,
               "renewing": True,
