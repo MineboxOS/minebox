@@ -326,22 +326,40 @@ def api_wallet_status():
       "siafundbalance": siadata["siafundbalance"],
       "siafundbalance_sc": int(siadata["siafundbalance"]) / H_PER_SC,
     }
-    # For now, just return the info from Sia directly.
     return jsonify(walletdata), 200
 
 
-@app.route("/wallet/unlock", methods=['POST'])
+@app.route("/wallet/address", methods=['GET'])
 @set_origin()
-def api_wallet_unlock():
+def api_wallet_address():
     # Doc: *** not documented yet***
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    # Make sure we only hand parameters to siad that it supports.
-    pwd = request.form["encryptionpassword"]
-    siadata, status_code = post_to_sia('wallet/unlock', {"encryptionpassword": pwd})
-    if status_code == 204:
-        # This (No Content) should be the default returned on success.
-        return jsonify(message="Wallet unlocked."), 200
+    siadata, sia_status_code = get_from_sia('wallet/address')
+    # Just return the info from Sia directly as it's either an error
+    # or the address in a field called "address", so pretty straight forward.
+    return jsonify(siadata), sia_status_code
+
+
+@app.route("/wallet/send", methods=['POST'])
+@set_origin()
+def api_wallet_send():
+    # Doc: *** not documented yet***
+    if not check_login():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+    # The sia daemon takes the amount in hastings. Should we also/instead
+    # support an amount specified in SC?
+    amount = request.form["amount"]
+    destination = request.form["destination"]
+    siadata, status_code = post_to_sia('wallet/siacoin',
+                                       {"amount": amount,
+                                        "destination": destination})
+    if status_code == 200:
+        # siadata["transactionids"] is a list of IDs of the transactions that
+        # were created when sending the coins. The last transaction contains
+        # the output headed to the 'destination'.
+        return jsonify(message="%s SC successfully sent to %s."
+                               % (amount / H_PER_SC, destination)), 200
     else:
         return jsonify(siadata), status_code
 
