@@ -4,7 +4,7 @@ node ("rockstor") {
 
    def mvnHome
    stage('Checkout') { // for display purposes
-      dir {
+      dir (WORKSPACE) {
         deletedir() // clean build
       }
       checkout( [ $class: 'GitSCM'
