@@ -6,7 +6,7 @@ node ("rockstor") {
    stage('Checkout') { // for display purposes
       sh 'printenv'
       checkout( [ $class: 'GitSCM'
-                , branches: [[name: ${params.MINEBD_BRANCH]]
+                , branches: [[name: ${params.MINEBD_BRANCH}]]
                 , doGenerateSubmoduleConfigurations: false
                 , extensions: []
                 , submoduleCfg: []
