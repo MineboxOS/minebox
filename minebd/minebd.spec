@@ -33,7 +33,7 @@ set -e
 %post
 systemctl daemon-reload
 systemctl enable minebd
-systemctl start minebd
+systemctl start minebd &
 
 # Uninstallation script
 %preun
