@@ -1,6 +1,11 @@
 Name: MineBD
-Version: 1
-Release: 1%{?dist}
+#read Version from git tag
+# we excpect a tag "minebd_vM.m.p"
+
+# *NOTE* M is the Major number and has to be a _single digit_
+
+Version: %(git describe --tags --match 'minebd*'|grep -oP "(?<=minebd_v).")
+Release: %(git describe --tags --match 'minebd*'|grep -oP "(?<=minebd_v..).*" | tr '-' '_')%{?dist}
 Summary: Our core module
 License: Proprietary
 
