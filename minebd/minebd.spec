@@ -15,7 +15,7 @@ install -D "%{_topdir}minebd/build/libs/minebd-1.0-SNAPSHOT-all.jar" "$RPM_BUILD
 install -D --mode 755 "%{_topdir}minebd/systemd/mount-nbd0.sh" "$RPM_BUILD_ROOT/usr/lib/minebox/mount-nbd0.sh"
 install -D "%{_topdir}minebd/config.yaml" "$RPM_BUILD_ROOT/etc/minebox/config.yaml"
 install -D "%{_topdir}minebd/systemd/minebd.service" "$RPM_BUILD_ROOT/etc/systemd/system/minebd.service"
-install -D "%{_topdir}minebd/systemd/nbd@nbd0.service.d" "$RPM_BUILD_ROOT/etc/systemd/system/nbd@nbd0.service.d"
+install -D "%{_topdir}minebd/systemd/nbd@nbd0.service.d/mount.conf" "$RPM_BUILD_ROOT/etc/systemd/system/nbd@nbd0.service.d/mount.conf"
 
 # Installation script
 %pre
@@ -48,5 +48,5 @@ systemctl daemon-reload
 /usr/lib/minebox/mount-nbd0.sh
 /etc/minebox/config.yaml
 /etc/systemd/system/minebd.service
-/etc/systemd/system/nbd@nbd0.service.d
+/etc/systemd/system/nbd@nbd0.service.d/mount.conf
 
