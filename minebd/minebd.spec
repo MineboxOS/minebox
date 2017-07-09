@@ -41,6 +41,7 @@ systemctl start minebd &
 
 # Uninstallation script
 %preun
+if [ "$1" = 0 ] ; then
 set +e
 systemctl stop nbd@ndb0
 systemctl stop nbd-server
@@ -48,6 +49,7 @@ systemctl disable nbd-server
 systemctl stop minebd
 systemctl disable minebd
 set -e
+fi
 
 %postun
 systemctl daemon-reload
