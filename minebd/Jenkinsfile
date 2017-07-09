@@ -5,7 +5,7 @@ node ("rockstor") {
    def mvnHome
    stage('Checkout') { // for display purposes
       dir (WORKSPACE) {
-        deletedir // clean build
+        deleteDir() // clean build
       }
       checkout( [ $class: 'GitSCM'
                 , branches: [[name: params.MINEBD_BRANCH]]
