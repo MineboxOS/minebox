@@ -4,7 +4,6 @@ node ("rockstor") {
 
    def mvnHome
    stage('Checkout') { // for display purposes
-      sh 'printenv'
       checkout( [ $class: 'GitSCM'
                 , branches: [[name: params.MINEBD_BRANCH]]
                 , doGenerateSubmoduleConfigurations: false
