@@ -11,11 +11,11 @@ MineBD is the core module of a Minebox
 
 # Packaging
 %install
-install -D "%{_topdir}minebd/build/libs/minebd-1.0-SNAPSHOT-all.jar" --target-directory "$RPM_BUILD_ROOT/usr/lib/minebox/"
-install -D "%{_topdir}minebd/systemd/mount-nbd0.sh" --target-directory "$RPM_BUILD_ROOT/usr/lib/minebox/" --mode 755
-install -D "%{_topdir}minebd/config.yaml" --target-directory "$RPM_BUILD_ROOT/etc/minebox/"
-install -D "%{_topdir}minebd/systemd/minebd.service" --target-directory "$RPM_BUILD_ROOT/etc/systemd/system/"
-install -D "%{_topdir}minebd/systemd/nbd@nbd0.service.d" --target-directory "$RPM_BUILD_ROOT/etc/systemd/system/"
+install -D "%{_topdir}minebd/build/libs/minebd-1.0-SNAPSHOT-all.jar" "$RPM_BUILD_ROOT/usr/lib/minebox/"
+install -D --mode 755 "%{_topdir}minebd/systemd/mount-nbd0.sh" "$RPM_BUILD_ROOT/usr/lib/minebox/"
+install -D "%{_topdir}minebd/config.yaml" "$RPM_BUILD_ROOT/etc/minebox/"
+install -D "%{_topdir}minebd/systemd/minebd.service" "$RPM_BUILD_ROOT/etc/systemd/system/"
+install -D "%{_topdir}minebd/systemd/nbd@nbd0.service.d" "$RPM_BUILD_ROOT/etc/systemd/system/"
 
 # Installation script
 %pre
