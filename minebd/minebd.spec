@@ -26,11 +26,6 @@ install -D "%{_topdir}distro-tools/VM/nbd-client-config" "$RPM_BUILD_ROOT/etc/nb
 
 # Installation script
 %pre
-set +e
-systemctl stop nbd@ndb0
-systemctl stop nbd-server
-systemctl disable nbd-server
-set -e
 
 %post
 systemctl daemon-reload
@@ -45,8 +40,6 @@ systemctl start minebd &
 if [ "$1" = 0 ] ; then
 set +e
 systemctl stop nbd@ndb0
-systemctl stop nbd-server
-systemctl disable nbd-server
 systemctl stop minebd
 systemctl disable minebd
 set -e
