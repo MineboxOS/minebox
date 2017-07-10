@@ -9,13 +9,15 @@ node ("rockstor") {
       dir (WORKSPACE) {
         deleteDir() // clean build
       }
-      checkout( [ $class: 'GitSCM'
-                , branches: [[name: params.MUG_BRANCH]]
-                , doGenerateSubmoduleConfigurations: false
-                , extensions: []
-                , submoduleCfg: []
-                , userRemoteConfigs: [[credentialsId: '0c80fc94-d6f5-489b-a850-30e0deb2273f', url: 'git@bitbucket.org:mineboxgmbh/minebox-client-tools.git']]
-                ])
+      retry (3) {
+        checkout( [ $class: 'GitSCM'
+                  , branches: [[name: params.MUG_BRANCH]]
+                  , doGenerateSubmoduleConfigurations: false
+                  , extensions: []
+                  , submoduleCfg: []
+                  , userRemoteConfigs: [[credentialsId: '0c80fc94-d6f5-489b-a850-30e0deb2273f', url: 'git@bitbucket.org:mineboxgmbh/minebox-client-tools.git']]
+                  ])
+      }
    }
    stage('Check Build Environment') {
        sh """yum install -y rpmdevtools

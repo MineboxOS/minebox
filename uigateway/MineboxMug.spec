@@ -51,5 +51,11 @@ systemctl daemon-reload
 /usr/lib/minebox/mug.sh
 /etc/systemd/system/mug.service
 /usr/lib/minebox/mbvenv/mug.py
+/usr/lib/minebox/mbvenv/mug.pyc
+/usr/lib/minebox/mbvenv/mug.pyo
 /usr/lib/minebox/mbvenv/backupinfo.py
+/usr/lib/minebox/mbvenv/backupinfo.pyc
+/usr/lib/minebox/mbvenv/backupinfo.pyo
 /usr/lib/minebox/mbvenv/connecttools.py
+/usr/lib/minebox/mbvenv/connecttools.pyc
+/usr/lib/minebox/mbvenv/connecttools.pyo
