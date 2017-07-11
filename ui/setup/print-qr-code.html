@@ -253,18 +253,23 @@
 			});
 
 			function randomArtGenerator( $element ) {
-				var count = getRandomInt(200, 300);
+				var count = getRandomInt(1200, 2000);
 				var props = {};
 
 				for ( var n = 0; n < count; n++ ) {
-					props.width = getRandomInt(5,25) + '%';
-					props.height = getRandomInt(5,25) + '%';
-					props.top = getRandomInt(-20,100) + '%';
-					props.left = getRandomInt(-20,100) + '%';
-					props.round = getRandomInt(0,50) + '%';
-					props.opacity = getRandomInt(10,50) / 100;
+					props.width = getRandomInt(1,8) + '%';
+					props.top = getRandomInt(-2,95) + '%';
+					props.left = getRandomInt(-2,95) + '%';
+					props.opacity = getRandomInt(30,90) / 100;
+					props.color = getRandomInt(0,3);
 
-					$element.append('<span style="position:absolute;width:' + props.width + ';height:' + props.height + ';top:' + props.top + ';left:' + props.left + ';border-radius:' + props.round + ';background-color:#000;opacity:' + props.opacity + ';"></span>');
+					if ( props.color ) {
+						props.color = '#000';
+					} else {
+						props.color = '#fff';
+					}
+
+					$element.append('<span style="position:absolute;width:' + props.width + ';height:' + props.width + ';top:' + props.top + ';left:' + props.left + ';background-color:' + props.color + ';opacity:' + props.opacity + ';"></span>');
 				}
 			}
 
