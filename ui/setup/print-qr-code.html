@@ -4,13 +4,18 @@
 		<meta charset="utf-8" />
 		<title>Minebox private key for </title>
 
+		<link href="../css/heebo.css" type="text/css" rel="stylesheet" />
+		<link href="../css/notify.css" type="text/css" rel="stylesheet" />
+
 		<style>
+			html,body {
+				background-color: #efefef !important;
+				color: #666 !important;
+			}
 			body {
-				font-family: Helvetica, Arial, Sans-serif;
+				font-family: 'Heebo', Helvetica, Arial, Sans-serif;
 				font-size: 12px;
-				background-color: #efefef;
-				color: #666;
-				font-weight: 100;
+				font-weight: 300;
 				text-align: center;
 			}
 			.small {
@@ -132,6 +137,7 @@
 			.minebox-private-key-instructions-image + .minebox-private-key-instructions-image {
 				margin-top: 10px;
 			}
+			button,
 			.button {
 				display: inline-block;
 				background-color: #24acce;
@@ -180,6 +186,7 @@
 		<script type="text/javascript" src="../js/jquery.2.2.4.min.js"></script>
 		<script type="text/javascript" src="../js/qrcode.min.js"></script>
 		<script type="text/javascript" src="../js/func.lib.js"></script>
+		<script type="text/javascript" src="../js/jquery.notify.js"></script>
 	</head>
 
 	<body>
@@ -229,7 +236,12 @@
 			function fillPaperWallet() {
 				$('#words').html(data.seed);
 				$('#hostname').html(data.hostname);
-				qrCodeHandler.makeCode(data.seed);
+				if ( data.seed ) {
+					qrCodeHandler.makeCode(data.seed);
+				} else {
+					var notify = new Notify({message: 'Missing printing seed. Close this window and try again.'});
+					notify.print();
+				}
 				var title = $('title').html();
 				$('title').html( title + data.hostname + '.minebox.io' );
 			}
