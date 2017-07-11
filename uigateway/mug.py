@@ -358,7 +358,8 @@ def api_wallet_send():
         # siadata["transactionids"] is a list of IDs of the transactions that
         # were created when sending the coins. The last transaction contains
         # the output headed to the 'destination'.
-        return jsonify(message="%s SC successfully sent to %s."
+        return jsonify(transactionids=siadata["transactionids"],
+                       message="%s SC successfully sent to %s."
                                % (amount / H_PER_SC, destination)), 200
     else:
         return jsonify(siadata), status_code
