@@ -17,9 +17,7 @@ import sys
 from connecttools import (get_demo_url, get_from_sia, post_to_sia,
                           put_to_minebd, put_to_metadata)
 from backupinfo import *
-from siatools import check_sia_sync
-
-SIA_DIR="/mnt/lower1/sia"
+from siatools import check_sia_sync, SIA_DIR
 
 def check_backup_prerequisites():
     # Check if prerequisites are met to make backups.

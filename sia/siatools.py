@@ -12,6 +12,9 @@ from connecttools import (get_from_sia, post_to_sia, get_from_minebd,
 H_PER_SC=1e24 # hastings per siacoin ("siacoinprecision" in /daemon/constants)
 SEC_PER_BLOCK=600 # seconds per block ("blockfrequency" in /daemon/constants)
 SIA_CONFIG_JSON="/etc/minebox/sia_config.json"
+SIA_DIR="/mnt/lower1/sia"
+HOST_DIR_BASE_MASK="/mnt/lower*"
+HOST_DIR_NAME="hostedfiles"
 
 def check_sia_sync():
     # Check if sia is running and in sync before doing other sia actions.
@@ -84,10 +87,40 @@ def set_up_hosting():
         current_app.logger.error("Sia error %s: %s" % (sia_status_code,
                                                        siadata["message"]))
         return False
-    # TODO: Set up sia hosting (see MIN-129).
-    # add folder
-    # announce host
-    return
+    # Add path(s) to share for hosting.
+    for basepath in glob(HOST_DIR_BASE_MASK):
+        hostpath = path.join(basepath, HOST_DIR_NAME)
+        if not path.isdir(hostpath):
+            subprocess.call(['/usr/sbin/btrfs', 'subvolume', 'create', hostpath])
+        freespace = None
+        outlines = subprocess.check_output(['/usr/sbin/btrfs', 'filesystem', 'df', '-b', hostpath]).splitlines()
+        for line in outlines:
+            current_app.logger.info(line)
+            matches = re.match(r"^Data, single: total=([0-9]+), used=([0-9]+)$", line)
+            if matches:
+                freespace = int(matches.group(1)) - int(matches.group(2))
+        if freespace:
+            share_size = freespace * settings["minebox_sharing"]["shared_space_ratio"]
+        else:
+            share_size = 0
+        siadata, sia_status_code = post_to_sia("host/storage/folders/add",
+                                               {"path": hostpath,
+                                                "size": share_size})
+        if sia_status_code >= 400:
+            current_app.logger.error("Sia error %s: %s" % (sia_status_code,
+                                                          siadata["message"]))
+            return False
+    # Announce host
+    # When we have nice host names, we should announce that because of possibly
+    # changing IPs down the road.
+    # announce_params = {"netaddress": "host.minebox.io"}
+    announce_params = None
+    siadata, sia_status_code = post_to_sia("host/announce", announce_params)
+    if sia_status_code >= 400:
+        current_app.logger.error("Sia error %s: %s" % (sia_status_code,
+                                                      siadata["message"]))
+        return False
+    return True
 
 def restart_sia():
     current_app.logger.info("Restarting sia service.")
@@ -146,6 +179,9 @@ def get_sia_config():
                 "collateralbudget": 0 * H_PER_SC,
                 "maxcollateral": 0 * H_PER_SC,
                 "maxduration": 6 * months_per_block,
+              },
+              "minebox_sharing": {
+                "shared_space_ratio": 0.5,
               },
             }
     return get_sia_config.settings
