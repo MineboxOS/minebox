@@ -5,6 +5,7 @@ import java.io.StringWriter;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.Set;
 
 import javax.servlet.DispatcherType;
 import javax.servlet.FilterRegistration;
@@ -75,7 +76,8 @@ public class MinebdApplication extends Application<ApiConfig> {
         installCorsFilter(environment);
         //init all Singletons semi-eagerly
         REFLECTIONS.getTypesAnnotatedWith(Singleton.class).forEach(injector::getInstance);
-        register(jersey, REFLECTIONS.getTypesAnnotatedWith(Path.class));
+        final Set<Class<?>> resources = REFLECTIONS.getTypesAnnotatedWith(Path.class);
+        register(jersey, resources);
 
 
         jersey.register(new LoggingExceptionMapper<Throwable>() {

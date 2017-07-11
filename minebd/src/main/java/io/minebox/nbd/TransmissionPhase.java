@@ -84,6 +84,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 final long cmdOffset = this.cmdOffset;
                 final long cmdLength = this.cmdLength;
                 final long cmdHandle = this.cmdHandle;
+//                LOGGER.debug("reading from {} length {} handle {}", cmdOffset, cmdLength, cmdHandle);
                 Runnable operation = () -> {
                     ByteBuf data = null;
                     int err = 0;
@@ -91,6 +92,17 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                         //FIXME: use FUA/sync flag correctly
                         ByteBuffer bb = exportProvider.read(cmdOffset, Ints.checkedCast(cmdLength));
                         data = Unpooled.wrappedBuffer(bb);
+                        final int actuallyRead = data.writerIndex() - data.readerIndex();
+                        if (actuallyRead != cmdLength) {
+
+                            LOGGER.error("responding to from {} length {} handle {}", cmdOffset, actuallyRead, cmdHandle);
+                            final String msg = "i messed up and tried to return the wrong about of read data.. " +
+                                    "from " + cmdOffset +
+                                    " length " + actuallyRead +
+                                    " requested " + cmdLength +
+                                    " handle " + cmdHandle;
+                            throw new IllegalStateException(msg);
+                        }
                     } catch (Exception e) {
                         LOGGER.error("error during read", e);
                         err = Error.EIO;
@@ -105,6 +117,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 final long cmdOffset = this.cmdOffset;
                 final long cmdLength = this.cmdLength;
                 final long cmdHandle = this.cmdHandle;
+                LOGGER.debug("writing to {} length {}", cmdOffset, cmdLength);
 
                 final ByteBuf buf;
                 try {
@@ -131,6 +144,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 break;
             }
             case Protocol.NBD_CMD_DISC: {
+                LOGGER.debug("got command disc " + Protocol.NBD_CMD_DISC);
                 ctx.channel().close(); //
                 break;
             }
@@ -148,6 +162,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 try {
                     exportProvider.flush();
                 } catch (Exception e) {
+                    LOGGER.error("error during flush", e);
                     err = Error.EIO;
                 } finally {
                     sendTransmissionSimpleReply(ctx, err, cmdHandle, null);
@@ -158,11 +173,13 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 final long cmdOffset = this.cmdOffset;
                 final long cmdLength = this.cmdLength;
                 final long cmdHandle = this.cmdHandle;
+                LOGGER.debug("trimming from {} length {}", cmdOffset, cmdLength);
 
                 int err = 0;
                 try {
                     exportProvider.trim(cmdOffset, cmdLength);
                 } catch (Exception e) {
+                    LOGGER.error("error during trim", e);
                     err = Error.EIO;
                 } finally {
                     sendTransmissionSimpleReply(ctx, err, cmdHandle, null);
@@ -191,10 +208,11 @@ public class TransmissionPhase extends ByteToMessageDecoder {
         bbr.writeInt(Protocol.REPLY_MAGIC);
         bbr.writeInt(error); // zero for okay
         bbr.writeLong(handle);
-
-        ctx.write(bbr);
-        if (data != null) {
-            ctx.write(data);
+        synchronized (this) {
+            ctx.write(bbr);
+            if (data != null) {
+                ctx.write(data);
+            }
         }
         ctx.flush();
         final int pendingOperations = this.pendingOperations.decrementAndGet();

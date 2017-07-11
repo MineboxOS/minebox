@@ -63,8 +63,8 @@ This results in the following packages being installed:
 Commands to set up / work with VirtualEnv:
 ```
 cd /usr/lib/minebox
-virtualenv mug
-source mug/bin/activate
+virtualenv mbvenv
+source mbvenv/bin/activate
 pip install flask flask-cors requests packaging appdirs
 pip install pyopenssl
 <do stuff>

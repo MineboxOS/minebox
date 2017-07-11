@@ -3,7 +3,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-from flask import current_app
+from flask import current_app, json
 from os.path import isfile, isdir, join
 import os
 from glob import glob
@@ -14,30 +14,46 @@ from connecttools import get_from_sia
 
 DATADIR_MASK="/mnt/lower*/data"
 METADATA_BASE="/mnt/lower1/mineboxmeta"
+MINEBD_STORAGE_PATH="/mnt/storage"
 UPLOADER_CMD="/usr/lib/minebox/uploader-bg.sh"
+INFO_FILENAME="fileinfo"
 
 
-def get_status(backupname):
-    backupfiles, is_finished = get_files(backupname)
-    if backupfiles is None:
-        return {"message": "No backup found with that name."}, 404
+def get_status(backupname, allow_old=False):
+    backupfileinfo, is_finished, is_archived = get_fileinfo(backupname)
 
     status_code = 200
-    if len(backupfiles) < 1:
+    if backupfileinfo is None:
+        # This backup has no file info available or doesn't exist.
+        status_code = 404
+        files = -1
+        total_size = -1
+        rel_size = -1
+        progress = 100 if is_finished else 0
+        rel_progress = 100 if is_finished else 0
+        status = "ERROR"
+        metadata = "ERROR"
+        fully_available = False
+    elif len(backupfileinfo) < 1:
         # Before uploads are scheduled, we find a backup but no files.
+        # If we believe we are finished/archived though, the data is damaged.
         files = -1
         total_size = -1
         rel_size = -1
         progress = 0
         rel_progress = 0
-        status = "PENDING"
-        metadata = "PENDING"
+        if is_archived or is_finished:
+            status = "DAMAGED"
+            metadata = "DAMAGED"
+        else:
+            status = "PENDING"
+            metadata = "PENDING"
         fully_available = False
     else:
-        backuplist = get_list()
+        backuplist = get_list(allow_old)
         currentidx = backuplist.index(backupname)
-        if currentidx > 0:
-            prev_backupfiles, prev_finished = get_files(backuplist[currentidx - 1])
+        if currentidx < len(backuplist) - 1:
+            prev_backupfiles, prev_finished = get_files(backuplist[currentidx + 1])
         else:
             prev_backupfiles = None
         sia_filedata, sia_status_code = get_from_sia('renter/files')
@@ -50,10 +66,10 @@ def get_status(backupname):
             rel_pct_size = 0
             fully_available = True
             sia_map = dict((d["siapath"], index) for (index, d) in enumerate(sia_filedata["files"]))
-            for fname in backupfiles:
-                if fname in sia_map:
+            for finfo in backupfileinfo:
+                if not is_archived and finfo["siapath"] in sia_map:
                     files += 1
-                    fdata = sia_filedata["files"][sia_map[fname]]
+                    fdata = sia_filedata["files"][sia_map[finfo["siapath"]]]
                     # For now, report all files.
                     # We may want to only report files not included in previous backups.
                     total_size += fdata["filesize"]
@@ -63,20 +79,22 @@ def get_status(backupname):
                         rel_pct_size += fdata["filesize"] * fdata["uploadprogress"] / 100
                     if not fdata["available"]:
                         fully_available = False
-                elif re.match(r'.*\.dat$', fname):
+                elif re.match(r'.*\.dat$', finfo["siapath"]):
                     files += 1
-                    fully_available = False
-                    current_app.logger.warn('File %s not found on Sia!', fname)
+                    total_size += finfo["size"]
+                    if not is_archived:
+                        fully_available = False
+                        current_app.logger.warn('File %s not found on Sia!', finfo["siapath"])
                 else:
-                    current_app.logger.debug('File "%s" not on Sia and not matching watched names.', fname)
+                    current_app.logger.debug('File "%s" not on Sia and not matching watched names.', finfo["siapath"])
             # If size is 0, we report 100% progress.
             # This is really needed for relative as otherwise a backup with no
             # difference to the previous would never go to 100%.
             progress = total_pct_size / total_size * 100 if total_size else 100
             rel_progress = rel_pct_size / rel_size * 100 if rel_size else 100
-            # We don't upload metadata atm, so always flag it as pending.
-            metadata = "PENDING"
-            if is_finished and fully_available:
+            if is_archived:
+                status = "ARCHIVED"
+            elif is_finished and fully_available:
                 status = "FINISHED"
             elif is_finished and not fully_available:
                 status = "DAMAGED"
@@ -84,8 +102,20 @@ def get_status(backupname):
                 status = "UPLOADING"
             else:
                 status = "PENDING"
+            if is_finished:
+                # Assume metadata is always uploaded when we are finished.
+                # As right now we report finished only if we have a .zip but no
+                # directory, and we delete the directory only after metadata
+                # upload is done, this is actually the case.
+                metadata = "FINISHED"
+            elif is_archived:
+                # Archived backups that are not finished are missing metadata.
+                metadata = "DAMAGED"
+            else:
+                # Otherwise, always report pending metadata.
+                metadata = "PENDING"
         else:
-            current_app.logger.error("Error %s getting Sia files: %s", status_code, str(sia_filedata))
+            current_app.logger.error("Error %s getting Sia files: %s", status_code, sia_filedata["message"])
             status_code = 503
             files = -1
             total_size = -1
@@ -109,11 +139,23 @@ def get_status(backupname):
     }, status_code
 
 
-def get_list():
+def get_list(include_old=False):
     backuplist = [re.sub(r'.*backup\.(\d+)(\.zip)?', r'\1', f)
                   for f in glob(join(METADATA_BASE, "backup.*"))
                     if (isfile(f) and f.endswith(".zip")) or
                        isdir(f) ]
+    if include_old:
+        # Actually look at upper level snapshots to figure out what old backups
+        # to add - and only add them if we have lower-level info as well.
+        for snap in glob(os.path.join(MINEBD_STORAGE_PATH, 'snapshots', '*', '*')):
+            snapname = os.path.basename(snap)
+            if (not snapname in backuplist
+                and (isfile(join(METADATA_BASE, "old.backup.%s.zip" % snapname))
+                     or isdir(join(METADATA_BASE, "old.backup.%s" % snapname)))):
+                backuplist.append(snapname)
+    # Converting to a set eliminates duplicates.
+    # Convert back to list for type consistency.
+    backuplist = list(set(backuplist))
     # Sort most-recent-first.
     backuplist.sort(reverse=True)
     return backuplist
@@ -142,13 +184,13 @@ def get_backups_to_restart():
             restartlist.append(snapname)
         # Break on the first finished backup, add previous one (oldest
         # unfinished) unless it's already in the list.
-        if is_finished or snapname == backuplist[-1]:
+        if is_finished:
             if prevsnap_exists and prevsnap and not prevsnap in restartlist:
                  restartlist.append(prevsnap)
             break
         # If we arrive at the last item of the list, add if it's unfinished.
         if snapname == backuplist[-1]:
-            if snapshot_exists and not snapname in restartlist:
+            if snapshot_exists and not is_finished and not snapname in restartlist:
                  restartlist.append(snapname)
             break
         # Remember snapname for next cycle.
@@ -159,21 +201,69 @@ def get_backups_to_restart():
 
 def get_files(backupname):
     backupfiles = None
+    backupfileinfo, is_finished, is_archived = get_fileinfo(backupname)
+    if backupfileinfo:
+        backupfiles = [fi["siapath"] for fi in backupfileinfo]
+    return backupfiles, is_finished
+
+
+def get_fileinfo(backupname):
+    backupfileinfo = None
     is_finished = None
+    is_archived = None
     zipname = join(METADATA_BASE, "backup.%s.zip" % backupname)
     dirname = join(METADATA_BASE, "backup.%s" % backupname)
-    if isfile(zipname):
-        backupfiles = []
-        is_finished = True
-        with ZipFile(zipname, 'r') as backupzip:
-            backupfiles = [re.sub(r'.*backup\.\d+\/(.*)\.sia$', r'\1', f)
-                           for f in backupzip.namelist()
-                             if f.endswith(".sia")]
-    elif isdir(dirname):
-        backupfiles = []
+    oldzipname = join(METADATA_BASE, "old.backup.%s.zip" % backupname)
+    olddirname = join(METADATA_BASE, "old.backup.%s" % backupname)
+    # For "current" backups, directory overrides zipfile (as metadata upload
+    # may have failed), for old/archived ones, do the reverse.
+    if isdir(dirname):
+        backupfileinfo = []
         is_finished = False
-        flist = join(dirname, "files")
-        if isfile(flist):
-            with open(flist) as f:
-                backupfiles = [line.rstrip('\n') for line in f]
-    return backupfiles, is_finished
+        is_archived = False
+        bfinfo_path = join(dirname, INFO_FILENAME)
+        if isfile(bfinfo_path):
+            with open(bfinfo_path) as json_file:
+                backupfileinfo = json.load(json_file)
+    elif isfile(zipname):
+        backupfileinfo = []
+        is_finished = True
+        is_archived = False
+        with ZipFile(zipname, 'r') as backupzip:
+            # The infofname_long is a workaround for misconstructed zips before July 4, 2017.
+            # TODO: remove this workaround again once we have some backup history with correct zips.
+            infofname_long = str(join(dirname, INFO_FILENAME))[1:]
+            if INFO_FILENAME in backupzip.namelist():
+                with backupzip.open(INFO_FILENAME) as json_file:
+                    backupfileinfo = json.load(json_file)
+            elif infofname_long in backupzip.namelist():
+                with backupzip.open(infofname_long) as json_file:
+                    backupfileinfo = json.load(json_file)
+    elif isfile(oldzipname):
+        backupfileinfo = []
+        is_finished = True
+        is_archived = True
+        with ZipFile(oldzipname, 'r') as backupzip:
+            # The infofname_long is a workaround for misconstructed zips before July 4, 2017.
+            # TODO: remove this workaround again once we have some backup history with correct zips.
+            infofname_long = str(join(dirname, INFO_FILENAME))[1:]
+            if INFO_FILENAME in backupzip.namelist():
+                with backupzip.open(INFO_FILENAME) as json_file:
+                    backupfileinfo = json.load(json_file)
+            elif infofname_long in backupzip.namelist():
+                with backupzip.open(infofname_long) as json_file:
+                    backupfileinfo = json.load(json_file)
+    elif isdir(olddirname):
+        backupfileinfo = []
+        is_finished = False
+        is_archived = True
+        bfinfo_path = join(olddirname, INFO_FILENAME)
+        if isfile(bfinfo_path):
+            with open(bfinfo_path) as json_file:
+                backupfileinfo = json.load(json_file)
+    return backupfileinfo, is_finished, is_archived
+
+
+def is_finished(backupname):
+    backupfileinfo, is_finished, is_archived = get_fileinfo(backupname)
+    return is_finished

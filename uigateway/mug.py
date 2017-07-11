@@ -4,7 +4,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from flask import Flask, request, jsonify, json
-from os.path import ismount
+from os.path import ismount, isfile
 from os import environ
 import re
 import logging
@@ -15,10 +15,12 @@ import backupinfo
 from connecttools import (set_origin, check_login, get_demo_url,
                           get_from_sia, post_to_sia, get_from_minebd,
                           get_from_backupservice)
+from siatools import H_PER_SC, SEC_PER_BLOCK
 
 
 # Define various constants.
 REST_PORT=5000
+CONFIG_JSON_PATH="/etc/minebox/mug_config.json"
 # TODO: The Rockstor certs are at a different location in production!
 SSL_CERT="/root/rockstor-core_vm/certs/rockstor.cert"
 SSL_KEY="/root/rockstor-core_vm/certs/rockstor.key"
@@ -26,9 +28,25 @@ MINEBD_STORAGE_PATH="/mnt/storage"
 UPLOADER_CMD=backupinfo.UPLOADER_CMD
 DEMOSIAC_CMD="/root/minebox-client-tools_vm/sia/demosiac.sh"
 MBKEY_CMD="/usr/lib/minebox/mbkey.sh"
-H_PER_SC=1e24 # hastings per siacoin
+
+config = {}
 
 app = Flask(__name__)
+
+
+@app.before_first_request
+def before_first_request():
+    global config
+    # Read configuration from JSON file.
+    if isfile(CONFIG_JSON_PATH):
+        with open(CONFIG_JSON_PATH) as json_file:
+            config = json.load(json_file)
+    # Set default values.
+    if not "allowed_cors_hosts" in config:
+        config["allowed_cors_hosts"] = []
+    # Copy those values to the Flask app that may be used in imports.
+    app.config["allowed_cors_hosts"] = config["allowed_cors_hosts"]
+
 
 @app.route("/")
 @set_origin()
@@ -48,7 +66,7 @@ def api_backup_list():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backuplist
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    metalist = backupinfo.get_list()
+    metalist = backupinfo.get_list(True)
     return jsonify(metalist), 200
 
 
@@ -63,7 +81,13 @@ def api_backup_status(backupname):
     elif not re.match(r'^\d+$', backupname):
         return jsonify(error="Illegal backup name."), 400
 
-    backupstatus, status_code = backupinfo.get_status(backupname)
+    if backupname:
+        backupstatus, status_code = backupinfo.get_status(backupname, True)
+    else:
+        status_code = 404
+    if status_code == 404:
+        # Use different error message with 404.
+        backupstatus = {"message": "No backup found with that name or its file info is missing."}
 
     return jsonify(backupstatus), status_code
 
@@ -74,11 +98,11 @@ def api_backup_all_status():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backupallstatus
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    backuplist = backupinfo.get_list()
+    backuplist = backupinfo.get_list(True)
 
     statuslist = []
     for backupname in backuplist:
-        backupstatus, status_code = backupinfo.get_status(backupname)
+        backupstatus, status_code = backupinfo.get_status(backupname, True)
         statuslist.append(backupstatus)
 
     return jsonify(statuslist), 200
@@ -189,6 +213,28 @@ def api_contracts():
     return jsonify(contractlist), 200
 
 
+@app.route("/transactions", methods=['GET'])
+@set_origin()
+def api_transactions():
+    # Doc: *** not documented yet***
+    if not check_login():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+    consdata, cons_status_code = get_from_sia('consensus')
+    if cons_status_code == 200:
+        consensus_height = consdata["height"]
+    else:
+        return jsonify(consdata), cons_status_code
+    blocks_per_day = 24 * 3600 / SEC_PER_BLOCK
+    offset = int(request.args.get('offsetdays') or 0) * blocks_per_day
+    endheight = int(consensus_height - offset)
+    startheight = int(endheight - blocks_per_day)
+    siadata, sia_status_code = get_from_sia("wallet/transactions?startheight=%s&endheight=%s" % (startheight, endheight))
+    if sia_status_code >= 400:
+        return jsonify(siadata), sia_status_code
+    # For now, just return the info from Sia directly.
+    return jsonify(siadata), sia_status_code
+
+
 @app.route("/status", methods=['GET'])
 @set_origin()
 def api_status():
@@ -280,22 +326,41 @@ def api_wallet_status():
       "siafundbalance": siadata["siafundbalance"],
       "siafundbalance_sc": int(siadata["siafundbalance"]) / H_PER_SC,
     }
-    # For now, just return the info from Sia directly.
     return jsonify(walletdata), 200
 
 
-@app.route("/wallet/unlock", methods=['POST'])
+@app.route("/wallet/address", methods=['GET'])
 @set_origin()
-def api_wallet_unlock():
+def api_wallet_address():
     # Doc: *** not documented yet***
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    # Make sure we only hand parameters to siad that it supports.
-    pwd = request.form["encryptionpassword"]
-    siadata, status_code = post_to_sia('wallet/unlock', {"encryptionpassword": pwd})
-    if status_code == 204:
-        # This (No Content) should be the default returned on success.
-        return jsonify(message="Wallet unlocked."), 200
+    siadata, sia_status_code = get_from_sia('wallet/address')
+    # Just return the info from Sia directly as it's either an error
+    # or the address in a field called "address", so pretty straight forward.
+    return jsonify(siadata), sia_status_code
+
+
+@app.route("/wallet/send", methods=['POST'])
+@set_origin()
+def api_wallet_send():
+    # Doc: *** not documented yet***
+    if not check_login():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+    # The sia daemon takes the amount in hastings. Should we also/instead
+    # support an amount specified in SC?
+    amount = request.form["amount"]
+    destination = request.form["destination"]
+    siadata, status_code = post_to_sia('wallet/siacoin',
+                                       {"amount": amount,
+                                        "destination": destination})
+    if status_code == 200:
+        # siadata["transactionids"] is a list of IDs of the transactions that
+        # were created when sending the coins. The last transaction contains
+        # the output headed to the 'destination'.
+        return jsonify(transactionids=siadata["transactionids"],
+                       message="%s SC successfully sent to %s."
+                               % (amount / H_PER_SC, destination)), 200
     else:
         return jsonify(siadata), status_code
 

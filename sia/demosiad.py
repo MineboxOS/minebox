@@ -46,19 +46,12 @@ def api_renter_files():
     if md_status_code >= 400:
         return jsonify(mdata), md_status_code
     files = []
-    for line in mdata["message"].splitlines():
-        usize, unit, fpath = line.split()
+    for fdata in mdata:
         # Do not report files that do not match the .dat file pattern (e.g. backup zips).
-        if re.match(r'^minebox_.+\.dat$', fpath):
-            # Right now, the only unit we get from metadata service is MB.
-            if unit == "MB":
-                fsize = int(usize) * 2**20
-            else:
-                fsize = int(usize)
-
+        if re.match(r'^minebox_.+\.dat$', fdata["name"]):
             files.append({
-              "siapath": fpath,
-              "filesize": fsize,
+              "siapath": fdata["name"],
+              "filesize": fdata["size"],
               "available": True,
               "renewing": True,
               "redundancy": 1,

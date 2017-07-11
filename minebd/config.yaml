@@ -12,6 +12,7 @@ logging:
     io.minebox: DEBUG
     io.minebox.nbd.NbdStatsReporter: INFO
     org.bitcoin.Secp256k1Context: ERROR
+#    io.minebox.nbd.TransmissionPhase: INFO
 
 #netty-spectific settings of minebd
 minebd:
