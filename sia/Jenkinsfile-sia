@@ -27,7 +27,7 @@ node ("rockstor") {
       }
    }
    stage('Download Sia') {
-       sh """curl -L -O https://github.com/NebulousLabs/Sia/releases/download/v$SIA_VERSION/Sia-$vSIA_VERSION-linux-amd64.zip
+       sh """curl -L -O https://github.com/NebulousLabs/Sia/releases/download/v$SIA_VERSION/Sia-v$SIA_VERSION-linux-amd64.zip
           """
    }
    stage('Check Build Environment') {
