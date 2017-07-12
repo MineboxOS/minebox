@@ -33,7 +33,7 @@ node ("rockstor") {
        sh """mkdir -p SOURCES
              mkdir -p BUILD
              mkdir -p RPMS
-             rpmbuild -bb uigateway/minebox-ui.spec
+             rpmbuild -bb ui/minebox-ui.spec
           """
    }
    stage('Store RPM in archive') {
