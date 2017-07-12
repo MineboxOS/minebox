@@ -40,7 +40,7 @@ node ("rockstor") {
              mkdir -p BUILD
              mkdir -p RPMS
              unzip -o Sia-*.zip
-             /usr/bin/cp -a Sia-*/ BUILD/
+             /usr/bin/cp -a Sia-*/* BUILD/
              rpmbuild -bb sia/minebox-sia.spec
           """
    }
