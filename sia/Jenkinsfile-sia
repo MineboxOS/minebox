@@ -1,0 +1,45 @@
+#!groovy
+node ("rockstor") {
+   properties([parameters([string(defaultValue: 'master', description: 'Branch of Sia to build', name: 'SIA_BRANCH')]), [$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: false], pipelineTriggers([])])
+
+
+   currentBuild.displayName = "#" + BUILD_ID + " (" + SIA_BRANCH + ")"
+   def mvnHome
+   stage('Checkout') { // for display purposes
+      dir (WORKSPACE) {
+        deleteDir() // clean build
+      }
+      retry (3) {
+        checkout( [ $class: 'GitSCM'
+                  , branches: [[name: params.SIA_BRANCH]]
+                  , doGenerateSubmoduleConfigurations: false
+                  , extensions: []
+                  , submoduleCfg: []
+                  , userRemoteConfigs: [[credentialsId: '0c80fc94-d6f5-489b-a850-30e0deb2273f', url: 'git@bitbucket.org:mineboxgmbh/minebox-client-tools.git']]
+                  ])
+      }
+   }
+   stage('Download Sia') {
+       sh """siaver="v1.2.2"
+             siafile="Sia-$siaver-linux-amd64.zip"
+             curl -L -O https://github.com/NebulousLabs/Sia/releases/download/$siaver/$siafile
+          """
+   }
+   stage('Check Build Environment') {
+       sh """yum install -y rpmdevtools
+             rpmdev-setuptree
+          """
+   }
+   stage('Build RPM') {
+       sh """mkdir -p SOURCES
+             mkdir -p BUILD
+             mkdir -p RPMS
+             unzip -o Sia-*.zip
+             /usr/bin/cp -a Sia-*/ BUILD/
+             rpmbuild -bb sia/minebox-sia.spec
+          """
+   }
+   stage('Store RPM in archive') {
+      archive 'RPMS/x86_64/*.rpm'
+   }
+}
