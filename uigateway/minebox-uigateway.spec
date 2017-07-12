@@ -6,12 +6,12 @@ Name: minebox-uigateway
 
 Version: %(git describe --tags --match 'mug*'|grep -oP "(?<=mug_v).")
 Release: %(git describe --tags --match 'mug*'|grep -oP "(?<=mug_v..).*" | tr '-' '_')%{?dist}
-Summary: Our core module
+Summary: Minebox UI Gateway (MUG)
 License: Proprietary
 Requires: minebox-virtualenv
 
 %description
-The Minebox UI Gateway is a python service that allows the UI to access Minebox system functionality.
+The Minebox UI Gateway (MUG) is a python service that allows the UI to access Minebox system functionality.
 
 %define _topdir %(echo \$PWD)/
 

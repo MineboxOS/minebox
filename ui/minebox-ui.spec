@@ -6,7 +6,7 @@ Name: minebox-ui
 
 Version: %(git describe --tags --match 'ui*'|grep -oP "(?<=ui_v).")
 Release: %(git describe --tags --match 'ui*'|grep -oP "(?<=ui_v..).*" | tr '-' '_')%{?dist}
-Summary: Our core module
+Summary: The Minebox UI
 License: Proprietary
 Requires: minebox-virtualenv
 

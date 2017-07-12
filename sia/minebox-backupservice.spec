@@ -6,7 +6,7 @@ Name: minebox-backupservice
 
 Version: %(git describe --tags --match 'bkupsvc*'|grep -oP "(?<=bkupsvc_v).")
 Release: %(git describe --tags --match 'bkupsvc*'|grep -oP "(?<=bkupsvc_v..).*" | tr '-' '_')%{?dist}
-Summary: Our core module
+Summary: Minebox Backup Service
 License: Proprietary
 Requires: minebox-virtualenv minebox-uigateway
 
