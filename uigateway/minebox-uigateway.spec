@@ -1,4 +1,4 @@
-Name: MineboxMUG
+Name: minebox-uigateway
 #read Version from git tag
 # we excpect a tag "mug_vM.m.p"
 
@@ -8,10 +8,10 @@ Version: %(git describe --tags --match 'mug*'|grep -oP "(?<=mug_v).")
 Release: %(git describe --tags --match 'mug*'|grep -oP "(?<=mug_v..).*" | tr '-' '_')%{?dist}
 Summary: Our core module
 License: Proprietary
-Requires: python-flask python-requests pyOpenSSL
+Requires: minebox-virtualenv
 
 %description
-MineboxMUG is a python service that allows the UI to access Minebox system functionality.
+The Minebox UI Gateway is a python service that allows the UI to access Minebox system functionality.
 
 %define _topdir %(echo \$PWD)/
 
