@@ -1,7 +1,9 @@
 #!groovy
 node ("rockstor") {
-   properties([parameters([string(defaultValue: 'master', description: 'Branch of Sia to build', name: 'SIA_BRANCH')]), [$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: false], pipelineTriggers([])],
-              [parameters([string(defaultValue: '1.2.2', description: 'Version of Sia to build', name: 'SIA_VERSION')]), [$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: false], pipelineTriggers([])])
+   properties([parameters([string(defaultValue: 'master', description: 'Branch of Sia to build', name: 'SIA_BRANCH')],
+                          [string(defaultValue: '1.2.2', description: 'Version of Sia to build', name: 'SIA_VERSION')]),
+               [$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: false],
+               pipelineTriggers([])])
 
 
    currentBuild.displayName = "#" + BUILD_ID + " (" + SIA_BRANCH + ")"
