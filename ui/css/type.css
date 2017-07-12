@@ -3,7 +3,7 @@
 /* font style, family, weight and line-heights */
 body {
   font-family: 'Heebo', Helvetica, Sans-serif;
-  font-size: 14px;
+  font-size: 12px;
   line-height: 28px;
   font-weight: 300;
   text-align: justify;
@@ -43,8 +43,8 @@ h6 {
 p, span, label, li,
 input, select, textarea,
 button {
-  font-size: 14px;
-  line-height: 28px;
+  font-size: 12px;
+  line-height: 24px;
   font-weight: 300;
 }
 
