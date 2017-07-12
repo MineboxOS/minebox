@@ -17,12 +17,12 @@ The Minebox Backup Service drives the actual generation and upload of backups as
 
 # Packaging
 %install
-install -D --mode 755 "%{_topdir}uigateway/backup-service.sh" "$RPM_BUILD_ROOT/usr/lib/minebox/backup-service.sh"
-install -D "%{_topdir}uigateway/systemd/backup-service.service" "$RPM_BUILD_ROOT/etc/systemd/system/backup-service.service"
+install -D --mode 755 "%{_topdir}sia/backup-service.sh" "$RPM_BUILD_ROOT/usr/lib/minebox/backup-service.sh"
+install -D "%{_topdir}sia/systemd/backup-service.service" "$RPM_BUILD_ROOT/etc/systemd/system/backup-service.service"
 install -D "%{_topdir}sia/cron.d/backup-service" "$RPM_BUILD_ROOT/etc/cron.d/backup-service"
-install -D --mode 755 "%{_topdir}uigateway/backup-service.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/backup-service.py"
-install -D "%{_topdir}uigateway/backuptools.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/backuptools.py"
-install -D "%{_topdir}uigateway/siatools.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/siatools.py"
+install -D --mode 755 "%{_topdir}sia/backup-service.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/backup-service.py"
+install -D "%{_topdir}sia/backuptools.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/backuptools.py"
+install -D "%{_topdir}sia/siatools.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/siatools.py"
 
 # Installation script
 %pre
