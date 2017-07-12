@@ -1,6 +1,10 @@
 #!groovy
 node ("rockstor") {
-   properties([parameters([string(defaultValue: 'master', description: 'Branch of MUG to build', name: 'MUG_BRANCH')]), [$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: false], pipelineTriggers([])])
+   properties([ disableConcurrentBuilds()
+              , parameters([string(defaultValue: 'master', description: 'Branch of MUG to build', name: 'MUG_BRANCH')])
+              , [$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: false]
+              , pipelineTriggers([])
+              ])
 
 
    currentBuild.displayName = "#" + BUILD_ID + " (" + MUG_BRANCH + ")"
