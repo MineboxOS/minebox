@@ -15,6 +15,9 @@ SIA_CONFIG_JSON="/etc/minebox/sia_config.json"
 SIA_DIR="/mnt/lower1/sia"
 HOST_DIR_BASE_MASK="/mnt/lower*"
 HOST_DIR_NAME="hostedfiles"
+MINEBD_STORAGE_PATH="/mnt/storage"
+UPPER_SPACE_MIN=50*(2**30)
+UPPER_SPACE_TARGET=100*(2**30)
 
 def check_sia_sync():
     # Check if sia is running and in sync before doing other sia actions.
@@ -92,13 +95,7 @@ def set_up_hosting():
         hostpath = path.join(basepath, HOST_DIR_NAME)
         if not path.isdir(hostpath):
             subprocess.call(['/usr/sbin/btrfs', 'subvolume', 'create', hostpath])
-        freespace = None
-        outlines = subprocess.check_output(['/usr/sbin/btrfs', 'filesystem', 'df', '-b', hostpath]).splitlines()
-        for line in outlines:
-            current_app.logger.info(line)
-            matches = re.match(r"^Data, single: total=([0-9]+), used=([0-9]+)$", line)
-            if matches:
-                freespace = int(matches.group(1)) - int(matches.group(2))
+        freespace = _get_btrfs_free_space(hostpath)
         if freespace:
             share_size = freespace * settings["minebox_sharing"]["shared_space_ratio"]
         else:
@@ -129,6 +126,30 @@ def restart_sia():
         current_app.logger.error("Restarting sia failed with return code %s." % retcode)
         return False
     # If the return code is 0, we get here and return True (success).
+    return True
+
+def rebalance_diskspace():
+    # MineBD reports a large block device size but the filesystem is formatted
+    # with much less.
+    upper_freespace = _get_btrfs_free_space(MINEBD_STORAGE_PATH)
+    if upper_freespace < UPPER_SPACE_MIN:
+        current_app.logger.info("Less than 50MB free on upper, try to rebalance disk space.")
+        # We should enlarge upper so that we have at least UPPER_SPACE_TARGET free.
+        host_freespace = 0
+        for basepath in glob(HOST_DIR_BASE_MASK):
+            hostpath = path.join(basepath, HOST_DIR_NAME)
+            if not path.isdir(hostpath):
+                subprocess.call(['/usr/sbin/btrfs', 'subvolume', 'create', hostpath])
+            freespace = _get_btrfs_free_space(hostpath)
+            if freespace:
+                host_freespace += freespace
+        if host_freespace > UPPER_SPACE_TARGET - UPPER_SPACE_MIN:
+            # We have enough free space that we can enlarge upper.
+            pass
+        else:
+            # Try to reduce amount allocated for sia (by lowering shared space)
+            # So that we can enlarge upper.
+            pass
     return True
 
 def get_sia_config():
@@ -185,3 +206,13 @@ def get_sia_config():
               },
             }
     return get_sia_config.settings
+
+def _get_btrfs_free_space(diskpath):
+    freespace = None
+    outlines = subprocess.check_output(['/usr/sbin/btrfs', 'filesystem', 'df', '-b', diskpath]).splitlines()
+    for line in outlines:
+        current_app.logger.info(line)
+        matches = re.match(r"^Data, single: total=([0-9]+), used=([0-9]+)$", line)
+        if matches:
+            freespace = int(matches.group(1)) - int(matches.group(2))
+    return freespace

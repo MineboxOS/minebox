@@ -122,6 +122,9 @@ def api_ping():
                 # This would return True for success but already logs errors.
                 restart_sia()
 
+    # See if we need to rebalance the disk space.
+    rebalance_diskspace()
+
     return "", 204
 
 
