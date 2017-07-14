@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+# The Minebox UI Gateway (MUG)
+# API Docs: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md
+
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -51,6 +55,7 @@ def before_first_request():
 @app.route("/")
 @set_origin()
 def api_root():
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get
     links = []
     for rule in app.url_map.iter_rules():
         # Flask has a default route for serving static files, let's exclude it.
@@ -63,7 +68,7 @@ def api_root():
 @app.route("/backup/list", methods=['GET'])
 @set_origin()
 def api_backup_list():
-    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backuplist
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-backuplist
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     metalist = backupinfo.get_list(True)
@@ -73,7 +78,7 @@ def api_backup_list():
 @app.route("/backup/<backupname>/status", methods=['GET'])
 @set_origin()
 def api_backup_status(backupname):
-    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backup1493807150status
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-backup1493807150status
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     if backupname == "last":
@@ -95,7 +100,7 @@ def api_backup_status(backupname):
 @app.route("/backup/all/status", methods=['GET'])
 @set_origin()
 def api_backup_all_status():
-    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backupallstatus
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-backupallstatus
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     backuplist = backupinfo.get_list(True)
@@ -121,7 +126,7 @@ def api_backup_start():
 @app.route("/key/status", methods=['GET'])
 @set_origin()
 def api_key_status():
-    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-keystatus
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-keystatus
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     return jsonify(message="Not yet implemented."), 501
@@ -130,7 +135,7 @@ def api_key_status():
 @app.route("/key/generate", methods=['GET'])
 @set_origin()
 def api_key_generate():
-    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-keygenerate
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-keygenerate
     mbdata, mb_status_code = get_from_minebd('keys/asJson')
     # For the moment, just blindly hand over the result from MineBD.
     return jsonify(mbdata), mb_status_code
@@ -139,7 +144,7 @@ def api_key_generate():
 @app.route("/key/verify", methods=['POST'])
 @set_origin()
 def api_key_verify():
-    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-post-keyverify
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-post-keyverify
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     return jsonify(message="Not yet implemented."), 501
@@ -148,7 +153,7 @@ def api_key_verify():
 @app.route("/key", methods=['PUT'])
 @set_origin()
 def api_key_put():
-    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-put-key
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-put-key
     mbdata, mb_status_code = get_from_minebd('serialnumber')
     if mb_status_code == 200:
         return jsonify(message="File system is already encrypted, cannot set key."), 400
@@ -169,7 +174,7 @@ def api_key_put():
 @app.route("/key", methods=['POST'])
 @set_origin()
 def api_key_post():
-    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-post-key
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-post-key
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     return jsonify(message="Not yet implemented."), 501

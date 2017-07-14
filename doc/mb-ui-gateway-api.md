@@ -1,34 +1,44 @@
-# UI / UI-Rest-Api Draft
+# Minebox UI Gateway (MUG)
 
-The UI layer will be implemented consists of three distinct frontends that will all work with roughly the same paradigm:
-A set of static html/js/css files that access a single service (MB-UI-GW) via Rest Api. The MB-UI-GW service seldomly processes the request itself, but uses other services to do the job.
+The static html/js/css UI layer accesses underlying system functionality via the
+Minebox UI Gateway (MUG) via a RESTful API.
+The MUG hands off most of the tasks to other services (often via local REST
+calls) internally, though some assembly of information and conversions are done
+in the MUG. Any UI interaction with Minebox-specific features goes through the
+MUG.
 
-TBD: The MB-UI-GW needs to know if the user is authenticated via the Rockstor interface possibly via the cookie that is already set after login
+The MUG is verifying the user authentication/login with Rockstor and therefore
+needs to see the cookies of Rockstor's UI. The MUG reuses Rockstor's TLS
+certificates and exposes CORS headers so that the UI can access it from the
+browser.
 
 
- * The setup UI after the first boot
-   * *must* Key management (create new / input existing / check data / metadata)
-   * *must* Restore status
- * The customized Rockstor UI
-   * *later* dashboard integration 
-   * *later* adding/removing disks at runtime
- * The minebox-only interface
-   * *optional* (geek factor only) show contracts (TBD if we really want to expose this)
-   * *optional* wallet functions (send/receive/balance)
-   * *must* list backups 
-   * *must* upload status per backup (needs sila file upload status under the hood)
+Implemented features:
 
-fyi: we differentiate the term **snapshot** and **backup**. 
+* Key management functions for setup UI
+* Status of backups
+* Sytem status
+* Sia status: consensus, contracts, trancactions
+* Wallet: balance(s), receive address, send coins
 
- **snapshot** happens in multiple subvolumes on the **upper**
- 
-**backup** contains a group up snapshots of the **upper** and is built with the help of snapshots of **lower**  
+Planned features:
 
- 
-therefore we can already define a list of calls:
+* *must* Restore status
+* *later* Rockstor dashboard integration
+* *later* adding/removing disks at runtime (via Rockstor UI?)
 
-##Api-Calls
-Api calls should be kept simple.
+Note we differentiate the terms **snapshot** and **backup**:
+
+*  **snapshots** of (single) subvolumes are done on **upper** and esp. of the
+   data subvolume on **lower**.
+*  A **backup** contains a group up snapshots of the **upper** and is built with
+   the help of a data snapshot in **lower** but is a consistent set of data that
+   is being uploaded to the Sia network.
+
+
+## REST API
+### GET /
+Returns an overview list of supported REST endpoints.
 
 ###GET /backup/list
 Returns a list of snapshots which have been made by the system
