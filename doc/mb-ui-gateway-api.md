@@ -101,48 +101,82 @@ status outputs).
 Trigger a backup run. Takes no input fields, and just gives a "message" field in
 the JSON on success.
 
-###GET /key/status
-returns the current key status
+### GET /key/status
+
+Returns the current key status. `Not implemented yet!`
+
 ```json
 {
-"pubkey": "0123456789ABC", //ec pubkey/address or checksum
-"metadata": "BACKED_UP|NOT_FOUND",
-""
+  "pubkey": "0123456789ABC", //ec pubkey/address or checksum
+  "metadata": "BACKED_UP|NOT_FOUND",
+  ""
 }
 ```
-###GET /key/generate
-just randomly generates a set of keys
+
+### GET /key/generate
+
+Just randomly generates a key, transcribed into a set of 12 words.
+
 ```json
 [
   "randomly",
   "generated",
-  "list", "of", "words"
+  "list", "of", "twelve", "words"
 ]
 ```
-###POST /key/verify
-verifies a key. debatable if its worthwhile to do it via client-side computed hash?
+
+### POST /key/verify
+
+Verifies a key. `Not implemented yet!`  
+Debatable if its worthwhile to do it via client-side computed hash?
+
+Input:
+
 ```json
 [
   "randomly",
   "generated",
-  "list", "of", "words"
+  "list", "of", "twelve", "words"
 ]
 ```
-returns
+
+Output:
+
 ```json
-{"keystatus": "INVALID|MATCH|NO_MATCH"}
+{
+  "keystatus": "INVALID|MATCH|NO_MATCH"
+}
 ```
- 
-###PUT /key
-body like /key/generate
-returns the acceptance status depending on:
- * was there already a key
- * was there metadata
- * could the metadata be retrieved
+
+### PUT /key
+
+Sets a new key. Only works on a system that has no key set yet.  
+If the key was used previously and backups exist in the Minebox/Sia network, a
+restore of data will be started automatically (if there is no error receiving
+the metadata). Otherwise, a new storage will be set up.  
+If the local system already has a key, this call will return an error 400.  
+`keystatus reply not implemented yet!`
+
+Input:
+
 ```json
-{"keystatus": "FRESH|RESTORING|ERROR_EXISTING|ERROR_METADATA"}
+[
+  "randomly",
+  "generated",
+  "list", "of", "twelve", "words"
+]
+
+Output:
+
+```json
+{
+  "message": "a string describing the status",
+  "keystatus": "FRESH|RESTORING|ERROR_EXISTING|ERROR_METADATA"
+}
 ```
- 
- 
-###POST /key 
-TBD later, initiates a complicated key-change procedure, needs the original key/root key to auth
+
+### POST /key
+
+TBD later, initiates a complicated key-change procedure, needs the original
+key/root key to auth. `Not implemented yet!`
+
