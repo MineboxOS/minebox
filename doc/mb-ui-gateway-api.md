@@ -101,17 +101,74 @@ status outputs).
 Trigger a backup run. Takes no input fields, and just gives a "message" field in
 the JSON on success.
 
-### GET /key/status
+### GET /consensus
 
-Returns the current key status. `Not implemented yet!`
+Return Sia consensus status. Without `synched` being `true`, a lot of Sia
+activities do not work.  
+Also see [Sia API /consensus documentation](https://github.com/NebulousLabs/Sia/blob/master/doc/API.md#consensus-get).
 
 ```json
 {
-  "pubkey": "0123456789ABC", //ec pubkey/address or checksum
-  "metadata": "BACKED_UP|NOT_FOUND",
-  ""
+  "synced": true,
+  "height": 62248,
+  "currentblock": "00000000000008a84884ba827bdc868a17ba9c14011de33ff763bd95779a9cf1",
+  "target": [0,0,0,0,0,0,11,48,125,79,116,89,136,74,42,27,5,14,10,31,23,53,226,238,202,219,5,204,38,32,59,165],
+  "difficulty": "1234"
 }
 ```
+
+### GET /contracts
+
+Return a list of active Sia renter contracts.
+
+```json
+[
+  {
+    "id": "1234567890abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "host": "12.34.56.78:9",
+    "funds_remaining_sc": 10.4562,
+    "funds_spent_sc": 0.01234,
+    "fees_spent_sc": 5.2345,
+    "data_size": 1000000000,
+    "height_end": 50000
+  },
+  ...
+}
+```
+
+### PUT /key
+
+Sets a new key. Only works on a system that has no key set yet.  
+This can be called *without a Rockstor login*.  
+If the key was used previously and backups exist in the Minebox/Sia network, a
+restore of data will be started automatically (if there is no error receiving
+the metadata). Otherwise, a new storage will be set up.  
+If the local system already has a key, this call will return an error 400.  
+`keystatus reply not implemented yet!`
+
+Input:
+
+```json
+[
+  "randomly",
+  "generated",
+  "list", "of", "twelve", "words"
+]
+```
+
+Output:
+
+```json
+{
+  "message": "a string describing the status",
+  "keystatus": "FRESH|RESTORING|ERROR_EXISTING|ERROR_METADATA"
+}
+```
+
+### POST /key
+
+TBD later, initiates a complicated key-change procedure, needs the original
+key/root key to auth. `Not implemented yet!`
 
 ### GET /key/generate
 
@@ -123,6 +180,18 @@ Just randomly generates a key, transcribed into a set of 12 words.
   "generated",
   "list", "of", "twelve", "words"
 ]
+```
+
+### GET /key/status
+
+Returns the current key status. `Not implemented yet!`
+
+```json
+{
+  "pubkey": "0123456789ABC", //ec pubkey/address or checksum
+  "metadata": "BACKED_UP|NOT_FOUND",
+  ""
+}
 ```
 
 ### POST /key/verify
@@ -148,35 +217,59 @@ Output:
 }
 ```
 
-### PUT /key
+### GET /status
 
-Sets a new key. Only works on a system that has no key set yet.  
-If the key was used previously and backups exist in the Minebox/Sia network, a
-restore of data will be started automatically (if there is no error receiving
-the metadata). Otherwise, a new storage will be set up.  
-If the local system already has a key, this call will return an error 400.  
-`keystatus reply not implemented yet!`
+Return the current status of the Minebox system, showing the most important
+indicators.  
+If the Minebox setup is fully done and the box is active,
+`minebd_storage_mounted` and `users_created` are both `true`. To be fully
+usable, `wallet_encrypted` (setting up the wallet) and `wallet_unlocked` need to
+be `true` as well, which the Minebox should all do automatically.  
+If `minebd_storage_mounted` is `true` and `users_created` is `false`, the
+Minebox storage was set up, but we did not create any users in Rockstor yet.  
+If `minebd_running` or `sia_daemon_running` is `false`, we have an internal
+issue with the box, we never should run into this. A reboot may help, but
+otherwise, Minebox support is needed.  
+If `minebd_encrypted` is `true` but `minebd_storage_mounted` is not, MineBD (or
+btrfs formatting etc.) is probably still in the process of setting up the
+storage, but the key is set.  
+If `minebd_encrypted` is `false`, the Minebox has not be set up at all yet.  
+The *wallet* has a confirmed balance (in siacoins) and an uncomfirmed delta of
+transactions that have been messaged to the network but not confirmed in a Sia
+block yet (like a contract in the real world that has been agreed between the
+parties but not signed yet).  
+Some fields (like wallet contents) will not be reported (i.e. contain a `null`
+value) when there is no `user` `logged_in` via the Rockstor UI, but the base
+system status `true`/`false` fields will also be available in this case.
 
-Input:
-
-```json
-[
-  "randomly",
-  "generated",
-  "list", "of", "twelve", "words"
-]
-
-Output:
 
 ```json
 {
-  "message": "a string describing the status",
-  "keystatus": "FRESH|RESTORING|ERROR_EXISTING|ERROR_METADATA"
+  "logged_in": true,
+  "user": "myuser",
+  "minebd_running": true,
+  "minebd_encrypted": true,
+  "minebd_storage_mounted": true,
+  "minebd_serialnumber": "1234567890abcdef...",
+  "users_created": true,
+  "backup_type": "sia",
+  "sia_daemon_running": true,
+  "consensus_height": 62248,
+  "consensus_synced": true,
+  "wallet_unlocked": true,
+  "wallet_encrypted": true,
+  "wallet_confirmed_balance_sc": 2154.5678,
+  "wallet_unconfirmed_delta_sc": -78.987
 }
 ```
 
-### POST /key
+### GET /transactions
 
-TBD later, initiates a complicated key-change procedure, needs the original
-key/root key to auth. `Not implemented yet!`
+Return (roughly) a day of transactions on the Sia wallet. By default, this takes
+the last day, with an `offsetdays` parameter, you can get earlier days.
+
+The return format is TBD, right now the
+[Sia /wallet/transactions](https://github.com/NebulousLabs/Sia/blob/master/doc/API.md#wallettransactions-get)
+format is returned directly, but that should be simplified in the future.
+
 
