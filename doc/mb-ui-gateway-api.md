@@ -12,6 +12,9 @@ needs to see the cookies of Rockstor's UI. The MUG reuses Rockstor's TLS
 certificates and exposes CORS headers so that the UI can access it from the
 browser.
 
+All endpoints give JSON output replies and the usual standard of 2xx status
+codes on success, 4xx on input error, 5xx on server error, and a "message" field
+in the output JSON on all errors.
 
 Implemented features:
 
@@ -40,33 +43,60 @@ Note we differentiate the terms **snapshot** and **backup**:
 ### GET /
 Returns an overview list of supported REST endpoints.
 
-###GET /backup/list
-Returns a list of snapshots which have been made by the system
+### GET /backup/list
+Returns a newest-first list of backups which have been made by the system.
+
 ```json
 [
   "1493807150",
-  "1493807151",
-  "1493807152"
+  "1493682341",
+  "1493472128"
 ]
 ```
 
+### GET /backup/1493807150/status
 
-###GET /backup/1493807150/status
-returns the status of a single snapshot
+Returns the status of a single backup. 
+The time_snaphost is the time the backup has been started (by making the
+snapshots). With current conventions, that time (in string form) also doubles as
+the backup name, butbackup naming conventions could change, so use the
+time_snapshot field when you need a time.
 
 ```json
 {
-  "progress": 44.3,
+  "name": "1493807150",
+  "time_snapshot": 1493807150,
   "status": "UPLOADING|PENDING|FINISHED|DAMAGED|ERROR",
   "metadata": "UPLOADING|PENDING|FINISHED|ERROR",
-  "numFiles": 23
+  "numFiles": 23,
+  "size": 403678324,
+  "progress": 44.3,
+  "relative_size": 21487245,
+  "relative_progress": 87.5
 }
 ```
-###GET /backup/all/status
-bulk operation for listing all statuses
+
+### GET /backup/latest/status
+
+Returns the status of the most recent backup (same output as above single-backup
+status - actually implemented as a special case of that one).
+
+### GET /backup/all/status
+
+Bulk operation for listing all statuses (newest-first list of signle-backup
+status outputs).
+
+```json
+[
+  {"name": "1493807150", ...},
+  ...
+]
 ```
-[{same as status but a list of items},...]
-```
+
+### POST /backup/start
+
+Trigger a backup run. Takes no input fields, and just gives a "message" field in
+the JSON on success.
 
 ###GET /key/status
 returns the current key status

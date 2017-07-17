@@ -79,9 +79,10 @@ def api_backup_list():
 @set_origin()
 def api_backup_status(backupname):
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-backup1493807150status
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-backuplateststatus
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    if backupname == "last":
+    if backupname == "latest":
         backupname = backupinfo.get_latest()
     elif not re.match(r'^\d+$', backupname):
         return jsonify(error="Illegal backup name."), 400
@@ -116,7 +117,7 @@ def api_backup_all_status():
 @app.route("/backup/start", methods=['POST'])
 @set_origin()
 def api_backup_start():
-    # Doc: *** TBD - not documented yet***
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-post-backupstart
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     bsdata, bs_status_code = get_from_backupservice('trigger')
