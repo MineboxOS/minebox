@@ -133,7 +133,7 @@ Return a list of active Sia renter contracts.
     "height_end": 50000
   },
   ...
-}
+]
 ```
 
 ### PUT /key
@@ -272,4 +272,58 @@ The return format is TBD, right now the
 [Sia /wallet/transactions](https://github.com/NebulousLabs/Sia/blob/master/doc/API.md#wallettransactions-get)
 format is returned directly, but that should be simplified in the future.
 
+### GET /wallet/address
 
+Generate a new address for the wallet, usually to receive currency into. Also
+see [ Sia API /wallet/address documentation](https://github.com/NebulousLabs/Sia/blob/master/doc/API.md#walletaddress-get),
+which this exactly forwards to.
+
+```json
+{
+  "address": "1234567890abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789ab"
+}
+```
+
+### POST /wallet/send
+
+Sends siacoins to an address. Takes an `amount` in hastings (as a string to not
+run afoul of JavaScript's limits of numerical values) and an `address` to
+receive the siacoins, both as urlencoded form values.
+
+Also see [ Sia API /wallet/siacoins documentation](https://github.com/NebulousLabs/Sia/blob/master/doc/API.md#walletsiacoins-post),
+which is used behind the scenes.
+
+
+```json
+{
+  "transactionids": [
+    "1234567890abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  ]
+}
+```
+
+### GET /wallet/status
+
+Return the status of the Sia wallet. For the currency values, both an
+unpostfixed entry with a string of a hastings value is reported and a numeric
+value with a `_sc` postfix containing a siacoin amount.
+
+
+```json
+{
+  "encrypted": true,
+  "unlocked": true,
+  "confirmedsiacoinbalance": 2154567800000000000000000000,
+  "confirmedsiacoinbalance_sc": 2154.5678,
+  "unconfirmedincomingsiacoins": 1345000000000000000000000,
+  "unconfirmedincomingsiacoins_sc": 1.345,
+  "unconfirmedoutgoingsiacoins": 77642000000000000000000000,
+  "unconfirmedoutgoingsiacoins_sc": 77.642,
+  "siacoinclaimbalance": 0,
+  "siacoinclaimbalance_sc": 0,
+  "siafundbalance": 0,
+  "siafundbalance_sc": 0,
+}
+```
