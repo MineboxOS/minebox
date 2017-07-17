@@ -56,6 +56,8 @@ textarea[disabled], button[disabled], .button[disabled] {
   cursor: not-allowed !important;
 }
 textarea {
+  line-height: 24px;
+  padding: 6px 12px;
   min-height: 180px;
 }
 input[type="checkbox"] {
