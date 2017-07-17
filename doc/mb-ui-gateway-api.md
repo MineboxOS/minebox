@@ -56,18 +56,21 @@ Returns a newest-first list of backups which have been made by the system.
 
 ### GET /backup/1493807150/status
 
-Returns the status of a single backup. 
-The time_snaphost is the time the backup has been started (by making the
+Returns the status of a single backup.  
+The `time_snaphost` is the time the backup has been started (by making the
 snapshots). With current conventions, that time (in string form) also doubles as
 the backup name, butbackup naming conventions could change, so use the
-time_snapshot field when you need a time.
+`time_snapshot` field when you need a time.  
+The `relative_*` fields are in difference to the preceding backup, so about what
+has to be freshly uploaded for this backup, whereas the other fields are for the
+total amounts for this backup.
 
 ```json
 {
   "name": "1493807150",
   "time_snapshot": 1493807150,
-  "status": "UPLOADING|PENDING|FINISHED|DAMAGED|ERROR",
-  "metadata": "UPLOADING|PENDING|FINISHED|ERROR",
+  "status": "PENDING|UPLOADING|FINISHED|DAMAGED|ERROR",
+  "metadata": "PENDING|UPLOADING|FINISHED|ERROR",
   "numFiles": 23,
   "size": 403678324,
   "progress": 44.3,
@@ -83,7 +86,7 @@ status - actually implemented as a special case of that one).
 
 ### GET /backup/all/status
 
-Bulk operation for listing all statuses (newest-first list of signle-backup
+Bulk operation for listing all statuses (newest-first list of single-backup
 status outputs).
 
 ```json
