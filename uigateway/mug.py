@@ -79,9 +79,10 @@ def api_backup_list():
 @set_origin()
 def api_backup_status(backupname):
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-backup1493807150status
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-backuplateststatus
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    if backupname == "last":
+    if backupname == "latest":
         backupname = backupinfo.get_latest()
     elif not re.match(r'^\d+$', backupname):
         return jsonify(error="Illegal backup name."), 400
@@ -116,7 +117,7 @@ def api_backup_all_status():
 @app.route("/backup/start", methods=['POST'])
 @set_origin()
 def api_backup_start():
-    # Doc: *** TBD - not documented yet***
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-post-backupstart
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     bsdata, bs_status_code = get_from_backupservice('trigger')
@@ -183,7 +184,7 @@ def api_key_post():
 @app.route("/consensus", methods=['GET'])
 @set_origin()
 def api_consensus():
-    # Doc: *** TBD - not documented yet***
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-consensus
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     siadata, status_code = get_from_sia('consensus')
@@ -194,7 +195,7 @@ def api_consensus():
 @app.route("/contracts", methods=['GET'])
 @set_origin()
 def api_contracts():
-    # Doc: *** not documented yet***
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-contracts
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     siadata, sia_status_code = get_from_sia('renter/contracts')
@@ -221,7 +222,7 @@ def api_contracts():
 @app.route("/transactions", methods=['GET'])
 @set_origin()
 def api_transactions():
-    # Doc: *** not documented yet***
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-transactions
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     consdata, cons_status_code = get_from_sia('consensus')
@@ -243,7 +244,7 @@ def api_transactions():
 @app.route("/status", methods=['GET'])
 @set_origin()
 def api_status():
-    # Doc: *** TBD - not documented yet***
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-status
     username = check_login()
     outdata = {}
     if username:
@@ -311,7 +312,7 @@ def api_status():
 @app.route("/wallet/status", methods=['GET'])
 @set_origin()
 def api_wallet_status():
-    # Doc: *** not documented yet***
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-walletstatus
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     siadata, sia_status_code = get_from_sia('wallet')
@@ -337,7 +338,7 @@ def api_wallet_status():
 @app.route("/wallet/address", methods=['GET'])
 @set_origin()
 def api_wallet_address():
-    # Doc: *** not documented yet***
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-walletaddress
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     siadata, sia_status_code = get_from_sia('wallet/address')
@@ -349,7 +350,7 @@ def api_wallet_address():
 @app.route("/wallet/send", methods=['POST'])
 @set_origin()
 def api_wallet_send():
-    # Doc: *** not documented yet***
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-post-walletsend
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     # The sia daemon takes the amount in hastings. Should we also/instead
