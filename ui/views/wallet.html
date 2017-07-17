@@ -2,7 +2,10 @@
 
 	<div id="wallet-balance-box">
 		<div class="container-fluid">
-			<p id="wallet-balance-text"><span id="wallet-balance"></span>&nbsp;<span id="wallet-balance-coin">SC</span></p>
+			<h1>Your balance</h1>
+			<p class="wallet-balance" id="wallet-sia"><span class="currency-value"></span><span class="currency-sign">SC</span></p>
+			<p class="wallet-balance" id="wallet-bitcoin"><span class="currency-value">2.13726561</span><span class="currency-sign">BTC</span></p>
+			<p class="wallet-balance" id="wallet-fiat"><span class="currency-value">4569.47</span><span class="currency-sign">EUR</span></p>
 			<p id="wallet-activity-witness"></p>
 		</div>
 	</div>
@@ -22,17 +25,18 @@
 
 						<div class="row">
 
-							<div class="col-xs-12 col-sm-6">
+							<div class="col-xs-12 col-sm-8">
 								<h3>Address:</h3>
-								<textarea id="send-to-address"></textarea>
-								<button class="button" id="scan-address-button">Scan address</button>
+								<input type="text" id="send-to-address" />
+								<button class="button" id="scan-address-button">Scan QR Code</button>
 							</div>
 
 
-							<div class="col-xs-12 col-sm-6">
-								<p class="available-amount-line">You have available <span id="available-amount"></span>&nbsp;SC</p>
+							<div class="col-xs-12 col-sm-4">
+								<h3>Specify amount:</h3>
 								<input type="number" min="0" id="amount-to-send" value="0" />
 								<p id="amount-feedback"></p>
+								<p class="available-amount-line">You have available <span id="available-amount"></span>&nbsp;SC</p>
 							</div>
 
 							<div class="col-xs-12 button-box">
@@ -49,22 +53,37 @@
 
 						<div class="row">
 
-							<div class="col-xs-12 col-sm-6 receive-params">
+							<div class="col-xs-12 col-sm-8 receive-params">
 								<h3>Your address:</h3>
-								<textarea id="user-address"></textarea>
-								<br />
-								<h3>Specify amount <span>(<em>optional</em>)</span> :</h3>
-								<input type="number" min="0" id="amount-to-receive" />
+								<input type="text" id="user-wallet-address" readonly />
+								<button class="button" id="show-qr-code-button">Show QR code</button>
+								<span id="user-wallet-address-feedback" style="display:none;">Wallet address copied to your clipboard</span>
 							</div>
 
 
-							<div class="col-xs-12 col-sm-6 qr-col">
-								<div id="receive-funds-qr-code"></div>
+							<div class="col-xs-12 col-sm-4 qr-col">
+								<h3>Specify amount <span>(<em>optional</em>)</span> :</h3>
+								<input type="number" min="0" id="amount-to-receive" />
 							</div>
 
 						</div>
 
 					</div>
+				</div>
+
+
+				<div id="instascan-box">
+					<div id="close-instascan-button" class="generic-close-button"></div>
+					<div id="instascan-container">
+						<video id="instascan-video"></video>
+					</div>
+				</div>
+
+
+				
+				<div id="receive-funds-qr-code">
+					<div id="qr-code"></div>
+					<div id="hide-qr-code-button" class="generic-close-button"></div>
 				</div>
 
 			</div>
