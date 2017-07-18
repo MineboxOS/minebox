@@ -201,15 +201,51 @@ function Wallet() {
 
 		var $webcamButton = $('#scan-address-button'),
 			$addressInput = $('#send-to-address'),
+			$amountInput = $('#amount-to-send'),
 			$closeWebcamButton = $('#close-instascan-button');
 
 		var instascanManager = InstascanManager();
+
+		function printData( data ) {
+
+			var address = null;
+			var amount = null;
+
+			//do we have an amount?
+			if ( data.indexOf('?amount=') >= 0 ) {
+				//splitting by ?amount=
+				amount = data.split( '?amount=' );
+				//storing amount
+				amount = amount[1];
+				//removing the amount from data
+				data = data.split( '?amount=' );
+				//storing address into data
+				data = data[0];
+			}
+
+			//clean address
+			//do we have a ":"?
+			if ( data.indexOf(':') >= 0 ) {
+				address = data.split(':');
+				address = address[1];
+			} else {
+				address = data;
+			}
+
+			//printing
+			$addressInput.val( address );
+			$amountInput
+				.val( amount )
+				.trigger('change');
+
+
+		}
 
 		$webcamButton.on('click', function() {
 			instascanManager.show();
 			instascanManager.scan(function(data) {
 				//content readed, received as data
-				$addressInput.val( data );
+				printData( data );
 			});
 		});
 
@@ -253,8 +289,15 @@ function Wallet() {
 		function gatherInformation() {
 			var string = '';
 
-			string += $addressInput.val();
-			string += $amountInput.val();
+			if ( $addressInput.val() ) {
+				string += 'siacoin:' + $addressInput.val();
+			} else {
+				return false;
+			}
+
+			if ( $amountInput.val() ) {
+				string += '?amount=' + $amountInput.val();
+			}
 
 			return string;
 		}
