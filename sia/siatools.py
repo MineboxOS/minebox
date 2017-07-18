@@ -84,6 +84,8 @@ def set_up_hosting():
     # See https://blog.sia.tech/how-to-run-a-host-on-sia-2159ebc4725 for a
     # blog post explaining all steps to do.
     settings = get_sia_config()
+    if not settings["minebox_sharing"]["enabled"]:
+        return
     # Set min*price, collateral, collateralbudget, maxcollateral, maxduration
     siadata, sia_status_code = post_to_sia("host", settings["host"])
     if sia_status_code >= 400:
@@ -202,6 +204,7 @@ def get_sia_config():
                 "maxduration": 6 * months_per_block,
               },
               "minebox_sharing": {
+                "enabled": False,
                 "shared_space_ratio": 0.5,
               },
             }

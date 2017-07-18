@@ -85,11 +85,14 @@ def api_ping():
         return "", 204
 
     # See if sia is fully set up and do init tasks if needed.
+    # Setting up hosting is the last step, so if that is not active, we still
+    # need to do something.
     walletdata, wallet_status_code = get_from_sia('wallet')
-    if wallet_status_code == 200:
-        if not walletdata["encrypted"]:
-            # We need to seed the wallet and set up allowances, etc.
-            setup_sia_system()
+    hostdata, host_status_code = get_from_sia('host')
+    if wallet_status_code == 200 and host_status_code == 200:
+        if not hostdata["acceptingcontracts"]:
+            # We need to seed the wallet, set up allowances and hosting, etc.
+            setup_sia_system(walletdata, hostdata)
         elif not walletdata["unlocked"]:
             # We should unlock the wallet so new contracts can be made.
             unlock_sia_wallet()
@@ -241,7 +244,7 @@ def restart_backups():
                 app.logger.debug('%s was restarted.', bthread.name)
 
 
-def setup_sia_system():
+def setup_sia_system(walletdata, hostdata):
     # We may start long-running tasks here so we do them in their own thread.
     # We also need to make sure to not init the same process multiple times.
     if [thread.name for thread in threading.enumerate()
@@ -250,14 +253,14 @@ def setup_sia_system():
         return None
 
     sevent = threading.Event()
-    sthread = threading.Thread(target=run_sia_setup, args=(sevent,))
+    sthread = threading.Thread(target=run_sia_setup, args=(sevent, walletdata, hostdata))
     sthread.daemon = True
     sthread.start()
     sevent.wait() # Wait for thread being set up.
     return sthread.name
 
 
-def run_sia_setup(startevent):
+def run_sia_setup(startevent, walletdata, hostdata):
     # The routes have implicit Flask application context, but the thread needs an explicit one.
     # See http://flask.pocoo.org/docs/appcontext/#creating-an-application-context
     with app.app_context():
@@ -281,14 +284,28 @@ def run_sia_setup(startevent):
         if not seed:
             app.logger.error("Did not get a useful seed, cannot initialize the sia wallet.")
             return
-        if not init_wallet(seed):
+        if not walletdata["encrypted"]:
+            if not init_wallet(seed):
+                return
+        if not walletdata["unlocked"]:
+            if not unlock_wallet(seed):
+                return
+        if (walletdata["confirmedsiacoinbalance"] == "0"
+              and walletdata["unconfirmedoutgoingsiacoins"] == "0"
+              and walletdata["unconfirmedincomingsiacoins"] == "0"):
+            # We have an empty wallet, let's try to fetch some siacoins.
+            fetch_siacoins()
+            # If we succeeded, we need to wait for the coins to arrive,
+            # and if we failed, we have no balance and can't set an allowance
+            # or host files, so in any case, we return here.
             return
-        if not unlock_wallet(seed):
-            return
-        fetch_siacoins()
-        if not set_allowance():
-            return
-        #set_up_hosting()
+        renterdata, renter_status_code = get_from_sia('renter')
+        if renter_status_code == 200 and renterdata["settings"]["allowance"]["funds"] == "0":
+            # No allowance, let's set one.
+            if not set_allowance():
+                return
+        if not hostdata["acceptingcontracts"]:
+            set_up_hosting()
 
 
 def unlock_sia_wallet():
