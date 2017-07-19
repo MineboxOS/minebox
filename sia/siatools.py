@@ -66,12 +66,12 @@ def unlock_wallet(seed):
     return True
 
 def fetch_siacoins():
-    current_app.logger.info("TODO: Fetch base allotment of coins from Minebox.")
+    current_app.logger.info("TODO: Fetching base allotment of coins from Minebox.")
     # We need the Minebox sia faucet service for this (See MIN-130).
     return
 
 def set_allowance():
-    current_app.logger.info("Set an allowance for renting out files.")
+    current_app.logger.info("Setting an allowance for renting out files.")
     settings = get_sia_config()
     siadata, sia_status_code = post_to_sia('renter',
                                            {"funds": settings["renter"]["allowance_funds"],
@@ -84,12 +84,12 @@ def set_allowance():
     return True
 
 def set_up_hosting():
-    current_app.logger.info("TODO: Set up sia hosting.")
     # See https://blog.sia.tech/how-to-run-a-host-on-sia-2159ebc4725 for a
     # blog post explaining all steps to do.
     settings = get_sia_config()
     if not settings["minebox_sharing"]["enabled"]:
         return
+    current_app.logger.info("Setting up sia hosting.")
     # Set min*price, collateral, collateralbudget, maxcollateral, maxduration
     siadata, sia_status_code = post_to_sia("host", settings["host"])
     if sia_status_code >= 400:
