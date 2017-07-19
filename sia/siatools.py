@@ -4,7 +4,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from flask import current_app, json
+from glob import glob
 import subprocess
+import os
+import re
+import time
 
 from connecttools import (get_from_sia, post_to_sia, get_from_minebd,
                           get_from_mineboxconfig)
@@ -16,8 +20,8 @@ SIA_DIR="/mnt/lower1/sia"
 HOST_DIR_BASE_MASK="/mnt/lower*"
 HOST_DIR_NAME="hostedfiles"
 MINEBD_STORAGE_PATH="/mnt/storage"
-UPPER_SPACE_MIN=50*(2**30)
-UPPER_SPACE_TARGET=100*(2**30)
+UPPER_SPACE_MIN=50*(2**20)
+UPPER_SPACE_TARGET=100*(2**20)
 
 def check_sia_sync():
     # Check if sia is running and in sync before doing other sia actions.
@@ -94,8 +98,8 @@ def set_up_hosting():
         return False
     # Add path(s) to share for hosting.
     for basepath in glob(HOST_DIR_BASE_MASK):
-        hostpath = path.join(basepath, HOST_DIR_NAME)
-        if not path.isdir(hostpath):
+        hostpath = os.path.join(basepath, HOST_DIR_NAME)
+        if not os.path.isdir(hostpath):
             subprocess.call(['/usr/sbin/btrfs', 'subvolume', 'create', hostpath])
         freespace = _get_btrfs_free_space(hostpath)
         if freespace:
@@ -107,7 +111,7 @@ def set_up_hosting():
                                                 "size": share_size})
         if sia_status_code >= 400:
             current_app.logger.error("Sia error %s: %s" % (sia_status_code,
-                                                          siadata["message"]))
+                                                           siadata["message"]))
             return False
     # Announce host
     # When we have nice host names, we should announce that because of possibly
@@ -139,8 +143,8 @@ def rebalance_diskspace():
         # We should enlarge upper so that we have at least UPPER_SPACE_TARGET free.
         host_freespace = 0
         for basepath in glob(HOST_DIR_BASE_MASK):
-            hostpath = path.join(basepath, HOST_DIR_NAME)
-            if not path.isdir(hostpath):
+            hostpath = os.path.join(basepath, HOST_DIR_NAME)
+            if not os.path.isdir(hostpath):
                 subprocess.call(['/usr/sbin/btrfs', 'subvolume', 'create', hostpath])
             freespace = _get_btrfs_free_space(hostpath)
             if freespace:
@@ -162,8 +166,8 @@ def get_sia_config():
         get_sia_config.timestamp = time.time()
         if not hasattr(get_sia_config, "settings"):
             get_sia_config.settings = None
-        if isfile(SIA_CONFIG_JSON):
-            fileinfo = stat(SIA_CONFIG_JSON)
+        if os.path.isfile(SIA_CONFIG_JSON):
+            fileinfo = os.stat(SIA_CONFIG_JSON)
             filetime = int(fileinfo.st_mtime)
         else:
             filetime = 0
@@ -177,7 +181,7 @@ def get_sia_config():
             else:
                 current_app.logger.error('Error %s getting Sia config from Minebox config service: %s' % (cf_status_code,  cfdata["message"]))
                 get_sia_config.settings = None
-        if not get_sia_config.settings and isfile(SIA_CONFIG_JSON):
+        if not get_sia_config.settings and os.path.isfile(SIA_CONFIG_JSON):
             # If we did not get settings remotely, read them from the file.
             with open(CONFIG_JSON_PATH) as json_file:
                 get_sia_config.settings = json.load(json_file)
@@ -186,7 +190,7 @@ def get_sia_config():
             # also doesn't work. Set useful defaults.
             bytes_per_tb = 2 ** 40
             months_per_block = 30 * 24 * 3600 / SEC_PER_BLOCK
-            sctb_per_hb = H_PER_SC / BYTES_PER_TB # SC / TB -> hastings / byte
+            sctb_per_hb = H_PER_SC / bytes_per_tb # SC / TB -> hastings / byte
             sctbmon_per_hbblk = sctb_per_hb * months_per_block # SC / TB / month -> hastings / byte / block
             get_sia_config.settings = {
               "renter": {
@@ -212,10 +216,10 @@ def get_sia_config():
 
 def _get_btrfs_free_space(diskpath):
     freespace = None
-    outlines = subprocess.check_output(['/usr/sbin/btrfs', 'filesystem', 'df', '-b', diskpath]).splitlines()
+    # See https://btrfs.wiki.kernel.org/index.php/FAQ#Understanding_free_space.2C_using_the_new_tools
+    outlines = subprocess.check_output(['/usr/sbin/btrfs', 'filesystem', 'usage', '--raw', diskpath]).splitlines()
     for line in outlines:
-        current_app.logger.info(line)
-        matches = re.match(r"^Data, single: total=([0-9]+), used=([0-9]+)$", line)
+        matches = re.match(r"^\s+Free \(estimated\):\s+([0-9]+)", line)
         if matches:
-            freespace = int(matches.group(1)) - int(matches.group(2))
+            freespace = int(matches.group(1))
     return freespace
