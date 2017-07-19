@@ -269,9 +269,10 @@ def run_sia_setup(startevent, walletdata, hostdata):
         startevent.set()
         # Do the initial setup of the sia system, so uploading and hosting files works.
         # 0) Check if sia is running and consensus in sync.
-        # 1) Get wallet seed from MineBD.
-        # 2) Init the wallet with that seed.
-        # 3) Unlock the wallet, using the seed as password.
+        # If wallet is not unlocked:
+        #   1) Get wallet seed from MineBD.
+        #   2) If the wallet is not encrypted yet, init the wallet with that seed.
+        #   3) Unlock the wallet, using the seed as password.
         # 4) Fetch our initial allotment of siacoins from Minebox (if applicable).
         # 5) Set an allowance for renting, so that we can start uploading backups.
         # 6) Set up sia hosting.
@@ -280,14 +281,14 @@ def run_sia_setup(startevent, walletdata, hostdata):
             app.logger.error(errmsg)
             app.logger.info("Exiting sia setup because sia is not ready, will try again on next ping.")
             return
-        seed = get_seed()
-        if not seed:
-            app.logger.error("Did not get a useful seed, cannot initialize the sia wallet.")
-            return
-        if not walletdata["encrypted"]:
-            if not init_wallet(seed):
-                return
         if not walletdata["unlocked"]:
+            seed = get_seed()
+            if not seed:
+                app.logger.error("Did not get a useful seed, cannot initialize the sia wallet.")
+                return
+            if not walletdata["encrypted"]:
+                if not init_wallet(seed):
+                    return
             if not unlock_wallet(seed):
                 return
         if (walletdata["confirmedsiacoinbalance"] == "0"
