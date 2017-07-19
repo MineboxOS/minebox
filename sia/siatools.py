@@ -20,6 +20,7 @@ SIA_DIR="/mnt/lower1/sia"
 HOST_DIR_BASE_MASK="/mnt/lower*"
 HOST_DIR_NAME="hostedfiles"
 MINEBD_STORAGE_PATH="/mnt/storage"
+MINEBD_DEVICE_PATH="/dev/nbd0"
 UPPER_SPACE_MIN=50*(2**20)
 UPPER_SPACE_TARGET=100*(2**20)
 
@@ -97,22 +98,8 @@ def set_up_hosting():
                                                        siadata["message"]))
         return False
     # Add path(s) to share for hosting.
-    for basepath in glob(HOST_DIR_BASE_MASK):
-        hostpath = os.path.join(basepath, HOST_DIR_NAME)
-        if not os.path.isdir(hostpath):
-            subprocess.call(['/usr/sbin/btrfs', 'subvolume', 'create', hostpath])
-        freespace = _get_btrfs_free_space(hostpath)
-        if freespace:
-            share_size = freespace * settings["minebox_sharing"]["shared_space_ratio"]
-        else:
-            share_size = 0
-        siadata, sia_status_code = post_to_sia("host/storage/folders/add",
-                                               {"path": hostpath,
-                                                "size": share_size})
-        if sia_status_code >= 400:
-            current_app.logger.error("Sia error %s: %s" % (sia_status_code,
-                                                           siadata["message"]))
-            return False
+    if not _rebalance_hosting_to_ratio():
+        return False
     # Announce host
     # When we have nice host names, we should announce that because of possibly
     # changing IPs down the road.
@@ -137,26 +124,80 @@ def restart_sia():
 def rebalance_diskspace():
     # MineBD reports a large block device size but the filesystem is formatted
     # with much less.
-    upper_freespace = _get_btrfs_free_space(MINEBD_STORAGE_PATH)
-    if upper_freespace < UPPER_SPACE_MIN:
-        current_app.logger.info("Less than 50MB free on upper, try to rebalance disk space.")
+    devsize = _get_device_size(MINEBD_DEVICE_PATH)
+    upper_space = _get_btrfs_space(MINEBD_STORAGE_PATH)
+    if (upper_space["free_est"] < UPPER_SPACE_MIN
+        and devsize > upper_space["total"]):
+        current_app.logger.info("Less than %s MB free on upper, try to rebalance disk space." % (UPPER_SPACE_MIN // 2**20))
+        space_to_add = UPPER_SPACE_TARGET - UPPER_SPACE_MIN
         # We should enlarge upper so that we have at least UPPER_SPACE_TARGET free.
         host_freespace = 0
         for basepath in glob(HOST_DIR_BASE_MASK):
             hostpath = os.path.join(basepath, HOST_DIR_NAME)
             if not os.path.isdir(hostpath):
                 subprocess.call(['/usr/sbin/btrfs', 'subvolume', 'create', hostpath])
-            freespace = _get_btrfs_free_space(hostpath)
-            if freespace:
-                host_freespace += freespace
-        if host_freespace > UPPER_SPACE_TARGET - UPPER_SPACE_MIN:
+            hostspace = _get_btrfs_space(hostpath)
+            if hostspace:
+                host_freespace += hostspace["free_est"]
+        if host_freespace > space_to_add:
             # We have enough free space that we can enlarge upper.
-            pass
+            retcode = subprocess.call(['/usr/sbin/btrfs', 'filesystem', 'resize', ('+%s' % space_to_add), MINEBD_STORAGE_PATH])
+            if retcode > 0:
+                current_app.logger.warn("btrfs resize failed with return code %s!" % retcode)
+                return False
+            # See to resize sharing folders to fulfill the defined ratio.
+            # If that succeeds, we should be able to enlarge upper again in the
+            # future if/when needed.
+            if not _rebalance_hosting_to_ratio():
+                return False
         else:
-            # Try to reduce amount allocated for sia (by lowering shared space)
-            # So that we can enlarge upper.
-            pass
+            current_app.logger.error("Not enough free space left on lower disk(s) to enlarge upper storage!")
+            return False
+    elif upper_space["free_est"] < UPPER_SPACE_MIN:
+        current_app.logger.warn("Less than %s MB free on upper, but device fully used!" % (UPPER_SPACE_MIN // 2**20))
     return True
+
+def _rebalance_hosting_to_ratio():
+    settings = get_sia_config()
+    folderdata = {}
+    siadata, sia_status_code = get_from_sia("host/storage")
+    if sia_status_code >= 400:
+        current_app.logger.error("Sia error %s: %s" % (sia_status_code,
+                                                       siadata["message"]))
+        return False
+    for folder in siadata["folders"]:
+        folderdata[folder["path"]] = folder
+
+    success = True
+
+    for basepath in glob(HOST_DIR_BASE_MASK):
+        hostpath = os.path.join(basepath, HOST_DIR_NAME)
+        if not os.path.isdir(hostpath):
+            subprocess.call(['/usr/sbin/btrfs', 'subvolume', 'create', hostpath])
+        hostspace = _get_btrfs_space(hostpath)
+        if hostspace:
+            share_size = hostspace["free_est"] * settings["minebox_sharing"]["shared_space_ratio"]
+        else:
+            share_size = 0
+        if hostpath in folderdata:
+            # Existing folder, (try to) resize it.
+            siadata, sia_status_code = post_to_sia("host/storage/folders/resize",
+                                                   {"path": hostpath,
+                                                    "newsize": share_size})
+            if sia_status_code >= 400:
+                current_app.logger.error("Sia error %s: %s" %
+                                          (sia_status_code, siadata["message"]))
+                success = False
+        else:
+            # New folder, add it.
+            siadata, sia_status_code = post_to_sia("host/storage/folders/add",
+                                                   {"path": hostpath,
+                                                    "size": share_size})
+            if sia_status_code >= 400:
+                current_app.logger.error("Sia error %s: %s" % (sia_status_code,
+                                                              siadata["message"]))
+                success = False
+    return success
 
 def get_sia_config():
     if (not hasattr(get_sia_config, "settings") or get_sia_config.settings is None
@@ -214,12 +255,30 @@ def get_sia_config():
             }
     return get_sia_config.settings
 
-def _get_btrfs_free_space(diskpath):
-    freespace = None
+def _get_btrfs_space(diskpath):
+    spaceinfo = {}
     # See https://btrfs.wiki.kernel.org/index.php/FAQ#Understanding_free_space.2C_using_the_new_tools
     outlines = subprocess.check_output(['/usr/sbin/btrfs', 'filesystem', 'usage', '--raw', diskpath]).splitlines()
     for line in outlines:
-        matches = re.match(r"^\s+Free \(estimated\):\s+([0-9]+)", line)
+        matches = re.match(r"^\s+Device size:\s+([0-9]+)$", line)
         if matches:
-            freespace = int(matches.group(1))
-    return freespace
+            spaceinfo["total"] = int(matches.group(1))
+
+        matches = re.match(r"^\s+Device allocated:\s+([0-9]+)$", line)
+        if matches:
+            spaceinfo["allocated"] = int(matches.group(1))
+
+        matches = re.match(r"^\s+Used:\s+([0-9]+)$", line)
+        if matches:
+            spaceinfo["used"] = int(matches.group(1))
+
+        matches = re.match(r"^\s+Free \(estimated\):\s+([0-9]+)\s+\(min: ([0-9]+)\)$", line)
+        if matches:
+            spaceinfo["free_est"] = int(matches.group(1))
+            spaceinfo["free_min"] = int(matches.group(2))
+
+    return spaceinfo
+
+def _get_device_size(devpath):
+    devsize = int(subprocess.check_output(['/usr/sbin/blockdev', '--getsize64', devpath]))
+    return devsize
