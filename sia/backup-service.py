@@ -90,7 +90,7 @@ def api_ping():
     walletdata, wallet_status_code = get_from_sia('wallet')
     hostdata, host_status_code = get_from_sia('host')
     if wallet_status_code == 200 and host_status_code == 200:
-        if not hostdata["acceptingcontracts"]:
+        if not hostdata["internalsettings"]["acceptingcontracts"]:
             # We need to seed the wallet, set up allowances and hosting, etc.
             setup_sia_system(walletdata, hostdata)
         elif not walletdata["unlocked"]:
@@ -304,7 +304,7 @@ def run_sia_setup(startevent, walletdata, hostdata):
             # No allowance, let's set one.
             if not set_allowance():
                 return
-        if not hostdata["acceptingcontracts"]:
+        if not hostdata["internalsettings"]["acceptingcontracts"]:
             set_up_hosting()
 
 
