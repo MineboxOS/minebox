@@ -11,7 +11,7 @@ import re
 import time
 
 from connecttools import (get_from_sia, post_to_sia, get_from_minebd,
-                          get_from_mineboxconfig)
+                          get_from_mineboxconfig, get_from_faucetservice)
 
 H_PER_SC=1e24 # hastings per siacoin ("siacoinprecision" in /daemon/constants)
 SEC_PER_BLOCK=600 # seconds per block ("blockfrequency" in /daemon/constants)
@@ -69,7 +69,11 @@ def unlock_wallet(seed):
 def fetch_siacoins():
     current_app.logger.info("TODO: Fetching base allotment of coins from Minebox.")
     # We need the Minebox sia faucet service for this (See MIN-130).
-    return
+    fsdata, fs_status_code = get_from_faucetservice('siacoins')
+        current_app.logger.error("Faucet error %s: %s" % (fs_status_code,
+                                                          fsdata["message"]))
+        return False
+    return True
 
 def set_allowance():
     current_app.logger.info("Setting an allowance for renting out files.")
@@ -220,7 +224,9 @@ def get_sia_config():
                 with open(SIA_CONFIG_JSON, 'w') as outfile:
                     json.dump(get_sia_config.settings, outfile)
             else:
-                current_app.logger.error('Error %s getting Sia config from Minebox config service: %s' % (cf_status_code,  cfdata["message"]))
+                current_app.logger.error(
+                  'Error %s getting Sia config from Minebox config service: %s'
+                  % (cf_status_code,  cfdata["message"]))
                 get_sia_config.settings = None
         if not get_sia_config.settings and os.path.isfile(SIA_CONFIG_JSON):
             # If we did not get settings remotely, read them from the file.
