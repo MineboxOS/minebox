@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.minebox.nbd.NbdServer.State.*;
+import static io.netty.util.NetUtil.*;
 
 
 @Singleton
@@ -88,15 +89,20 @@ public class NbdServer implements Managed {
             state = KEY_DETECTED;
             eventLoopGroup = new NioEventLoopGroup();
             ServerBootstrap bootstrap = new ServerBootstrap();
-            bootstrap.group(eventLoopGroup)
+            final boolean hasIpv6 = LOCALHOST.equals(LOCALHOST6);
+            final ServerBootstrap serverBootstrap = bootstrap.group(eventLoopGroup)
                     .channel(NioServerSocketChannel.class)
-                    .localAddress(new InetSocketAddress(port))
-                    .childHandler(new ChannelInitializer<SocketChannel>() {
-                        @Override
-                        protected void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(new HandshakePhase(exportProvider));
-                        }
-                    });
+                    .localAddress(new InetSocketAddress(LOCALHOST, port));
+            if (hasIpv6) {
+                //also add v4
+                serverBootstrap.localAddress(LOCALHOST4, port);
+            }
+            serverBootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
+                @Override
+                protected void initChannel(SocketChannel ch) throws Exception {
+                    ch.pipeline().addLast(new HandshakePhase(exportProvider));
+                }
+            });
             final ChannelFuture bind = bootstrap.bind();
             ChannelFuture f;
             try {

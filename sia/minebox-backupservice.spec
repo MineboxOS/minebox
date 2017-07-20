@@ -1,0 +1,63 @@
+Name: minebox-backupservice
+#read Version from git tag
+# we excpect a tag "bkupsvc_vM.m.p"
+
+# *NOTE* M is the Major number and has to be a _single digit_
+
+Version: %(git describe --tags --match 'bkupsvc*'|grep -oP "(?<=bkupsvc_v).")
+Release: %(git describe --tags --match 'bkupsvc*'|grep -oP "(?<=bkupsvc_v..).*" | tr '-' '_')%{?dist}
+Summary: Minebox Backup Service
+License: Proprietary
+Requires: minebox-virtualenv minebox-uigateway
+
+%description
+The Minebox Backup Service drives the actual generation and upload of backups as well as the setup of the Sia service.
+
+%define _topdir %(echo \$PWD)/
+
+# Packaging
+%install
+install -D --mode 755 "%{_topdir}sia/backup-service.sh" "$RPM_BUILD_ROOT/usr/lib/minebox/backup-service.sh"
+install -D "%{_topdir}sia/systemd/backup-service.service" "$RPM_BUILD_ROOT/etc/systemd/system/backup-service.service"
+install -D "%{_topdir}sia/cron.d/backup-service" "$RPM_BUILD_ROOT/etc/cron.d/backup-service"
+install -D --mode 755 "%{_topdir}sia/backup-service.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/backup-service.py"
+install -D "%{_topdir}sia/backuptools.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/backuptools.py"
+install -D "%{_topdir}sia/siatools.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/siatools.py"
+
+# Installation script
+%pre
+set +e
+systemctl stop backup-service
+set -e
+
+%post
+systemctl daemon-reload
+systemctl enable backup-service
+systemctl start backup-service
+
+# Uninstallation script
+%preun
+if [ "$1" = 0 ] ; then
+set +e
+systemctl stop backup-service
+systemctl disable backup-service
+set -e
+fi
+
+%postun
+systemctl daemon-reload
+
+%files
+
+/usr/lib/minebox/backup-service.sh
+/etc/systemd/system/backup-service.service
+/etc/cron.d/backup-service
+/usr/lib/minebox/mbvenv/backup-service.py
+/usr/lib/minebox/mbvenv/backup-service.pyc
+/usr/lib/minebox/mbvenv/backup-service.pyo
+/usr/lib/minebox/mbvenv/backuptools.py
+/usr/lib/minebox/mbvenv/backuptools.pyc
+/usr/lib/minebox/mbvenv/backuptools.pyo
+/usr/lib/minebox/mbvenv/siatools.py
+/usr/lib/minebox/mbvenv/siatools.pyc
+/usr/lib/minebox/mbvenv/siatools.pyo

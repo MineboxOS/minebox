@@ -15,6 +15,7 @@
   height: 100%;
   cursor: pointer;
   z-index: 99;
+  background-color: rgba(0, 0, 0, 0.95);
 }
 .notify-window .window {
   position: fixed;
@@ -50,6 +51,18 @@
   height: 1px;
   margin-top: -0.5px;
   margin-left: -10px;
+  background-color: #999;
+}
+.notify-window button {
+  border: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.notify-window button.accept {
+  background-color: #24acce;
+}
+.notify-window button.cancel {
+  background-color: #de001f;
 }
 .notify-window .close-btn:before {
   transform: rotate(-45deg);
@@ -58,17 +71,12 @@
   transform: rotate(45deg);
 }
 .notify-window .text {
+  color: #fff;
   text-align: center;
 }
 .notify-window .buttons {
   margin-top: 15px;
   text-align: center;
-}
-.notify-window button {
-}
-.notify-window button.accept {
-}
-.notify-window button.cancel {
 }
 .notify-window button + button {
   margin-right: 15px;

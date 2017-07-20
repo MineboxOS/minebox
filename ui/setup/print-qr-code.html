@@ -4,13 +4,18 @@
 		<meta charset="utf-8" />
 		<title>Minebox private key for </title>
 
+		<link href="../css/heebo.css" type="text/css" rel="stylesheet" />
+		<link href="../css/notify.css" type="text/css" rel="stylesheet" />
+
 		<style>
+			html,body {
+				background-color: #efefef !important;
+				color: #666 !important;
+			}
 			body {
-				font-family: Helvetica, Arial, Sans-serif;
+				font-family: 'Heebo', Helvetica, Arial, Sans-serif;
 				font-size: 12px;
-				background-color: #efefef;
-				color: #666;
-				font-weight: 100;
+				font-weight: 300;
 				text-align: center;
 			}
 			.small {
@@ -132,6 +137,7 @@
 			.minebox-private-key-instructions-image + .minebox-private-key-instructions-image {
 				margin-top: 10px;
 			}
+			button,
 			.button {
 				display: inline-block;
 				background-color: #24acce;
@@ -180,6 +186,7 @@
 		<script type="text/javascript" src="../js/jquery.2.2.4.min.js"></script>
 		<script type="text/javascript" src="../js/qrcode.min.js"></script>
 		<script type="text/javascript" src="../js/func.lib.js"></script>
+		<script type="text/javascript" src="../js/jquery.notify.js"></script>
 	</head>
 
 	<body>
@@ -229,7 +236,12 @@
 			function fillPaperWallet() {
 				$('#words').html(data.seed);
 				$('#hostname').html(data.hostname);
-				qrCodeHandler.makeCode(data.seed);
+				if ( data.seed ) {
+					qrCodeHandler.makeCode(data.seed);
+				} else {
+					var notify = new Notify({message: 'Missing printing seed. Close this window and try again.'});
+					notify.print();
+				}
 				var title = $('title').html();
 				$('title').html( title + data.hostname + '.minebox.io' );
 			}
@@ -241,18 +253,23 @@
 			});
 
 			function randomArtGenerator( $element ) {
-				var count = getRandomInt(200, 300);
+				var count = getRandomInt(1200, 2000);
 				var props = {};
 
 				for ( var n = 0; n < count; n++ ) {
-					props.width = getRandomInt(5,25) + '%';
-					props.height = getRandomInt(5,25) + '%';
-					props.top = getRandomInt(-20,100) + '%';
-					props.left = getRandomInt(-20,100) + '%';
-					props.round = getRandomInt(0,50) + '%';
-					props.opacity = getRandomInt(10,50) / 100;
+					props.width = getRandomInt(1,8) + '%';
+					props.top = getRandomInt(-2,95) + '%';
+					props.left = getRandomInt(-2,95) + '%';
+					props.opacity = getRandomInt(30,90) / 100;
+					props.color = getRandomInt(0,3);
 
-					$element.append('<span style="position:absolute;width:' + props.width + ';height:' + props.height + ';top:' + props.top + ';left:' + props.left + ';border-radius:' + props.round + ';background-color:#000;opacity:' + props.opacity + ';"></span>');
+					if ( props.color ) {
+						props.color = '#000';
+					} else {
+						props.color = '#fff';
+					}
+
+					$element.append('<span style="position:absolute;width:' + props.width + ';height:' + props.width + ';top:' + props.top + ';left:' + props.left + ';background-color:' + props.color + ';opacity:' + props.opacity + ';"></span>');
 				}
 			}
 

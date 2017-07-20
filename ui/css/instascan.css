@@ -39,43 +39,6 @@
 }
 
 #close-instascan-button {
-	position: absolute;
 	top: 15px;
 	right: 15px;
-	cursor: pointer;
-	width: 20px;
-	height: 20px;
-	transition: all cubic-bezier(0.64, 0.53, 0, 0.73) .5s;
-	-webkit-transition: all cubic-bezier(0.64, 0.53, 0, 0.73) .5s;
-	-moz-transition: all cubic-bezier(0.64, 0.53, 0, 0.73) .5s;
-	-o-transition: all cubic-bezier(0.64, 0.53, 0, 0.73) .5s;
-}
-#close-instascan-button:hover {
-	transform: rotate(90deg);
-	-webkit-transform: rotate(90deg);
-	-moz-transform: rotate(90deg);
-	-o-transform: rotate(90deg);
-}
-#close-instascan-button:before,
-#close-instascan-button:after {
-	content: '';
-	position: absolute;
-	top: 10px;
-	left: 10px;
-	width: 1px;
-	height: 20px;
-	margin-top: -10px;
-	margin-left: -0.5px;
-}
-#close-instascan-button:before {
-	transform: rotate(45deg);
-	-webkit-transform: rotate(45deg);
-	-moz-transform: rotate(45deg);
-	-o-transform: rotate(45deg);
-}
-#close-instascan-button:after {
-	transform: rotate(-45deg);
-	-webkit-transform: rotate(-45deg);
-	-moz-transform: rotate(-45deg);
-	-o-transform: rotate(-45deg);
 }

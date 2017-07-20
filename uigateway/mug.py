@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 
+# The Minebox UI Gateway (MUG)
+# API Docs: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md
+
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from flask import Flask, request, jsonify, json
-from os.path import ismount
+from os.path import ismount, isfile
 from os import environ
 import re
 import logging
@@ -20,6 +24,7 @@ from siatools import H_PER_SC, SEC_PER_BLOCK
 
 # Define various constants.
 REST_PORT=5000
+CONFIG_JSON_PATH="/etc/minebox/mug_config.json"
 # TODO: The Rockstor certs are at a different location in production!
 SSL_CERT="/root/rockstor-core_vm/certs/rockstor.cert"
 SSL_KEY="/root/rockstor-core_vm/certs/rockstor.key"
@@ -28,11 +33,29 @@ UPLOADER_CMD=backupinfo.UPLOADER_CMD
 DEMOSIAC_CMD="/root/minebox-client-tools_vm/sia/demosiac.sh"
 MBKEY_CMD="/usr/lib/minebox/mbkey.sh"
 
+config = {}
+
 app = Flask(__name__)
+
+
+@app.before_first_request
+def before_first_request():
+    global config
+    # Read configuration from JSON file.
+    if isfile(CONFIG_JSON_PATH):
+        with open(CONFIG_JSON_PATH) as json_file:
+            config = json.load(json_file)
+    # Set default values.
+    if not "allowed_cors_hosts" in config:
+        config["allowed_cors_hosts"] = []
+    # Copy those values to the Flask app that may be used in imports.
+    app.config["allowed_cors_hosts"] = config["allowed_cors_hosts"]
+
 
 @app.route("/")
 @set_origin()
 def api_root():
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get
     links = []
     for rule in app.url_map.iter_rules():
         # Flask has a default route for serving static files, let's exclude it.
@@ -45,26 +68,27 @@ def api_root():
 @app.route("/backup/list", methods=['GET'])
 @set_origin()
 def api_backup_list():
-    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backuplist
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-backuplist
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    metalist = backupinfo.get_list()
+    metalist = backupinfo.get_list(True)
     return jsonify(metalist), 200
 
 
 @app.route("/backup/<backupname>/status", methods=['GET'])
 @set_origin()
 def api_backup_status(backupname):
-    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backup1493807150status
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-backup1493807150status
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-backuplateststatus
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    if backupname == "last":
+    if backupname == "latest":
         backupname = backupinfo.get_latest()
     elif not re.match(r'^\d+$', backupname):
         return jsonify(error="Illegal backup name."), 400
 
     if backupname:
-        backupstatus, status_code = backupinfo.get_status(backupname)
+        backupstatus, status_code = backupinfo.get_status(backupname, True)
     else:
         status_code = 404
     if status_code == 404:
@@ -77,14 +101,14 @@ def api_backup_status(backupname):
 @app.route("/backup/all/status", methods=['GET'])
 @set_origin()
 def api_backup_all_status():
-    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-backupallstatus
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-backupallstatus
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    backuplist = backupinfo.get_list()
+    backuplist = backupinfo.get_list(True)
 
     statuslist = []
     for backupname in backuplist:
-        backupstatus, status_code = backupinfo.get_status(backupname)
+        backupstatus, status_code = backupinfo.get_status(backupname, True)
         statuslist.append(backupstatus)
 
     return jsonify(statuslist), 200
@@ -93,7 +117,7 @@ def api_backup_all_status():
 @app.route("/backup/start", methods=['POST'])
 @set_origin()
 def api_backup_start():
-    # Doc: *** TBD - not documented yet***
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-post-backupstart
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     bsdata, bs_status_code = get_from_backupservice('trigger')
@@ -103,7 +127,7 @@ def api_backup_start():
 @app.route("/key/status", methods=['GET'])
 @set_origin()
 def api_key_status():
-    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-keystatus
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-keystatus
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     return jsonify(message="Not yet implemented."), 501
@@ -112,7 +136,7 @@ def api_key_status():
 @app.route("/key/generate", methods=['GET'])
 @set_origin()
 def api_key_generate():
-    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-get-keygenerate
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-keygenerate
     mbdata, mb_status_code = get_from_minebd('keys/asJson')
     # For the moment, just blindly hand over the result from MineBD.
     return jsonify(mbdata), mb_status_code
@@ -121,7 +145,7 @@ def api_key_generate():
 @app.route("/key/verify", methods=['POST'])
 @set_origin()
 def api_key_verify():
-    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-post-keyverify
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-post-keyverify
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     return jsonify(message="Not yet implemented."), 501
@@ -130,7 +154,7 @@ def api_key_verify():
 @app.route("/key", methods=['PUT'])
 @set_origin()
 def api_key_put():
-    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-put-key
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-put-key
     mbdata, mb_status_code = get_from_minebd('serialnumber')
     if mb_status_code == 200:
         return jsonify(message="File system is already encrypted, cannot set key."), 400
@@ -151,7 +175,7 @@ def api_key_put():
 @app.route("/key", methods=['POST'])
 @set_origin()
 def api_key_post():
-    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-funktionen-skizze.md#markdown-header-post-key
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-post-key
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     return jsonify(message="Not yet implemented."), 501
@@ -160,7 +184,7 @@ def api_key_post():
 @app.route("/consensus", methods=['GET'])
 @set_origin()
 def api_consensus():
-    # Doc: *** TBD - not documented yet***
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-consensus
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     siadata, status_code = get_from_sia('consensus')
@@ -171,7 +195,7 @@ def api_consensus():
 @app.route("/contracts", methods=['GET'])
 @set_origin()
 def api_contracts():
-    # Doc: *** not documented yet***
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-contracts
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     siadata, sia_status_code = get_from_sia('renter/contracts')
@@ -198,7 +222,7 @@ def api_contracts():
 @app.route("/transactions", methods=['GET'])
 @set_origin()
 def api_transactions():
-    # Doc: *** not documented yet***
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-transactions
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     consdata, cons_status_code = get_from_sia('consensus')
@@ -220,7 +244,7 @@ def api_transactions():
 @app.route("/status", methods=['GET'])
 @set_origin()
 def api_status():
-    # Doc: *** TBD - not documented yet***
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-status
     username = check_login()
     outdata = {}
     if username:
@@ -288,7 +312,7 @@ def api_status():
 @app.route("/wallet/status", methods=['GET'])
 @set_origin()
 def api_wallet_status():
-    # Doc: *** not documented yet***
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-walletstatus
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     siadata, sia_status_code = get_from_sia('wallet')
@@ -308,22 +332,41 @@ def api_wallet_status():
       "siafundbalance": siadata["siafundbalance"],
       "siafundbalance_sc": int(siadata["siafundbalance"]) / H_PER_SC,
     }
-    # For now, just return the info from Sia directly.
     return jsonify(walletdata), 200
 
 
-@app.route("/wallet/unlock", methods=['POST'])
+@app.route("/wallet/address", methods=['GET'])
 @set_origin()
-def api_wallet_unlock():
-    # Doc: *** not documented yet***
+def api_wallet_address():
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-walletaddress
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    # Make sure we only hand parameters to siad that it supports.
-    pwd = request.form["encryptionpassword"]
-    siadata, status_code = post_to_sia('wallet/unlock', {"encryptionpassword": pwd})
-    if status_code == 204:
-        # This (No Content) should be the default returned on success.
-        return jsonify(message="Wallet unlocked."), 200
+    siadata, sia_status_code = get_from_sia('wallet/address')
+    # Just return the info from Sia directly as it's either an error
+    # or the address in a field called "address", so pretty straight forward.
+    return jsonify(siadata), sia_status_code
+
+
+@app.route("/wallet/send", methods=['POST'])
+@set_origin()
+def api_wallet_send():
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-post-walletsend
+    if not check_login():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+    # The sia daemon takes the amount in hastings. Should we also/instead
+    # support an amount specified in SC?
+    amount = request.form["amount"]
+    destination = request.form["destination"]
+    siadata, status_code = post_to_sia('wallet/siacoin',
+                                       {"amount": amount,
+                                        "destination": destination})
+    if status_code == 200:
+        # siadata["transactionids"] is a list of IDs of the transactions that
+        # were created when sending the coins. The last transaction contains
+        # the output headed to the 'destination'.
+        return jsonify(transactionids=siadata["transactionids"],
+                       message="%s SC successfully sent to %s."
+                               % (amount / H_PER_SC, destination)), 200
     else:
         return jsonify(siadata), status_code
 

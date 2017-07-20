@@ -34,6 +34,7 @@ sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
+    maven { url "https://jitpack.io" }
 }
 
 
@@ -77,6 +78,8 @@ dependencies {
 //    jmh 'org.openjdk.jmh:jmh-core:0.9'
 //    jmh 'org.openjdk.jmh:jmh-generator-annprocess:0.9'
 //    jmh sourceSets.test.output
+
+    compile 'com.github.apetersson:Blake2b:0.1'
 
 
 }

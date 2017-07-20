@@ -12,7 +12,7 @@ import logging
 import threading
 from backuptools import *
 from siatools import *
-from backupinfo import get_backups_to_restart, get_latest
+from backupinfo import get_backups_to_restart, get_latest, is_finished
 from connecttools import get_from_sia
 
 # Define various constants.
@@ -50,12 +50,16 @@ def api_trigger():
 
 @app.route("/status")
 def api_start():
-    # This is a very temporary debug-style status output for now.
-    statusdata = {"active": get_running_backups(), "all": []}
+    # This status output is mainly thought for MUG who can forward a slice to UI.
+    statusdata = {"backup_active": get_running_backups(),
+                  "backup_info": [],
+                  "helper_active": get_running_helpers()}
     for tname in threadstatus:
-        statusdata["all"].append({
+        statusdata["backup_info"].append({
           "name": threadstatus[tname]["snapname"],
           "time_snapshot": int(threadstatus[tname]["snapname"]),
+          "time_start_step": int(threadstatus[tname]["starttime_step"]),
+          "step": threadstatus[tname]["step"],
           "message": threadstatus[tname]["message"],
           "finished": threadstatus[tname]["finished"],
           "failed": threadstatus[tname]["failed"],
@@ -73,20 +77,22 @@ def api_ping():
     # if needed (via @app.before_first_request).
 
     # Check for synced sia consensus as a prerequisite.
-    consdata, cons_status_code = get_from_sia('consensus')
-    if cons_status_code == 200:
-        if not consdata["synced"]:
-            # Return early, we need a synced consensus to do anything.
-            return "", 204
-    else:
-        return jsonify(message="ERROR: sia daemon is not running."), 503
+    success, errmsg = check_sia_sync()
+    if not success:
+        # Return early, we need a synced consensus to do anything.
+        app.logger.debug(errmsg)
+        app.logger.info("Exiting because sia is not ready, let's check again on next ping.")
+        return "", 204
 
     # See if sia is fully set up and do init tasks if needed.
+    # Setting up hosting is the last step, so if that is not active, we still
+    # need to do something.
     walletdata, wallet_status_code = get_from_sia('wallet')
-    if wallet_status_code == 200:
-        if not walletdata["encrypted"]:
-            # We need to seed the wallet and set up allowances, etc.
-            setup_sia_system()
+    hostdata, host_status_code = get_from_sia('host')
+    if wallet_status_code == 200 and host_status_code == 200:
+        if not hostdata["internalsettings"]["acceptingcontracts"]:
+            # We need to seed the wallet, set up allowances and hosting, etc.
+            setup_sia_system(walletdata, hostdata)
         elif not walletdata["unlocked"]:
             # We should unlock the wallet so new contracts can be made.
             unlock_sia_wallet()
@@ -99,6 +105,29 @@ def api_ping():
         success, errmsg = check_backup_prerequisites()
         if success:
             bthread = start_backup_thread()
+
+    # If no backup is active but the most recent one is not finished,
+    # perform a restart of backups.
+    active_backups = get_running_backups()
+    if not active_backups:
+        snapname = get_latest()
+        if snapname:
+            if not is_finished(snapname):
+                restart_backups()
+    else:
+        # If the upload step is stuck (taking longer than 30 minutes),
+        # we should restart the sia service.
+        # See https://github.com/NebulousLabs/Sia/issues/1605
+        for tname in threadstatus:
+            if (threadstatus[tname]["snapname"] in active_backups
+                and threadstatus[tname]["step"] == "initiate uploads"
+                and threadstatus[tname]["starttime_step"] < time.time() - 30 * 60):
+                # This would return True for success but already logs errors.
+                restart_sia()
+
+    # See if we need to rebalance the disk space.
+    rebalance_diskspace()
+
     return "", 204
 
 
@@ -132,9 +161,12 @@ def run_backup(startevent, snapname=None):
           "uploadsize": None,
           "uploadfiles": [],
           "uploadprogress": 0,
+          "starttime_thread": time.time(),
+          "starttime_step": time.time(),
           "finished": False,
           "failed": False,
           "restarted": restarted,
+          "step": "init",
           "message": "started",
         }
         # Tell main thread we are set up.
@@ -185,12 +217,20 @@ def run_backup(startevent, snapname=None):
             return
         threadstatus[threading.current_thread().name]["finished"] = True
         threadstatus[threading.current_thread().name]["message"] = "done"
+        threadstatus[threading.current_thread().name]["step"] = "complete"
+        threadstatus[threading.current_thread().name]["starttime_step"] = time.time()
 
 
 def get_running_backups():
     return [threadstatus[thread.name]["snapname"]
             for thread in threading.enumerate()
               if thread.name in threadstatus ]
+
+
+def get_running_helpers():
+    return [thread.name
+            for thread in threading.enumerate()
+              if thread.name.startswith("sia.") ]
 
 
 def restart_backups():
@@ -204,7 +244,7 @@ def restart_backups():
                 app.logger.debug('%s was restarted.', bthread.name)
 
 
-def setup_sia_system():
+def setup_sia_system(walletdata, hostdata):
     # We may start long-running tasks here so we do them in their own thread.
     # We also need to make sure to not init the same process multiple times.
     if [thread.name for thread in threading.enumerate()
@@ -213,14 +253,14 @@ def setup_sia_system():
         return None
 
     sevent = threading.Event()
-    sthread = threading.Thread(target=run_sia_setup, args=(sevent,))
+    sthread = threading.Thread(target=run_sia_setup, args=(sevent, walletdata, hostdata))
     sthread.daemon = True
     sthread.start()
     sevent.wait() # Wait for thread being set up.
     return sthread.name
 
 
-def run_sia_setup(startevent):
+def run_sia_setup(startevent, walletdata, hostdata):
     # The routes have implicit Flask application context, but the thread needs an explicit one.
     # See http://flask.pocoo.org/docs/appcontext/#creating-an-application-context
     with app.app_context():
@@ -229,9 +269,10 @@ def run_sia_setup(startevent):
         startevent.set()
         # Do the initial setup of the sia system, so uploading and hosting files works.
         # 0) Check if sia is running and consensus in sync.
-        # 1) Get wallet seed from MineBD.
-        # 2) Init the wallet with that seed.
-        # 3) Unlock the wallet, using the seed as password.
+        # If wallet is not unlocked:
+        #   1) Get wallet seed from MineBD.
+        #   2) If the wallet is not encrypted yet, init the wallet with that seed.
+        #   3) Unlock the wallet, using the seed as password.
         # 4) Fetch our initial allotment of siacoins from Minebox (if applicable).
         # 5) Set an allowance for renting, so that we can start uploading backups.
         # 6) Set up sia hosting.
@@ -240,18 +281,32 @@ def run_sia_setup(startevent):
             app.logger.error(errmsg)
             app.logger.info("Exiting sia setup because sia is not ready, will try again on next ping.")
             return
-        seed = get_seed()
-        if not seed:
-            app.logger.error("Did not get a useful seed, cannot initialize the sia wallet.")
+        if not walletdata["unlocked"]:
+            seed = get_seed()
+            if not seed:
+                app.logger.error("Did not get a useful seed, cannot initialize the sia wallet.")
+                return
+            if not walletdata["encrypted"]:
+                if not init_wallet(seed):
+                    return
+            if not unlock_wallet(seed):
+                return
+        if (walletdata["confirmedsiacoinbalance"] == "0"
+              and walletdata["unconfirmedoutgoingsiacoins"] == "0"
+              and walletdata["unconfirmedincomingsiacoins"] == "0"):
+            # We have an empty wallet, let's try to fetch some siacoins.
+            fetch_siacoins()
+            # If we succeeded, we need to wait for the coins to arrive,
+            # and if we failed, we have no balance and can't set an allowance
+            # or host files, so in any case, we return here.
             return
-        if not init_wallet(seed):
-            return
-        if not unlock_wallet(seed):
-            return
-        fetch_siacoins()
-        if not set_allowance():
-            return
-        #set_up_hosting()
+        renterdata, renter_status_code = get_from_sia('renter')
+        if renter_status_code == 200 and renterdata["settings"]["allowance"]["funds"] == "0":
+            # No allowance, let's set one.
+            if not set_allowance():
+                return
+        if not hostdata["internalsettings"]["acceptingcontracts"]:
+            set_up_hosting()
 
 
 def unlock_sia_wallet():

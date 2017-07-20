@@ -1,0 +1,145 @@
+#wallet {
+
+}
+
+
+	#wallet-balance-box {
+		background-color: rgba(36,172,206,0.2);
+		text-align: center;
+		position: relative;
+		padding: 30px 0;
+	}
+		.wallet-balance {
+			font-size: 12px;
+			line-height: 18px;
+			font-style: italic;
+			opacity: 0.7;
+		}
+		#wallet-sia {
+			font-size: 26px;
+			line-height: 34px;
+			color: #fff;
+			font-style: normal;
+			opacity: 1;
+		}
+			.wallet-balance>span {
+				font: inherit;
+				display: inline-block;
+				vertical-align: middle;
+			}
+				.currency-sign {
+					font-size: 0.8em !important;
+					margin-left: 5px !important;
+				}
+		#wallet-activity-witness {
+			position: absolute;
+			bottom: 0;
+			left: 0;
+			width: 100%;
+			height: 10px;
+			margin: 0;
+			display: none;
+		}
+
+
+	#wallet-tabs-buttons {
+		text-align: center;
+		padding: 30px 0;
+	}
+
+		#wallet-tabs-buttons .button {
+			margin-top: 0;
+			margin-bottom: 0;
+		}
+		#wallet-tabs-buttons .button + .button {
+			margin-left: 30px; /* match bootstrap's col padding * 2 */
+		}
+
+	#wallet-tabs {
+
+	}
+
+		#wallet-tabs .wallet-tab {
+			display: none;
+		}
+		#wallet-tabs .wallet-tab.active {
+			display: block;
+		}
+
+
+		#send-tab {
+
+		}
+			#send-tab .available-amount-line {
+				margin-top: 0;
+			}
+			#send-tab .available-amount-line>span {
+				font: inherit;
+				display: inline-block;
+				vertical-align: middle;
+				border-bottom: 1px dotted rgba(255,255,255,.5);
+				cursor: pointer;
+			}
+			#amount-to-send {
+				text-align: right;
+				font-size: 12px;
+				color: #fff;
+			}
+			#amount-feedback {
+				color: #ff4a86;
+			}
+			#send-tab .button-box {
+				text-align: right;
+			}
+
+
+		#receive-tab {
+
+		}
+			#receive-tab .receive-params,
+			#receive-tab .qr-col {
+				padding-bottom: 30px;
+			}
+				#user-address {
+
+				}
+				#amount-to-receive {
+					text-align: right;
+					font-size: 12px;
+					color: #fff;
+				}
+				#user-wallet-address-feedback {
+					margin-left: 15px;
+				}
+
+
+
+
+#receive-funds-qr-code {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0,0,0,0.8);
+	display: none;
+}
+#qr-code {
+	position: absolute;
+	top: 40%;
+	left: 50%;
+	width: 316px;
+	height: 316px;
+	background-color: #fff;
+	margin-top: -158px;
+	margin-left: -158px;
+	padding: 30px;
+}
+#hide-qr-code-button {
+	top: 30px;
+	right: 30px;
+}
+#hide-qr-code-button:before,
+#hide-qr-code-button:after {
+	background-color: #fff;
+}

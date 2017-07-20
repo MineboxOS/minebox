@@ -1,0 +1,38 @@
+#!groovy
+node ("rockstor") {
+   properties([parameters([string(defaultValue: 'master', description: 'Branch of Backup Service to build', name: 'BKUPSVC_BRANCH')]), [$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: false], pipelineTriggers([])])
+
+
+   currentBuild.displayName = "#" + BUILD_ID + " (" + BKUPSVC_BRANCH + ")"
+   def mvnHome
+   stage('Checkout') { // for display purposes
+      dir (WORKSPACE) {
+        deleteDir() // clean build
+      }
+      retry (3) {
+        checkout( [ $class: 'GitSCM'
+                  , branches: [[name: params.BKUPSVC_BRANCH]]
+                  , doGenerateSubmoduleConfigurations: false
+                  , extensions: []
+                  , submoduleCfg: []
+                  , userRemoteConfigs: [[credentialsId: '0c80fc94-d6f5-489b-a850-30e0deb2273f', url: 'git@bitbucket.org:mineboxgmbh/minebox-client-tools.git']]
+                  ])
+      }
+   }
+   stage('Check Build Environment') {
+       sh """yum install -y rpmdevtools
+             rpmdev-setuptree
+          """
+   }
+   stage('Build RPM') {
+       
+       sh """mkdir -p SOURCES
+             mkdir -p BUILD
+             mkdir -p RPMS
+             rpmbuild -bb sia/minebox-backupservice.spec
+          """
+   }
+   stage('Store RPM in archive') {
+      archive 'RPMS/x86_64/*.rpm'
+   }
+}
