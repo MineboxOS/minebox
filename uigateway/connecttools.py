@@ -303,6 +303,10 @@ def get_from_mineboxconfig(api):
     return {"message": "This service doesn't exist yet."}, 501
 
 
+def get_from_faucetservice(api):
+    return {"message": "This service doesn't exist yet."}, 501
+
+
 def check_login():
     csrftoken = request.cookies.get('csrftoken')
     sessionid = request.cookies.get('sessionid')
