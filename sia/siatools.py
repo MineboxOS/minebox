@@ -230,13 +230,13 @@ def get_sia_config():
             # We only get here if no config file exists and the remote service
             # also doesn't work. Set useful defaults.
             bytes_per_tb = 2 ** 40
-            months_per_block = 30 * 24 * 3600 / SEC_PER_BLOCK
+            blocks_per_month = 30 * 24 * 3600 / SEC_PER_BLOCK
             sctb_per_hb = H_PER_SC / bytes_per_tb # SC / TB -> hastings / byte
-            sctbmon_per_hbblk = sctb_per_hb * months_per_block # SC / TB / month -> hastings / byte / block
+            sctbmon_per_hbblk = sctb_per_hb * blocks_per_month # SC / TB / month -> hastings / byte / block
             get_sia_config.settings = {
               "renter": {
                 "allowance_funds": 0 * H_PER_SC,
-                "allowance_period": 6 * months_per_block,
+                "allowance_period": 6 * blocks_per_month,
               },
               "host": {
                 "mincontractprice": 0 * H_PER_SC,
@@ -246,7 +246,7 @@ def get_sia_config():
                 "collateral": 0 * sctbmon_per_hbblk,
                 "collateralbudget": 0 * H_PER_SC,
                 "maxcollateral": 0 * H_PER_SC,
-                "maxduration": 6 * months_per_block,
+                "maxduration": 6 * blocks_per_month,
               },
               "minebox_sharing": {
                 "enabled": False,
