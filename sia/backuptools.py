@@ -239,7 +239,7 @@ def remove_old_backups(status, activebackups):
             # We don't have all files to keep yet, see if this is our "golden"
             # backup, an active or to-restart one - otherwise, schedule removal.
             backupfiles, is_finished = get_files(backupname)
-            if snapname in activebackups or snapname in restartset:
+            if backupname in activebackups or backupname in restartset:
                 keep_this_backup = True
             elif backupfiles and is_finished:
                 files_missing = False
