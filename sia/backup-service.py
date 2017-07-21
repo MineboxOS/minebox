@@ -12,7 +12,7 @@ import logging
 import threading
 from backuptools import *
 from siatools import *
-from backupinfo import get_backups_to_restart, get_latest, is_finished
+from backupinfo import get_backups_to_restart, get_latest, get_list, is_finished
 from connecttools import get_from_sia
 
 # Define various constants.
@@ -124,6 +124,15 @@ def api_ping():
                 and threadstatus[tname]["starttime_step"] < time.time() - 30 * 60):
                 # This would return True for success but already logs errors.
                 restart_sia()
+        # If the list of unfinished backups is significantly larger than active
+        # backups, we very probably have quite a few backups hanging around
+        # that we need to cleanup but don't get to routine cleanup (which
+        # happens only when a backup finishes).
+        unfinished_backups = get_list()
+        if len(unfinished_backups) > len(active_backups) + 5:
+            app.logger.info("We have %s unfinished backups but only %s active ones, let's clean up."
+                            % (len(unfinished_backups), len(active_backups)))
+            start_cleanup_thread()
 
     # See if we need to rebalance the disk space.
     rebalance_diskspace()
@@ -221,6 +230,26 @@ def run_backup(startevent, snapname=None):
         threadstatus[threading.current_thread().name]["starttime_step"] = time.time()
 
 
+def start_cleanup_thread():
+    cevent = threading.Event()
+    cthread = threading.Thread(target=run_cleanup, args=(cevent,))
+    cthread.daemon = True
+    cthread.start()
+    cevent.wait() # Wait for thread being set up.
+    return cthread
+
+
+def run_cleanup(startevent):
+    # The routes have implicit Flask application context, but the thread needs an explicit one.
+    # See http://flask.pocoo.org/docs/appcontext/#creating-an-application-context
+    with app.app_context():
+        threading.current_thread().name = 'cleanup.backups'
+        # Tell main thread we are set up.
+        startevent.set()
+        # Clean up old backups (locally and on the network).
+        remove_old_backups({}, get_running_backups())
+
+
 def get_running_backups():
     return [threadstatus[thread.name]["snapname"]
             for thread in threading.enumerate()
@@ -230,7 +259,8 @@ def get_running_backups():
 def get_running_helpers():
     return [thread.name
             for thread in threading.enumerate()
-              if thread.name.startswith("sia.") ]
+              if (thread.name.startswith("sia.")
+                  or thread.name.startswith("cleanup.")) ]
 
 
 def restart_backups():

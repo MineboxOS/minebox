@@ -224,6 +224,7 @@ def remove_old_backups(status, activebackups):
     status["message"] = "Cleaning up old backups"
     status["step"] = sys._getframe().f_code.co_name.replace("_", " ")
     status["starttime_step"] = time.time()
+    restartset = get_backups_to_restart()
     allbackupnames = get_list()
     sia_filedata, sia_status_code = get_from_sia('renter/files')
     if sia_status_code == 200:
@@ -233,19 +234,14 @@ def remove_old_backups(status, activebackups):
     keepfiles = []
     keepset_complete = False
     for backupname in allbackupnames:
+        keep_this_backup = False
         if not keepset_complete:
-            # We don't have all files to keep yet, see if this is our "golden" backup.
+            # We don't have all files to keep yet, see if this is our "golden"
+            # backup, an active or to-restart one - otherwise, schedule removal.
             backupfiles, is_finished = get_files(backupname)
-            current_app.logger.info("Keeping %s backup %s" %
-                                    ("finished" if is_finished else "unfinished",
-                                     backupname))
-            if backupfiles:
-                # Note that extend does not return anything.
-                keepfiles.extend(backupfiles)
-                # Converting to a set eliminates duplicates.
-                # Convert back to list for type consistency.
-                keepfiles = list(set(keepfiles))
-            if is_finished:
+            if backupname in activebackups or backupname in restartset:
+                keep_this_backup = True
+            elif backupfiles and is_finished:
                 files_missing = False
                 for bfile in backupfiles:
                    if (not bfile in sia_map
@@ -256,8 +252,18 @@ def remove_old_backups(status, activebackups):
                     # Yay! A finished backup with all files available!
                     # Keep this and everything we already collected, but that's it.
                     current_app.logger.info("Backup %s is fully complete!" % backupname)
+                    keep_this_backup = True
                     keepset_complete = True
-        else:
+            if keep_this_backup:
+                current_app.logger.info("Keeping %s backup %s" %
+                                        ("finished" if is_finished else "unfinished",
+                                         backupname))
+                # Note that extend does not return anything.
+                keepfiles.extend(backupfiles)
+                # Converting to a set eliminates duplicates.
+                # Convert back to list for type consistency.
+                keepfiles = list(set(keepfiles))
+        if not keep_this_backup:
             # We already have all files to keep, any older backup can be discarded.
             current_app.logger.info("Discard old backup %s" % backupname)
             zipname = join(METADATA_BASE, "backup.%s.zip" % backupname)

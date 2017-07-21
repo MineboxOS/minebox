@@ -70,6 +70,7 @@ def fetch_siacoins():
     current_app.logger.info("TODO: Fetching base allotment of coins from Minebox.")
     # We need the Minebox sia faucet service for this (See MIN-130).
     fsdata, fs_status_code = get_from_faucetservice('siacoins')
+    if fs_status_code >= 400:
         current_app.logger.error("Faucet error %s: %s" % (fs_status_code,
                                                           fsdata["message"]))
         return False
