@@ -1,0 +1,2 @@
+mug ALL=(ALL) NOPASSWD: /usr/lib/minebox/mbkey.sh
+

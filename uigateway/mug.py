@@ -31,6 +31,7 @@ SSL_KEY="/root/rockstor-core_vm/certs/rockstor.key"
 MINEBD_STORAGE_PATH="/mnt/storage"
 UPLOADER_CMD=backupinfo.UPLOADER_CMD
 DEMOSIAC_CMD="/root/minebox-client-tools_vm/sia/demosiac.sh"
+SUDO="/usr/bin/sudo"
 MBKEY_CMD="/usr/lib/minebox/mbkey.sh"
 
 config = {}
@@ -161,7 +162,7 @@ def api_key_put():
     elif "messagesource" in mbdata and mbdata["messagesource"] == "MineBD":
         # MineBD is running but encryption is not yet set up, we can actually set a key!
         if len(request.data):
-          retcode = subprocess.call([MBKEY_CMD, "set", request.data])
+          retcode = subprocess.call([SUDO, MBKEY_CMD, "set", request.data])
           if retcode == 0:
               return jsonify(message="Key set successfully"), 200
           else:
