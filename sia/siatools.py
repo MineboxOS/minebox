@@ -236,10 +236,10 @@ def get_sia_config():
         elif not get_sia_config.settings:
             # We only get here if no config file exists and the remote service
             # also doesn't work. Set useful defaults.
-            bytes_per_tb = 2 ** 40
+            bytes_per_tb = 1e12 # not 2 ** 40 as Sia uses SI TB, see https://github.com/NebulousLabs/Sia/blob/v1.2.2/modules/host.go#L14
             blocks_per_month = 30 * 24 * 3600 / SEC_PER_BLOCK
             sctb_per_hb = H_PER_SC / bytes_per_tb # SC / TB -> hastings / byte
-            sctbmon_per_hbblk = sctb_per_hb * blocks_per_month # SC / TB / month -> hastings / byte / block
+            sctbmon_per_hbblk = sctb_per_hb / blocks_per_month # SC / TB / month -> hastings / byte / block
             get_sia_config.settings = {
               "renter": {
                 "allowance_funds": 0 * H_PER_SC,
