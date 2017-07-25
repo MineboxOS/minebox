@@ -1,6 +1,6 @@
 Name: minebox-sia
 
-Version: 1.2.2
+Version: 1.3.0
 Release: %(git describe --tags --match 'minebox*'|grep -oP "(?<=minebox_v).*" | tr '-' '_')%{?dist}
 Summary: Sia - decentralized cloud storage platform
 License: MIT License
