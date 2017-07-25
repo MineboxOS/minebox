@@ -24,6 +24,11 @@ def check_backup_prerequisites():
     success, errmsg = check_sia_sync()
     if not success:
         return False, errmsg
+    siadata, sia_status_code = get_from_sia("renter/contracts")
+    if sia_status_code >= 400:
+        return False, siadata["message"]
+    if not siadata["contracts"]:
+        return False, "No Sia renter contracts, so uploading is not possible."
     # Potentially check things other than sia.
     return True, ""
 
