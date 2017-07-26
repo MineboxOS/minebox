@@ -175,10 +175,11 @@ def wait_for_uploads(status):
                 current_app.logger.info("Backup is fully available and minimum file redundancy is %.1f, we can finish things up."
                                         % min_redundancy)
                 break
-            # If we are still here, wait 5 minutes for more upload progress.
-            current_app.logger.info("Uploads are not yet complete (%d%% / min file redundancy %.1f), wait 5 minutes."
-                                    % (int(status["uploadprogress"]), min_redundancy))
-            time.sleep(5 * 60)
+            # If we are still here, wait some minutes for more upload progress.
+            wait_minutes = 5
+            current_app.logger.info("Uploads are not yet complete (%d%% / min file redundancy %.1f), wait %d minutes."
+                                    % (int(status["uploadprogress"]), min_redundancy, wait_minutes))
+            time.sleep(wait_minutes * 60)
         else:
             return False, "ERROR: Sia daemon needs to be running for any uploads."
     return True, ""

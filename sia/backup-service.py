@@ -129,7 +129,7 @@ def api_ping():
         # that we need to cleanup but don't get to routine cleanup (which
         # happens only when a backup finishes).
         unfinished_backups = get_list()
-        if len(unfinished_backups) > len(active_backups) + 5:
+        if len(unfinished_backups) > len(active_backups) + 3:
             app.logger.info("We have %s unfinished backups but only %s active ones, let's clean up."
                             % (len(unfinished_backups), len(active_backups)))
             start_cleanup_thread()
