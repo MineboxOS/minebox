@@ -79,9 +79,10 @@ def fetch_siacoins():
 def set_allowance():
     current_app.logger.info("Setting an allowance for renting out files.")
     settings = get_sia_config()
-    siadata, sia_status_code = post_to_sia('renter',
-                                           {"funds": settings["renter"]["allowance_funds"],
-                                            "period": settings["renter"]["allowance_period"]})
+    siadata, sia_status_code = post_to_sia('renter', {
+      "funds": str(settings["renter"]["allowance_funds"]),
+      "period": str(settings["renter"]["allowance_period"]),
+    })
     if sia_status_code >= 400:
         current_app.logger.error("Sia error %s: %s" % (sia_status_code,
                                                        siadata["message"]))
@@ -97,7 +98,16 @@ def set_up_hosting():
         return
     current_app.logger.info("Setting up sia hosting.")
     # Set min*price, collateral, collateralbudget, maxcollateral, maxduration
-    siadata, sia_status_code = post_to_sia("host", settings["host"])
+    siadata, sia_status_code = post_to_sia("host", {
+      "mincontractprice": str(settings["host"]["mincontractprice"]),
+      "mindownloadbandwidthprice": str(settings["host"]["mindownloadbandwidthprice"]),
+      "minstorageprice": str(settings["host"]["minstorageprice"]),
+      "minuploadbandwidthprice": str(settings["host"]["minuploadbandwidthprice"]),
+      "collateral": str(settings["host"]["collateral"]),
+      "collateralbudget": str(settings["host"]["collateralbudget"]),
+      "maxcollateral": str(settings["host"]["maxcollateral"]),
+      "maxduration": str(settings["host"]["maxduration"]),
+    })
     if sia_status_code >= 400:
         current_app.logger.error("Sia error %s: %s" % (sia_status_code,
                                                        siadata["message"]))
@@ -245,48 +255,48 @@ def get_sia_config():
         sctbmon_per_hbblk = sctb_per_hb / blocks_per_month # SC / TB / month -> hastings / byte / block
         get_sia_config.settings = {
           "renter": {
-            "allowance_funds": (
+            "allowance_funds": int((
               sia_settings["renter"]["allowance_funds"]
               if "allowance_funds" in sia_settings["renter"]
-              else 1000) * H_PER_SC,
-            "allowance_period": (
+              else 1000) * H_PER_SC),
+            "allowance_period": int((
               sia_settings["renter"]["allowance_period"]
               if "allowance_period" in sia_settings["renter"]
-              else 6) * blocks_per_month,
+              else 6) * blocks_per_month),
           },
           "host": {
-            "mincontractprice": (
+            "mincontractprice": int((
               sia_settings["host"]["mincontractprice"]
               if "mincontractprice" in sia_settings["host"]
-              else 3) * H_PER_SC,
-            "mindownloadbandwidthprice": (
+              else 3) * H_PER_SC),
+            "mindownloadbandwidthprice": int((
               sia_settings["host"]["mindownloadbandwidthprice"]
               if "mindownloadbandwidthprice" in sia_settings["host"]
-              else 41) * sctb_per_hb,
-            "minstorageprice": (
+              else 41) * sctb_per_hb),
+            "minstorageprice": int((
               sia_settings["host"]["minstorageprice"]
               if "minstorageprice" in sia_settings["host"]
-              else 120) * sctbmon_per_hbblk,
-            "minuploadbandwidthprice": (
+              else 120) * sctbmon_per_hbblk),
+            "minuploadbandwidthprice": int((
               sia_settings["host"]["minuploadbandwidthprice"]
               if "minuploadbandwidthprice" in sia_settings["host"]
-              else 8.2) * sctb_per_hb,
-            "collateral": (
+              else 8.2) * sctb_per_hb),
+            "collateral": int((
               sia_settings["host"]["collateral"]
               if "collateral" in sia_settings["host"]
-              else 80) * sctbmon_per_hbblk,
-            "collateralbudget": (
+              else 80) * sctbmon_per_hbblk),
+            "collateralbudget": int((
               sia_settings["host"]["collateralbudget"]
               if "collateralbudget" in sia_settings["host"]
-              else 2000) * H_PER_SC,
-            "maxcollateral": (
+              else 2000) * H_PER_SC),
+            "maxcollateral": int((
               sia_settings["host"]["maxcollateral"]
               if "maxcollateral" in sia_settings["host"]
-              else 100) * H_PER_SC,
-            "maxduration": (
+              else 100) * H_PER_SC),
+            "maxduration": int((
               sia_settings["host"]["maxduration"]
               if "maxduration" in sia_settings["host"]
-              else 6) * blocks_per_month,
+              else 6) * blocks_per_month),
           },
           "minebox_sharing": {
             "enabled": (
