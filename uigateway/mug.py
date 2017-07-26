@@ -352,16 +352,21 @@ def api_sia_status():
         }
     siadata, sia_status_code = get_from_sia("renter/contracts")
     if sia_status_code == 200:
-        outdata["renting"] = {"contracts": len(siadata["contracts"]) if siadata["contracts"] else 0}
+        outdata["renting"] = {"contracts": len(siadata["contracts"])
+                                           if siadata["contracts"] else 0}
     else:
         outdata["renting"] = {"contracts": None}
     siadata, sia_status_code = get_from_sia("renter/files")
     if sia_status_code == 200:
-        outdata["renting"]["uploaded_files"] = len(siadata["files"]) if siadata["files"] else 0
-        upsize = 0
-        for fdata in siadata["files"]:
-            upsize += fdata["filesize"] * fdata["redundancy"]
-        outdata["renting"]["uploaded_size"] = upsize
+        if siadata["files"]:
+            outdata["renting"]["uploaded_files"] = len(siadata["files"])
+            upsize = 0
+            for fdata in siadata["files"]:
+                upsize += fdata["filesize"] * fdata["redundancy"]
+            outdata["renting"]["uploaded_size"] = upsize
+        else:
+            outdata["renting"]["uploaded_files"] = 0
+            outdata["renting"]["uploaded_size"] = 0
     else:
         outdata["renting"]["uploaded_files"] = None
         outdata["renting"]["uploaded_size"] = None
