@@ -119,9 +119,9 @@ def initiate_uploads(status):
             filename = path.basename(filepath)
             (froot, fext) = path.splitext(filename)
             sia_fname = '%s.%s%s' % (froot, int(fileinfo.st_mtime), fext)
-            if any(sf['siapath'] == sia_fname and sf['available'] for sf in siafiles):
+            if siafiles and any(sf['siapath'] == sia_fname and sf['available'] for sf in siafiles):
                 current_app.logger.info("%s is part of the set and already uploaded." % sia_fname)
-            elif any(sf['siapath'] == sia_fname for sf in siafiles):
+            elif siafiles and any(sf['siapath'] == sia_fname for sf in siafiles):
                 status["uploadsize"] += fileinfo.st_size
                 status["uploadfiles"].append(sia_fname)
                 current_app.logger.info("%s is part of the set and the upload is already in progress." % sia_fname)
