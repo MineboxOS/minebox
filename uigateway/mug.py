@@ -369,7 +369,7 @@ def api_sia_status():
     if sia_status_code == 200:
         outdata["renting"]["allowance_funds_sc"] = int(siadata["settings"]["allowance"]["funds"]) / H_PER_SC
         outdata["renting"]["allowance_months"] = siadata["settings"]["allowance"]["period"] / blocks_per_month
-        outdata["reningr"]["siacoins_spent"] = (int(siadata["financialmetrics"]["contractspending"]) +
+        outdata["renting"]["siacoins_spent"] = (int(siadata["financialmetrics"]["contractspending"]) +
                                                 int(siadata["financialmetrics"]["downloadspending"]) +
                                                 int(siadata["financialmetrics"]["storagespending"]) +
                                                 int(siadata["financialmetrics"]["uploadspending"]))/ H_PER_SC

@@ -151,6 +151,7 @@ def wait_for_uploads(status):
         sia_filedata, sia_status_code = get_from_sia('renter/files')
         if sia_status_code == 200:
             uploaded_size = 0
+            min_redundancy = 0
             fully_available = True
             sia_map = dict((d["siapath"], index) for (index, d) in enumerate(sia_filedata["files"]))
             for bfile in status["backupfileinfo"]:
@@ -158,6 +159,8 @@ def wait_for_uploads(status):
                     fdata = sia_filedata["files"][sia_map[bfile["siapath"]]]
                     if fdata["siapath"] in status["uploadfiles"]:
                         uploaded_size += fdata["filesize"] * fdata["uploadprogress"] / 100.0
+                        if fdata["redundancy"] > min_redundancy:
+                            min_redundancy = fdata["redundancy"]
                     if not fdata["available"]:
                         fully_available = False
                 elif re.match(r'.*\.dat$', bfile["siapath"]):
@@ -166,16 +169,15 @@ def wait_for_uploads(status):
                 else:
                     current_app.logger.debug('File "%s" not on Sia and not matching watched names.', bfile["siapath"])
             status["uploadprogress"] = 100.0 * uploaded_size / status["uploadsize"] if status["uploadsize"] else 100
-            # Break if the backup is fully available on sia and has enough upload progress.
-            # TODO: target progress should probably be 99% (or even 100%)
-            #       but until sia 1.3 release, we need 66% here due to redundancy change.
-            if fully_available and status["uploadprogress"] > 66:
-                current_app.logger.info("Backup is fully available and progress is %s%%, we can finish things up."
-                                        % int(status["uploadprogress"]))
+            # Break if the backup is fully available on sia and has enough
+            # minimum redundancy.
+            if fully_available and min_redundancy >= 2.0:
+                current_app.logger.info("Backup is fully available and minimum file redundancy is %.1f, we can finish things up."
+                                        % min_redundancy)
                 break
             # If we are still here, wait 5 minutes for more upload progress.
-            current_app.logger.info("Uploads are not yet complete (%s%%), wait 5 minutes."
-                                    % int(status["uploadprogress"]))
+            current_app.logger.info("Uploads are not yet complete (%d%% / min file redundancy %.1f), wait 5 minutes."
+                                    % (int(status["uploadprogress"]), min_redundancy))
             time.sleep(5 * 60)
         else:
             return False, "ERROR: Sia daemon needs to be running for any uploads."
