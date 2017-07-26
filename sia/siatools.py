@@ -207,6 +207,7 @@ def _rebalance_hosting_to_ratio():
 def get_sia_config():
     if (not hasattr(get_sia_config, "settings") or get_sia_config.settings is None
         or get_sia_config.timestamp < time.time() - 24 * 3600):
+        sia_settings = {}
         # Always set the timestamp so we do not have to test above if it's set,
         #  as it's only unset when token is also unset
         get_sia_config.timestamp = time.time()
@@ -221,45 +222,83 @@ def get_sia_config():
             # Get config from remote service and write to file.
             cfdata, cf_status_code = get_from_mineboxconfig('sia')
             if cf_status_code == 200:
-                get_sia_config.settings = cfdata
+                sia_settings = cfdata
                 with open(SIA_CONFIG_JSON, 'w') as outfile:
-                    json.dump(get_sia_config.settings, outfile)
+                    json.dump(sia_settings, outfile)
             else:
                 current_app.logger.error(
-                  'Error %s getting Sia config from Minebox config service: %s'
+                  'Error %s getting Sia config from Minebox settings service: %s'
                   % (cf_status_code,  cfdata["message"]))
-                get_sia_config.settings = None
-        if not get_sia_config.settings and os.path.isfile(SIA_CONFIG_JSON):
+        if not sia_settings and os.path.isfile(SIA_CONFIG_JSON):
             # If we did not get settings remotely, read them from the file.
             with open(CONFIG_JSON_PATH) as json_file:
-                get_sia_config.settings = json.load(json_file)
-        elif not get_sia_config.settings:
-            # We only get here if no config file exists and the remote service
-            # also doesn't work. Set useful defaults.
-            bytes_per_tb = 1e12 # not 2 ** 40 as Sia uses SI TB, see https://github.com/NebulousLabs/Sia/blob/v1.2.2/modules/host.go#L14
-            blocks_per_month = 30 * 24 * 3600 / SEC_PER_BLOCK
-            sctb_per_hb = H_PER_SC / bytes_per_tb # SC / TB -> hastings / byte
-            sctbmon_per_hbblk = sctb_per_hb / blocks_per_month # SC / TB / month -> hastings / byte / block
-            get_sia_config.settings = {
-              "renter": {
-                "allowance_funds": 0 * H_PER_SC,
-                "allowance_period": 6 * blocks_per_month,
-              },
-              "host": {
-                "mincontractprice": 0 * H_PER_SC,
-                "mindownloadbandwidthprice": 0 * sctb_per_hb,
-                "minstorageprice": 0 * sctbmon_per_hbblk,
-                "minuploadbandwidthprice": 0 * sctb_per_hb,
-                "collateral": 0 * sctbmon_per_hbblk,
-                "collateralbudget": 0 * H_PER_SC,
-                "maxcollateral": 0 * H_PER_SC,
-                "maxduration": 6 * blocks_per_month,
-              },
-              "minebox_sharing": {
-                "enabled": False,
-                "shared_space_ratio": 0.5,
-              },
-            }
+                sia_settings = json.load(json_file)
+        # Convert values to units that siad is using.
+        # Set useful defaults in case either a value is missing or both the
+        # Minebox settings service doesn't work and we have no stored config.
+        for topic in ["renter", "host", "minebox_sharing"]:
+            if not topic in sia_settings:
+                sia_settings[topic] = {}
+        bytes_per_tb = 1e12 # not 2 ** 40 as Sia uses SI TB, see https://github.com/NebulousLabs/Sia/blob/v1.2.2/modules/host.go#L14
+        blocks_per_month = 30 * 24 * 3600 / SEC_PER_BLOCK
+        sctb_per_hb = H_PER_SC / bytes_per_tb # SC / TB -> hastings / byte
+        sctbmon_per_hbblk = sctb_per_hb / blocks_per_month # SC / TB / month -> hastings / byte / block
+        get_sia_config.settings = {
+          "renter": {
+            "allowance_funds": (
+              sia_settings["renter"]["allowance_funds"]
+              if "allowance_funds" in sia_settings["renter"]
+              else 1000) * H_PER_SC,
+            "allowance_period": (
+              sia_settings["renter"]["allowance_period"]
+              if "allowance_period" in sia_settings["renter"]
+              else 6) * blocks_per_month,
+          },
+          "host": {
+            "mincontractprice": (
+              sia_settings["host"]["mincontractprice"]
+              if "mincontractprice" in sia_settings["host"]
+              else 3) * H_PER_SC,
+            "mindownloadbandwidthprice": (
+              sia_settings["host"]["mindownloadbandwidthprice"]
+              if "mindownloadbandwidthprice" in sia_settings["host"]
+              else 41) * sctb_per_hb,
+            "minstorageprice": (
+              sia_settings["host"]["minstorageprice"]
+              if "minstorageprice" in sia_settings["host"]
+              else 120) * sctbmon_per_hbblk,
+            "minuploadbandwidthprice": (
+              sia_settings["host"]["minuploadbandwidthprice"]
+              if "minuploadbandwidthprice" in sia_settings["host"]
+              else 8.2) * sctb_per_hb,
+            "collateral": (
+              sia_settings["host"]["collateral"]
+              if "collateral" in sia_settings["host"]
+              else 80) * sctbmon_per_hbblk,
+            "collateralbudget": (
+              sia_settings["host"]["collateralbudget"]
+              if "collateralbudget" in sia_settings["host"]
+              else 2000) * H_PER_SC,
+            "maxcollateral": (
+              sia_settings["host"]["maxcollateral"]
+              if "maxcollateral" in sia_settings["host"]
+              else 100) * H_PER_SC,
+            "maxduration": (
+              sia_settings["host"]["maxduration"]
+              if "maxduration" in sia_settings["host"]
+              else 6) * blocks_per_month,
+          },
+          "minebox_sharing": {
+            "enabled": (
+              sia_settings["minebox_sharing"]["enabled"]
+              if "enabled" in sia_settings["minebox_sharing"]
+              else False),
+            "shared_space_ratio": (
+              sia_settings["minebox_sharing"]["shared_space_ratio"]
+              if "shared_space_ratio" in sia_settings["minebox_sharing"]
+              else 0.5),
+          },
+        }
     return get_sia_config.settings
 
 def _get_btrfs_space(diskpath):

@@ -217,6 +217,62 @@ Output:
 }
 ```
 
+### GET /sia/status
+
+Return the current status of the Sia subsystem.  
+The *wallet* has a confirmed balance (in siacoins) and an uncomfirmed delta of
+transactions that have been messaged to the network but not confirmed in a Sia
+block yet (like a contract in the real world that has been agreed between the
+parties but not signed yet).  
+Some fields (like wallet contents) will not be reported (i.e. contain a `null`
+value) when there is no `user` `logged_in` via the Rockstor UI, but the base
+system status `true`/`false` fields will also be available in this case.
+
+
+```json
+{
+  "sia_daemon_running": true,
+  "consensus": {
+    "height": 62248,
+    "synced": true
+  },
+  "wallet": {
+    "unlocked": true,
+    "encrypted": true,
+    "confirmed_balance_sc": 2154.5678,
+    "unconfirmed_delta_sc": -78.987
+  },
+  "renting": {
+    "contracts": 74,
+    "allowance_funds_sc": 1000,
+    "allowance_months": 6,
+    "siacoins_spent": 1029.6530237321947,
+    "siacoins_unspent": 591.5453739038509,
+    "uploaded_files": 55,
+    "uploaded_size": 581088460.8
+  },
+  "hosting": {
+    "enabled": false,
+    "contracts": 0,
+    "connectabilitystatus": "not connectable",
+    "workingstatus": "not working",
+    "netaddress": "",
+    "collateral_sc": 100,
+    "collateralbudget_sc": 1000000,
+    "maxcollateral_sc": 5000,
+    "maxduration_months": 6,
+    "mincontractprice_sc": 5,
+    "mindownloadbandwidthprice_sc": 250,
+    "minstorageprice_sc": 750,
+    "minuploadbandwidthprice_sc": 10,
+    "collateral_locked_sc": 0,
+    "collateral_lost_sc": 0,
+    "collateral_risked_sc": 0,
+    "revenue_sc": 0
+  }
+}
+```
+
 ### GET /status
 
 Return the current status of the Minebox system, showing the most important
@@ -234,10 +290,7 @@ If `minebd_encrypted` is `true` but `minebd_storage_mounted` is not, MineBD (or
 btrfs formatting etc.) is probably still in the process of setting up the
 storage, but the key is set.  
 If `minebd_encrypted` is `false`, the Minebox has not be set up at all yet.  
-The *wallet* has a confirmed balance (in siacoins) and an uncomfirmed delta of
-transactions that have been messaged to the network but not confirmed in a Sia
-block yet (like a contract in the real world that has been agreed between the
-parties but not signed yet).  
+See /sia/status for wallet metric descriptions.  
 Some fields (like wallet contents) will not be reported (i.e. contain a `null`
 value) when there is no `user` `logged_in` via the Rockstor UI, but the base
 system status `true`/`false` fields will also be available in this case.

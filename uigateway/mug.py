@@ -310,6 +310,106 @@ def api_status():
     return jsonify(outdata), 200
 
 
+@app.route("/sia/status", methods=['GET'])
+@set_origin()
+def api_sia_status():
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-siastatus
+    if not check_login():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+    bytes_per_tb = 1e12 # not 2 ** 40 as Sia uses SI TB, see https://github.com/NebulousLabs/Sia/blob/v1.2.2/modules/host.go#L14
+    blocks_per_month = 30 * 24 * 3600 / SEC_PER_BLOCK
+    sctb_per_hb = H_PER_SC / bytes_per_tb # SC / TB -> hastings / byte
+    sctbmon_per_hbblk = sctb_per_hb / blocks_per_month # SC / TB / month -> hastings / byte / block
+    outdata = {}
+    consdata, cons_status_code = get_from_sia('consensus')
+    if cons_status_code == 200:
+        outdata["sia_daemon_running"] = True
+        outdata["consensus"] = {
+          "height": consdata["height"],
+          "synced": consdata["synced"],
+        }
+    else:
+        outdata["sia_daemon_running"] = False
+        outdata["consensus"] = {
+          "height": None,
+          "synced": None,
+        }
+    walletdata, wallet_status_code = get_from_sia('wallet')
+    if wallet_status_code == 200:
+        outdata["wallet"] = {
+          "unlocked": walletdata["unlocked"],
+          "encrypted": walletdata["encrypted"],
+          "confirmed_balance_sc": int(walletdata["confirmedsiacoinbalance"]) / H_PER_SC,
+          "unconfirmed_delta_sc": (int(walletdata["unconfirmedincomingsiacoins"]) -
+                                   int(walletdata["unconfirmedoutgoingsiacoins"])) / H_PER_SC,
+        }
+    else:
+        outdata["wallet"] = {
+          "unlocked": None,
+          "encrypted": None,
+          "confirmed_balance_sc": None,
+          "unconfirmed_delta_sc": None,
+        }
+    siadata, sia_status_code = get_from_sia("renter/contracts")
+    if sia_status_code == 200:
+        outdata["renting"] = {"contracts": len(siadata["contracts"])}
+    else:
+        outdata["renting"] = {"contracts": None}
+    siadata, sia_status_code = get_from_sia("renter/files")
+    if sia_status_code == 200:
+        outdata["renting"]["uploaded_files"] = len(siadata["files"])
+        upsize = 0
+        for fdata in siadata["files"]:
+            upsize += fdata["filesize"] * fdata["redundancy"]
+        outdata["renting"]["uploaded_size"] = upsize
+    else:
+        outdata["renting"]["uploaded_files"] = None
+        outdata["renting"]["uploaded_size"] = None
+    siadata, sia_status_code = get_from_sia("renter")
+    if sia_status_code == 200:
+        outdata["renting"]["allowance_funds_sc"] = int(siadata["settings"]["allowance"]["funds"]) / H_PER_SC
+        outdata["renting"]["allowance_months"] = siadata["settings"]["allowance"]["period"] / blocks_per_month
+        outdata["reningr"]["siacoins_spent"] = (int(siadata["financialmetrics"]["contractspending"]) +
+                                                int(siadata["financialmetrics"]["downloadspending"]) +
+                                                int(siadata["financialmetrics"]["storagespending"]) +
+                                                int(siadata["financialmetrics"]["uploadspending"]))/ H_PER_SC
+        outdata["renting"]["siacoins_unspent"] = int(siadata["financialmetrics"]["unspent"]) / H_PER_SC
+    else:
+        outdata["renting"]["allowance_funds_sc"] = None
+        outdata["renting"]["allowance_months"] = None
+        outdata["renting"]["siacoins_spent"] = None
+        outdata["renting"]["siacoins_unspent"] = None
+    siadata, sia_status_code = get_from_sia('host')
+    if sia_status_code == 200:
+        outdata["hosting"] = {
+          "enabled": siadata["internalsettings"]["acceptingcontracts"],
+          "maxduration_months": siadata["internalsettings"]["maxduration"] / blocks_per_month,
+          "netaddress": siadata["internalsettings"]["netaddress"],
+          "collateral_sc": int(siadata["internalsettings"]["collateral"]) / sctbmon_per_hbblk,
+          "collateralbudget_sc": int(siadata["internalsettings"]["collateralbudget"]) / H_PER_SC,
+          "maxcollateral_sc": int(siadata["internalsettings"]["maxcollateral"]) / H_PER_SC,
+          "mincontractprice_sc": int(siadata["internalsettings"]["mincontractprice"]) / H_PER_SC,
+          "mindownloadbandwidthprice_sc": int(siadata["internalsettings"]["mindownloadbandwidthprice"]) / sctb_per_hb,
+          "minstorageprice_sc": int(siadata["internalsettings"]["minstorageprice"]) / sctbmon_per_hbblk,
+          "minuploadbandwidthprice_sc": int(siadata["internalsettings"]["minuploadbandwidthprice"]) / sctb_per_hb,
+          "connectabilitystatus": siadata["connectabilitystatus"],
+          "workingstatus": siadata["workingstatus"],
+          "contracts": siadata["financialmetrics"]["contractcount"],
+          "collateral_locked_sc": int(siadata["financialmetrics"]["lockedstoragecollateral"]) / H_PER_SC,
+          "collateral_lost_sc": int(siadata["financialmetrics"]["loststoragecollateral"]) / H_PER_SC,
+          "collateral_risked_sc": int(siadata["financialmetrics"]["riskedstoragecollateral"]) / H_PER_SC,
+          "revenue_sc": (int(siadata["financialmetrics"]["storagerevenue"]) +
+                         int(siadata["financialmetrics"]["downloadbandwidthrevenue"]) +
+                         int(siadata["financialmetrics"]["uploadbandwidthrevenue"])) / H_PER_SC,
+        }
+    else:
+        outdata["hosting"] = {
+          "enabled": None,
+        }
+
+    return jsonify(outdata), 200
+
+
 @app.route("/wallet/status", methods=['GET'])
 @set_origin()
 def api_wallet_status():
