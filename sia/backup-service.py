@@ -64,8 +64,11 @@ def api_start():
           "finished": threadstatus[tname]["finished"],
           "failed": threadstatus[tname]["failed"],
           "size": threadstatus[tname]["backupsize"],
+          "filecount": len(threadstatus[tname]["backupfiles"]),
           "upload_size": threadstatus[tname]["uploadsize"],
           "upload_progress": threadstatus[tname]["uploadprogress"],
+          "total_progress": threadstatus[tname]["totalprogress"],
+          "fully_available": threadstatus[tname]["available"],
         })
     return jsonify(statusdata), 200
 
@@ -170,11 +173,14 @@ def run_backup(startevent, snapname=None):
           "ident": threading.current_thread().ident,
           "backupfileinfo": [],
           "backupsize": None,
+          "backupfiles": [],
           "uploadsize": None,
           "uploadfiles": [],
           "uploadprogress": 0,
+          "totalprogress": 0,
           "starttime_thread": time.time(),
           "starttime_step": time.time(),
+          "available": False,
           "finished": False,
           "failed": False,
           "restarted": restarted,

@@ -108,6 +108,7 @@ def initiate_uploads(status):
     # is only one and we can ignore the risk of catching multiple directories with
     # the * wildcard.
     status["backupfileinfo"] = []
+    status["backupfiles"] = []
     status["uploadfiles"] = []
     status["backupsize"] = 0
     status["uploadsize"] = 0
@@ -119,6 +120,7 @@ def initiate_uploads(status):
             filename = path.basename(filepath)
             (froot, fext) = path.splitext(filename)
             sia_fname = '%s.%s%s' % (froot, int(fileinfo.st_mtime), fext)
+            status["backupfiles"].append(sia_fname)
             if siafiles and any(sf['siapath'] == sia_fname and sf['available'] for sf in siafiles):
                 current_app.logger.info("%s is part of the set and already uploaded." % sia_fname)
             elif siafiles and any(sf['siapath'] == sia_fname for sf in siafiles):
@@ -143,6 +145,7 @@ def wait_for_uploads(status):
     status["message"] = "Waiting for uploads to complete"
     status["step"] = sys._getframe().f_code.co_name.replace("_", " ")
     status["starttime_step"] = time.time()
+    status["available"] = False
     if not status["backupfileinfo"]:
         return False, "ERROR: Backup file info is missing."
     # Loop and sleep as long as the backup is not fully available and uploaded.
@@ -150,6 +153,7 @@ def wait_for_uploads(status):
     while True:
         sia_filedata, sia_status_code = get_from_sia('renter/files')
         if sia_status_code == 200:
+            total_uploaded_size = 0
             uploaded_size = 0
             redundancy = []
             fully_available = True
@@ -157,6 +161,7 @@ def wait_for_uploads(status):
             for bfile in status["backupfileinfo"]:
                 if bfile["siapath"] in sia_map:
                     fdata = sia_filedata["files"][sia_map[bfile["siapath"]]]
+                    total_uploaded_size += fdata["filesize"] * fdata["uploadprogress"] / 100.0
                     if fdata["siapath"] in status["uploadfiles"]:
                         uploaded_size += fdata["filesize"] * fdata["uploadprogress"] / 100.0
                         redundancy.append(fdata["redundancy"])
@@ -168,10 +173,12 @@ def wait_for_uploads(status):
                 else:
                     current_app.logger.debug('File "%s" not on Sia and not matching watched names.', bfile["siapath"])
             status["uploadprogress"] = 100.0 * uploaded_size / status["uploadsize"] if status["uploadsize"] else 100
+            status["totalprogress"] = 100.0 * total_uploaded_size / status["backupsize"] if status["backupsize"] else 100
             min_redundancy = min(redundancy) if redundancy else 0
             # Break if the backup is fully available on sia and has enough
             # minimum redundancy.
             if fully_available and min_redundancy >= 2.0:
+                status["available"] = True
                 current_app.logger.info("Backup is fully available and minimum file redundancy is %.1f, we can finish things up."
                                         % min_redundancy)
                 break
