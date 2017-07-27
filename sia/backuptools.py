@@ -151,7 +151,7 @@ def wait_for_uploads(status):
         sia_filedata, sia_status_code = get_from_sia('renter/files')
         if sia_status_code == 200:
             uploaded_size = 0
-            min_redundancy = 0
+            redundancy = []
             fully_available = True
             sia_map = dict((d["siapath"], index) for (index, d) in enumerate(sia_filedata["files"]))
             for bfile in status["backupfileinfo"]:
@@ -159,8 +159,7 @@ def wait_for_uploads(status):
                     fdata = sia_filedata["files"][sia_map[bfile["siapath"]]]
                     if fdata["siapath"] in status["uploadfiles"]:
                         uploaded_size += fdata["filesize"] * fdata["uploadprogress"] / 100.0
-                        if fdata["redundancy"] > min_redundancy:
-                            min_redundancy = fdata["redundancy"]
+                        redundancy.append(fdata["redundancy"])
                     if not fdata["available"]:
                         fully_available = False
                 elif re.match(r'.*\.dat$', bfile["siapath"]):
@@ -169,6 +168,7 @@ def wait_for_uploads(status):
                 else:
                     current_app.logger.debug('File "%s" not on Sia and not matching watched names.', bfile["siapath"])
             status["uploadprogress"] = 100.0 * uploaded_size / status["uploadsize"] if status["uploadsize"] else 100
+            min_redundancy = min(redundancy) if redundancy else 0
             # Break if the backup is fully available on sia and has enough
             # minimum redundancy.
             if fully_available and min_redundancy >= 2.0:
