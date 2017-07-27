@@ -136,6 +136,61 @@ def restart_sia():
     # If the return code is 0, we get here and return True (success).
     return True
 
+def update_sia_config():
+    settings = get_sia_config()
+    # Renting settings
+    siadata, sia_status_code = get_from_sia("renter")
+    if sia_status_code >= 400:
+        # If we can't get the current settings, no use in comparing to new ones.
+        return False
+    renter_params = {}
+    # If new settings values differ by at least 10% from currently set values,
+    # only then update Sia with the new settings.
+    if _absdiff(settings["renter"]["allowance_funds"],
+                int(siadata["settings"]["allowance"]["funds"])) > 0.1:
+        renter_params["funds"] = str(settings["renter"]["allowance_funds"])
+    if _absdiff(settings["renter"]["allowance_period"],
+                int(siadata["settings"]["allowance"]["period"])) > 0.1:
+        renter_params["period"] = str(settings["renter"]["allowance_period"])
+    if renter_params:
+        current_app.logger.info("Updating Sia renter/allowance settings.")
+        siadata, sia_status_code = post_to_sia("renter", renter_params)
+        if sia_status_code >= 400:
+            current_app.logger.error("Sia error %s: %s" % (sia_status_code,
+                                                          siadata["message"]))
+            return False
+    # Hosting settings
+    siadata, sia_status_code = get_from_sia('host')
+    if sia_status_code >= 400:
+        # If we can't get the current settings, no use in comparing to new ones.
+        return False
+    if not siadata["internalsettings"]["acceptingcontracts"]:
+        # If hosting is deactivated, pings will call setup_sia_system()
+        # This will care about settings so we don't do anything here.
+        return True
+    host_params = {}
+    if settings["minebox_sharing"]["enabled"] != siadata["internalsettings"]["acceptingcontracts"]:
+        host_params["acceptingcontracts"] = settings["minebox_sharing"]["enabled"]
+    for var in ["mincontractprice", "mindownloadbandwidthprice",
+                "minstorageprice", "minuploadbandwidthprice", "collateral",
+                "collateralbudget", "maxcollateral", "maxduration"]:
+        if _absdiff(settings["host"][var], int(siadata["internalsettings"][var])) > 0.1:
+            host_params[var] = str(settings["host"][var])
+    if host_params:
+        current_app.logger.info("Updating Sia host settings.")
+        siadata, sia_status_code = post_to_sia("host", host_params)
+        if sia_status_code >= 400:
+            current_app.logger.error("Sia error %s: %s" % (sia_status_code,
+                                                          siadata["message"]))
+            return False
+    # We're done here :)
+    return True
+
+def _absdiff(comparevalue, basevalue):
+    # Calculate a fractional absolut difference / deviation of a compare value
+    # to a base value.
+    return abs(float(comparevalue - basevalue) / basevalue)
+
 def rebalance_diskspace():
     # MineBD reports a large block device size but the filesystem is formatted
     # with much less.

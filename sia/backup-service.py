@@ -134,6 +134,9 @@ def api_ping():
                             % (len(unfinished_backups), len(active_backups)))
             start_cleanup_thread()
 
+    # Update Sia config if more than 10% off.
+    update_sia_config()
+
     # See if we need to rebalance the disk space.
     rebalance_diskspace()
 
