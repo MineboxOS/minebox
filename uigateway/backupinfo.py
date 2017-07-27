@@ -38,9 +38,13 @@ def get_status(backupname, allow_old=False):
                     status = "ERROR"
                     metadata = "ERROR"
                     status_code = 503
-                elif binfo["finished"]:
+                elif binfo["finished"] and binfo["metadata_uploaded"]:
                     status = "FINISHED"
                     metadata = "FINISHED"
+                    status_code = 200
+                elif binfo["finished"]:
+                    status = "FINISHED"
+                    metadata = "UPLOADING"
                     status_code = 200
                 elif binfo["upload_size"]:
                     status = "UPLOADING"

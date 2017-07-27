@@ -69,6 +69,7 @@ def api_start():
           "upload_progress": threadstatus[tname]["uploadprogress"],
           "total_progress": threadstatus[tname]["totalprogress"],
           "fully_available": threadstatus[tname]["available"],
+          "metadata_uploaded": threadstatus[tname]["metadata_uploaded"],
         })
     return jsonify(statusdata), 200
 
@@ -181,6 +182,7 @@ def run_backup(startevent, snapname=None):
           "starttime_thread": time.time(),
           "starttime_step": time.time(),
           "available": False,
+          "metadata_uploaded": False,
           "finished": False,
           "failed": False,
           "restarted": restarted,

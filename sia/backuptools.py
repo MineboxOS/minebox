@@ -223,6 +223,7 @@ def save_metadata(status):
     # Remove metadata directory, leave zip around.
     if path.isfile(zipname) and path.isdir(metadir):
         shutil.rmtree(metadir)
+    status["metadata_uploaded"] = True
     return True, ""
 
 def remove_lower_snapshots(status):
@@ -256,6 +257,13 @@ def remove_old_backups(status, activebackups):
             backupfiles, is_finished = get_files(backupname)
             if backupname in activebackups or backupname in restartset:
                 keep_this_backup = True
+                # If we have an active backup that has metadata uploaded,
+                # we can consider it "golden".
+                if (backupname in activebackups
+                    and "metadata_uploaded" in status
+                    and status["metadata_uploaded"]):
+                    current_app.logger.info("Backup %s is complete!" % backupname)
+                    keepset_complete = True
             elif backupfiles and is_finished:
                 files_missing = False
                 for bfile in backupfiles:
