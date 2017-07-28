@@ -62,8 +62,8 @@ public class BucketFactory {
         private final String filename;
         private final long bucketNumber;
         //right now we try to keep track of the empty ranges but dont use them anywhere. there is a big optimisation opportunity here to minimize the amount of
-        RangeSet<Long> emptyRange = TreeRangeSet.create(); //offsets in this bucket
         private RandomAccessFile randomAccessFile;
+        private volatile boolean needsFlush = false;
 
         BucketImpl(long bucketNumber) {
             this.bucketNumber = bucketNumber;
@@ -87,7 +87,6 @@ public class BucketFactory {
                 boolean wasDownloaded = metadataService.downloadIfPossible(file);
                 if (!wasDownloaded) {
                     createEmptyFile(file);
-                    emptyRange.add(Range.closed(0L, size));
                 }
             }
         }
@@ -160,6 +159,10 @@ public class BucketFactory {
         }
 
         public void flush() {
+            if (!needsFlush){
+                return;
+            }
+            needsFlush = false;
             LOGGER.info("flushing bucket {}", bucketNumber);
             try {
                 //todo make sure this triggers after potentially different pending writes have their lock
@@ -176,6 +179,7 @@ public class BucketFactory {
         @Override
         public long putBytes(long offset, ByteBuffer message) throws IOException {
             synchronized (this) {
+                needsFlush = true;
                 final long offsetInThisBucket = offsetInThisBucket(offset);
                 channel.position(offsetInThisBucket);
                 final ByteBuffer encrypted = encryption.encrypt(offset, message);
@@ -189,9 +193,9 @@ public class BucketFactory {
 
         @Override
         public void trim(long offset, long length) throws IOException {
+            needsFlush = true;
             final long offsetInThisBucket = offsetInThisBucket(offset);
             final long lengthInThisBucket = calcLengthInThisBucket(offsetInThisBucket, length); //should be always equal to length since it is normalized in MineboxEport
-            emptyRange.add(Range.closed(offsetInThisBucket, offsetInThisBucket + lengthInThisBucket));
             if (lengthInThisBucket == size) {
                 synchronized (this) {
                     channel.truncate(0);
