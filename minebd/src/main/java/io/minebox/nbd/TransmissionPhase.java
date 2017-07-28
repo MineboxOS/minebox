@@ -204,20 +204,35 @@ public class TransmissionPhase extends ByteToMessageDecoder {
     }
 
     private void sendTransmissionSimpleReply(ChannelHandlerContext ctx, int error, long handle, ByteBuf data) {
-        ByteBuf bbr = ctx.alloc().buffer(16);
-        bbr.writeInt(Protocol.REPLY_MAGIC);
-        bbr.writeInt(error); // zero for okay
-        bbr.writeLong(handle);
         synchronized (this) {
+            ByteBuf bbr = ctx.alloc().buffer(16);
+            bbr.writeInt(Protocol.REPLY_MAGIC);
+            bbr.writeInt(error); // zero for okay
+            bbr.writeLong(handle);
             ctx.write(bbr);
             if (data != null) {
                 ctx.write(data);
             }
         }
         ctx.flush();
+        logPendingOperations();
+    }
+
+    private volatile boolean loggedHighPending = false;
+    private volatile long lastLog;
+
+    private void logPendingOperations() {
         final int pendingOperations = this.pendingOperations.decrementAndGet();
-        if (pendingOperations != 0 || error != 0) {
-            LOGGER.debug("pending operations: {}, error: {}", pendingOperations, error);
+        if (pendingOperations == 0 && loggedHighPending) {
+            LOGGER.debug("pending operations back at 0");
+            loggedHighPending = false;
+        } else {
+            final long now = System.currentTimeMillis();
+            if (pendingOperations > 0 && (now - 1000) > lastLog) {
+                lastLog = now;
+                loggedHighPending = true;
+                LOGGER.debug("pending operations: {}", pendingOperations);
+            }
         }
     }
 }
