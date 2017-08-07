@@ -19,7 +19,7 @@ minebd:
   nbdPort : 10809
   maxOpenFiles : 20
   parentDir : /mnt/lower1/data/
-  reportedSize : 10G
+  reportedSize : 1TB
   encryptionKeyPath: /etc/minebox/minebox.key
   authFile: /etc/minebox/local-auth.key
   bucketSize : 40M
