@@ -55,23 +55,92 @@
 			margin-left: 30px; /* match bootstrap's col padding * 2 */
 		}
 
+
 	#wallet-tabs {
-
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background-color: rgba(0,0,0,0.6);
+		z-index: 100;
+		display: none;
+		transform: scale(1.1);
+		-webkit-transform: scale(1.1);
+		-moz-transform: scale(1.1);
+		-o-transform: scale(1.1);
+		transform-origin: center center;
+		-webkit-transform-origin: center center;
+		-moz-transform-origin: center center;
+		-o-transform-origin: center center;
+		transition: all ease .3s;
+		-webkit-transition: all ease .3s;
+		-moz-transition: all ease .3s;
+		-o-transition: all ease .3s;
 	}
-
-		#wallet-tabs .wallet-tab {
-			display: none;
+	#wallet-tabs.active {
+		display: block;
+		transform: scale(1);
+		-webkit-transform: scale(1);
+		-moz-transform: scale(1);
+		-o-transform: scale(1);
+	}
+		.wallet-tab {
+			position: absolute;
+			padding: 20px;
+			width: 500px;
+			height: 305px;
+			margin-left: -275px;
+			margin-top: -154px;
+			top: 40%;
+			left: 50%;
+			background: #1a7d96;  /* fallback for old browsers */
+			background: -webkit-linear-gradient(to bottom, #1a7d96, #16677c);  /* Chrome 10-25, Safari 5.1-6 */
+			background: linear-gradient(to bottom, #1a7d96, #16677c); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+			transition: all ease .3s;
+			-webkit-transition: all ease .3s;
+			-moz-transition: all ease .3s;
+			-o-transition: all ease .3s;
+			transform: scale(1.1);
+			-webkit-transform: scale(1.1);
+			-moz-transform: scale(1.1);
+			-o-transform: scale(1.1);
 		}
-		#wallet-tabs .wallet-tab.active {
-			display: block;
+		.wallet-tab.active {
+			transform: scale(1);
+			-webkit-transform: scale(1);
+			-moz-transform: scale(1);
+			-o-transform: scale(1);
 		}
-
+			.wallet-tab>.close-wallet-tab-button {
+				top: -40px;
+				right: -40px;
+			}
+			.wallet-tab-group {
+				padding: 5px 0;
+			}
+			#wallet-tabs h2 {
+				margin-bottom: 0;
+			}
+			.wallet-tab .input-plus-button {
+				display: inline-block;
+				width: calc(100% - 50px);
+				margin: 0;
+			}
+			.wallet-tab .button-for-input {
+				width: 46px;
+				min-width: 0;
+				color: #fff;
+				margin: 0;
+				position: relative;
+				top: 1px;
+			}
 
 		#send-tab {
 
 		}
-			#send-tab .available-amount-line {
-				margin-top: 0;
+			#amount-feedback {
+				color: #ff4a86;
 			}
 			#send-tab .available-amount-line>span {
 				font: inherit;
@@ -80,37 +149,21 @@
 				border-bottom: 1px dotted rgba(255,255,255,.5);
 				cursor: pointer;
 			}
-			#amount-to-send {
+
+		#receive-tab {
+			height: 200px;
+		}
+			#amount-to-send,
+			#amount-to-receive {
 				text-align: right;
 				font-size: 12px;
 				color: #fff;
 			}
-			#amount-feedback {
-				color: #ff4a86;
-			}
-			#send-tab .button-box {
-				text-align: right;
+			#user-wallet-address-feedback {
+				margin-left: 15px;
 			}
 
 
-		#receive-tab {
-
-		}
-			#receive-tab .receive-params,
-			#receive-tab .qr-col {
-				padding-bottom: 30px;
-			}
-				#user-address {
-
-				}
-				#amount-to-receive {
-					text-align: right;
-					font-size: 12px;
-					color: #fff;
-				}
-				#user-wallet-address-feedback {
-					margin-left: 15px;
-				}
 
 
 
@@ -121,7 +174,8 @@
 	left: 0;
 	width: 100%;
 	height: 100%;
-	background-color: rgba(0,0,0,0.8);
+	z-index: 100;
+	background-color: rgba(0,0,0,0.9);
 	display: none;
 }
 #qr-code {

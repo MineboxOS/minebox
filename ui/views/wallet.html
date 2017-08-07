@@ -13,6 +13,8 @@
 		</div>
 	</div>
 
+
+
 	<div id="content" class="content">
 		<div class="container-fluid">
 
@@ -21,76 +23,74 @@
 				<button class="button" id="send-tab-button" data-tab="send-tab">Send</button>
 			</div>
 
-			<div id="wallet-tabs">
-
-				<div id="send-tab" class="wallet-tab">
-					<div class="container">
-
-						<div class="row">
-
-							<div class="col-xs-12 col-sm-8">
-								<h3>Address:</h3>
-								<input type="text" id="send-to-address" />
-								<button class="button" id="scan-address-button">Scan QR Code</button>
-							</div>
+		</div>
+	</div>
 
 
-							<div class="col-xs-12 col-sm-4">
-								<h3>Specify amount:</h3>
-								<input type="number" min="0" id="amount-to-send" value="0" />
-								<p id="amount-feedback"></p>
-								<p class="available-amount-line">You have available <span id="available-amount"></span>&nbsp;SC</p>
-							</div>
 
-							<div class="col-xs-12 button-box">
-								<button class="button" id="send-button">Send funds</button>
-							</div>
+	<div id="wallet-tabs">
 
-						</div>
+		<div id="send-tab" class="wallet-tab">
 
-					</div>
+			<div class="generic-close-button close-wallet-tab-button"></div>
+
+			<div class="tab-content">
+				<h2>Send funds</h2>
+
+				<div class="wallet-tab-group">
+					<input type="text" id="send-to-address" placeholder="Type in an address" class="input-plus-button" />
+					<button class="button button-for-input" id="scan-address-button"><i class="ic ic-qrcode"></i></button>
+
+					<p>Specify amount:</p>
+					<input type="number" min="0" id="amount-to-send" value="0" />
+					<p id="amount-feedback"></p>
+					<p class="available-amount-line">You have available <span id="available-amount"></span>&nbsp;SC</p>
+
+					<button class="button" id="send-button">Send funds</button>
+				</div>
+			</div>
+
+		</div>
+
+
+		<div id="receive-tab" class="wallet-tab">
+
+			<div class="generic-close-button close-wallet-tab-button"></div>
+
+			<div class="tab-content">
+
+				<h2>Receive funds</h2>
+
+				<div class="wallet-tab-group receive-params">
+					<input type="text" id="user-wallet-address" readonly class="input-plus-button" />
+					<button class="button button-for-input" id="show-qr-code-button"><i class="ic ic-qrcode"></i></button>
+					<span id="user-wallet-address-feedback" style="display:none;">Wallet address copied to your clipboard</span>
 				</div>
 
-				<div id="receive-tab" class="wallet-tab">
-					<div class="container">
-
-						<div class="row">
-
-							<div class="col-xs-12 col-sm-8 receive-params">
-								<h3>Your address:</h3>
-								<input type="text" id="user-wallet-address" readonly />
-								<button class="button" id="show-qr-code-button">Show QR code</button>
-								<span id="user-wallet-address-feedback" style="display:none;">Wallet address copied to your clipboard</span>
-							</div>
-
-
-							<div class="col-xs-12 col-sm-4 qr-col">
-								<h3>Specify amount <span>(<em>optional</em>)</span> :</h3>
-								<input type="number" min="0" id="amount-to-receive" />
-							</div>
-
-						</div>
-
-					</div>
-				</div>
-
-
-				<div id="instascan-box">
-					<div id="close-instascan-button" class="generic-close-button"></div>
-					<div id="instascan-container">
-						<video id="instascan-video"></video>
-					</div>
-				</div>
-
-
-				
-				<div id="receive-funds-qr-code">
-					<div id="qr-code"></div>
-					<div id="hide-qr-code-button" class="generic-close-button"></div>
+				<div class="wallet-tab-group">
+					<p>Specify amount <span>(<em>optional</em>)</span> :</p>
+					<input type="number" min="0" id="amount-to-receive" />
 				</div>
 
 			</div>
 
 		</div>
 	</div>
+
+
+
+	<div id="instascan-box">
+		<div id="close-instascan-button" class="generic-close-button"></div>
+		<div id="instascan-container">
+			<video id="instascan-video"></video>
+		</div>
+	</div>
+
+
+	
+	<div id="receive-funds-qr-code">
+		<div id="qr-code"></div>
+		<div id="hide-qr-code-button" class="generic-close-button"></div>
+	</div>
+
 </div>

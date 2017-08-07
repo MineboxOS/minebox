@@ -80,14 +80,31 @@ function Wallet() {
 	(function WalletTabsHandler() {
 
 		//init vars
-		var $tabs = $('#wallet-tabs .wallet-tab'),
+		var $container = $('#wallet-tabs'),
+			$tabs = $container.find('.wallet-tab'),
 			$buttons = $('#wallet-tabs-buttons .button'),
+			$closeButtons = $container.find('.close-wallet-tab-button'),
 			speed = 300,
 			activeClass = 'active';
+
+		//active #wallet-tabs
+		function showWalletTabs() {
+			$container
+				.fadeIn( speed )
+				.addClass( activeClass );
+		}
+
+		//deactive #wallet-tabs
+		function hideWalletTabs() {
+			$container
+				.fadeOut( speed )
+				.removeClass( activeClass );
+		}
 
 		//show tab function
 		function showTab( targetID ) {
 			hideTabs();
+			showWalletTabs();
 			$('#' + targetID)
 				.addClass( activeClass )
 				.fadeIn( speed );
@@ -98,6 +115,14 @@ function Wallet() {
 			$tabs
 				.fadeOut( speed )
 				.removeClass( activeClass );
+		}
+
+		//close one specific tab
+		function closeTab( targetID ) {
+			hideWalletTabs();
+			$('#' + targetID)
+				.removeClass( activeClass )
+				.fadeOut( speed );
 		}
 
 		//deactivate all buttons function
@@ -116,6 +141,14 @@ function Wallet() {
 				//show wished tab
 				showTab( $(this).attr('data-tab') );
 			}
+		});
+
+		//closing wallet tabs
+		$closeButtons.on('click', function() {
+			//removing activeClass from all the buttons
+			deactivateButtons();
+			//closing tab
+			closeTab( $(this).parents('.wallet-tab').attr('id') );
 		});
 
 	}());
@@ -139,6 +172,10 @@ function Wallet() {
 			$input
 				.val( $(this).html() )
 				.trigger('change');
+		});
+
+		$input.on('keyup', function() {
+			checkIfEnoughAmount();
 		});
 
 		$input.on('change', function() {
