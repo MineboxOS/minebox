@@ -66,31 +66,33 @@ body {
 
 
 /* FORMS */
-input, textarea,
-select, .select,
-.button {
-  background-color: #333;
+input, input[type="checkbox"],
+textarea, select,
+.select, .button {
   color: #fff;
-  outline-color: transparent;
+  outline-width: 0 !important;
+  outline-color: transparent !important;
 }
-input, textarea, select {
+input, input[type="checkbox"], textarea, select {
   background-color: transparent;
   border: 1px solid rgba(36, 172, 206, 0.2);
 }
-input:hover, textarea:hover,
-select:hover, .select:hover {
+input:hover, input[type="checkbox"]:hover,
+textarea:hover, select:hover, .select:hover {
   border: 1px solid rgba(36, 172, 206, 0.5);
 }
-input:focus, textarea:focus,
-select:focus, .select:focus {
+input:focus, input[type="checkbox"]:focus,
+textarea:focus, select:focus, .select:focus {
   border-color: #24acce;
 }
 input[type="checkbox"] {
-  background-color: #fff;
+  background-color:rgba(255,255,255,.1);
 }
-input[type="checkbox"]:before,
-input[type="checkbox"]:after {
-  background-color: #198b95;
+input[type="checkbox"]:focus {
+  background-color:rgba(255,255,255,.4);
+}
+input[type="checkbox"]:before {
+  background-color: #fff;
 }
 .button {
   background-color: rgba(36, 172, 206, 0.6);
