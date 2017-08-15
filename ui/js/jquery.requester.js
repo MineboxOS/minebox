@@ -24,6 +24,11 @@ function Requester() {
   function setCache(cache) {
     CONFIG.cache = cache;
   }
+  function setCredentials(credentials) {
+    CONFIG.xhrFields = {
+      withCredentials: credentials
+    };
+  }
 
   function abort() {
     xhr.abort();
@@ -48,6 +53,7 @@ function Requester() {
     setData: setData,
     setType: setType,
     setCache: setCache,
+    setCredentials: setCredentials,
     setContentType: setContentType,
     abort: abort,
     run: run
