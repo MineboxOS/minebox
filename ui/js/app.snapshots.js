@@ -26,6 +26,9 @@ function Snapshot() {
       loadSpecificSnapshots: {
         fail: 'We couldn\'t retrieve data from current backups. Try again later.'
       }
+    },
+    events: {
+      snapshotsLoaded: 'snapshotsLoaded'
     }
   };
 
@@ -61,25 +64,32 @@ function Snapshot() {
     (function init() {
       //loading all backup names
       CONFIG.mug.requester.setURL( CONFIG.mug.url + 'backup/list');
-      console.log(CONFIG.mug.url + 'backup/list');
       CONFIG.mug.requester.setMethod('GET');
       //CONFIG.mug.requester.setType('JSON');
       CONFIG.mug.requester.setCache(false);
+      CONFIG.mug.requester.setCredentials(true);
       CONFIG.mug.requester.run(function(response) {
 
         //saving snapshotsList array
         CONFIG.snapshotsList = response;
 
+        //temporal var
+        var loadedSnapshots = 0;
         //iterating through snapshotsList and calling to the server on each iteration to get their info
-        for ( var n = 0; n < snapshotsList.length; n++ ) {
-          loadSnapshotInfo( snapshostList[n], function(response) {
-            snapshots.push( response );
+        for ( var n = 0; n < CONFIG.snapshotsList.length; n++ ) {
+          loadSnapshotInfo( CONFIG.snapshotsList[n], function(response) {
+            //store snapshot info
+            CONFIG.snapshots.push( response );
+
+            //increase loadedSnapshots witness
+            loadedSnapshots++;
+            if ( loadedSnapshots == CONFIG.snapshotsList.length ) {
+              //rise event when all the snapshots' info is loaded
+              $('body').trigger(CONFIG.events.snapshotsLoaded);
+            }
+            
           });
         }
-
-        //once snapshots array is filled with info, print them and build the interface
-        snapshotInterface.print(snapshots);
-        snapshotInterface.build();
 
       }, function(error) {
 
@@ -91,7 +101,7 @@ function Snapshot() {
 
 
     function loadSnapshotInfo(snapshotName, cb) {
-      CONFIG.mug.requester.setURL( CONFIG.mug.url + '/backup/' + snapshotName + '/');
+      CONFIG.mug.requester.setURL( CONFIG.mug.url + 'backup/' + snapshotName + '/status');
       CONFIG.mug.requester.setMethod('GET');
       CONFIG.mug.requester.setType('JSON');
       CONFIG.mug.requester.setCache(false);
@@ -106,6 +116,13 @@ function Snapshot() {
 
       });
     }
+
+
+    $('body').bind(CONFIG.events.snapshotsLoaded, function() {
+        //once snapshots array is filled with info, print them and build the interface
+        snapshotInterface.print(CONFIG.snapshots);
+        snapshotInterface.build();
+    });
 
   }
 
@@ -137,9 +154,9 @@ function Snapshot() {
         printingTempHTMLString = replaceAll( printingTempHTMLString, '{{snapshot_relative_progress}}', array[n].relative_progress );
         printingTempHTMLString = replaceAll( printingTempHTMLString, '{{snapshot_time}}', array[n].time_snapshot );
         //printing in graph
-        $cumulativeFiles.prepend( printingTempHTMLString );
+        $cumulativeFiles.append( printingTempHTMLString );
         //printing en timeline
-        $timelineBarsBox.prepend( printingTempHTMLString );
+        $timelineBarsBox.append( printingTempHTMLString );
       }
       //once everything is printed, update selection elements
       updateBarsSelectors();
