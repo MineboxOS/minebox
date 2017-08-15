@@ -9,6 +9,7 @@ var config = {
 		map: {
 			'dashboard': 'dashboard.html',
 			'wallet': 'wallet.html',
+			'contracts': 'contracts.html',
 			'snapshots': 'snapshots.html',
 			'settings': 'settings.html'
 		},
