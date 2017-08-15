@@ -4,9 +4,71 @@ viewLoader.add('wallet', Wallet);
 function Wallet() {
 
 
+	var CONFIG = {
+		api: {
+			address: {
+				url: config.mug.url + 'wallet/address',
+				requester: new Requester()
+			},
+			send: {
+				url: config.mug.url + 'wallet/send',
+				requester: new Requester()
+			},
+			status: {
+				url: config.mug.url + 'wallet/status',
+				requester: new Requester()
+			}
+		},
+		wallet: {},
+		events: {
+			walletStatusLoaded: 'walletStatusLoaded',
+			walletAddressLoaded: 'walletAddressLoaded'
+		},
+		messages: {
+			walletStatusLoaded: {
+				fail: 'Couldn\'t load wallet status. Try again in a few minutes.'
+			},
+			walletAddressLoaded: {
+				fail: 'Couldn\'t retrieve your wallet address. Please try again in a few minutes.'
+			}
+		}
+	};
+
 	var availableFunds = null;
 	var walletAddress = null;
 
+
+
+
+	/* Handles wallet status call */
+	function WalletStatusManager() {
+
+		function load() {
+			//calls to the server and gets the funds
+			CONFIG.api.status.requester.setURL( CONFIG.api.status.url );
+			CONFIG.api.status.requester.setMethod('GET');
+			CONFIG.api.status.requester.setCredentials(true);
+			CONFIG.api.status.requester.setCache(false);
+			CONFIG.api.status.requester.run(function(response) {
+
+				//storing data
+				CONFIG.wallet.status = response;
+
+				//rising event
+				$('body').trigger( CONFIG.events.walletStatusLoaded );
+			}, function(error) {
+
+				var notify = new Notify({ message: CONFIG.messages.walletStatusLoaded.fail });
+				notify.print();
+			});
+		}
+
+		return {
+			load: load
+		}
+
+	}
+	var walletStatusManager = WalletStatusManager();
 
 
 
@@ -14,18 +76,10 @@ function Wallet() {
 	/* Handle funds load, format and printing */
 	(function FundsManager() {
 
-		function loadFunds() {
-			//calls to the server and gets the funds
-			//$.ajax...
-				//faking received number
-				var funds = 676349.87658227;
-				//on callback;
-					//assigning funds to variable
-					availableFunds = funds;
-					//printing results
-					printFunds();
-					//maybe rising an event?
-		}
+		$('body').bind( CONFIG.events.walletStatusLoaded, function() {
+			//feels the event and prints funds
+			printFunds();
+		});
 
 		function formatFunds(number) {
 			//format number
@@ -34,15 +88,22 @@ function Wallet() {
 
 		function printFunds() {
 			//printing wallet balance
-			$('#wallet-sia .currency-value').html( formatFunds( availableFunds ) );
+			$('#wallet-sia .currency-value').html( formatFunds( CONFIG.wallet.status.confirmedsiacoinbalance_sc ) );
 			//printing you have available:
-			$('#available-amount').html( availableFunds );
+			$('#available-amount').html( CONFIG.wallet.status.confirmedsiacoinbalance_sc );
+
+			if ( CONFIG.wallet.status.unconfirmedincominsiacoins_sc ) {
+				//printing wallet balance
+				$('#wallet-balance-box .unconfirmed-incoming-funds')
+					.html( formatFunds( CONFIG.wallet.status.confirmedsiacoinbalance_sc ) )
+					.fadeIn(300);
+			} else {
+				//printing wallet balance
+				$('#wallet-balance-box .unconfirmed-incoming-funds')
+					.html( 'No funds incoming' )
+					.fadeOut(100);
+			}
 		}
-
-
-		$(document).ready(function() {
-			loadFunds();
-		});
 
 	}());
 
@@ -53,18 +114,30 @@ function Wallet() {
 	(function WalletAddressManager() {
 
 		function loadWalletAddress() {
-			//calls to the server and gets the address
-			var address = '1FfmbHfnpaZjKFvyi1okTjJJusN455paPH';
-			//on callback
-				//assigning address to variable
-				walletAddress = address;
-				//printing it
-				printWalletAddress();
-				//maybe rising an event?
+
+			CONFIG.api.address.requester.setURL( CONFIG.api.address.url );
+			CONFIG.api.address.requester.setMethod( 'GET' );
+			CONFIG.api.address.requester.setCache( false );
+			CONFIG.api.address.requester.setCredentials( true );
+			CONFIG.api.address.requester.run(function(response) {
+
+				//saving response
+				CONFIG.wallet.address = response.address;
+				//rising an event
+				$('body').trigger( CONFIG.events.walletAddressLoaded );
+			}, function(error) {
+
+				var notify = new Notify({ message: CONFIG.messages.walletAddressLoaded });
+				notify.print();
+			});
 		}
 
+		$('body').bind( CONFIG.events.walletAddressLoaded, function() {
+			printWalletAddress();
+		});
+
 		function printWalletAddress() {
-			$('#user-wallet-address').val( walletAddress );
+			$('#user-wallet-address').val( CONFIG.wallet.address );
 		}
 
 		$(document).ready(function() {
@@ -351,6 +424,22 @@ function Wallet() {
 
 	}());
 
+
+
+
+	$(document).ready(function() {
+		walletStatusManager.load();
+		var requester = new Requester();
+		requester.setURL( config.mug.url + 'transactions');
+		requester.setMethod('GET');
+		requester.setCache(false);
+		requester.setCredentials(true);
+		requester.run(function(response) {
+			console.log(response);
+		}, function(error) {
+			console.log(error);
+		});
+	});
 
 
 }

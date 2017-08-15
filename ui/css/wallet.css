@@ -31,6 +31,9 @@
 					font-size: 0.8em !important;
 					margin-left: 5px !important;
 				}
+			.wallet-balance>.unconfirmed-incoming-funds {
+				display: none;
+			}
 		#wallet-activity-witness {
 			position: absolute;
 			bottom: 0;
@@ -151,7 +154,7 @@
 			}
 
 		#receive-tab {
-			height: 200px;
+			height: 230px;
 		}
 			#amount-to-send,
 			#amount-to-receive {
