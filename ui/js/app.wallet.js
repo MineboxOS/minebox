@@ -44,6 +44,8 @@ function Wallet() {
 	function WalletStatusManager() {
 
 		function load() {
+			//start loader
+			loadingManager.add('Wallet status');
 			//calls to the server and gets the funds
 			CONFIG.api.status.requester.setURL( CONFIG.api.status.url );
 			CONFIG.api.status.requester.setMethod('GET');
@@ -56,7 +58,13 @@ function Wallet() {
 
 				//rising event
 				$('body').trigger( CONFIG.events.walletStatusLoaded );
+
+				//removing loader
+				loadingManager.remove('Wallet status');
 			}, function(error) {
+
+				//removing loader
+				loadingManager.remove('Wallet status');
 
 				var notify = new Notify({ message: CONFIG.messages.walletStatusLoaded.fail });
 				notify.print();
@@ -115,6 +123,9 @@ function Wallet() {
 
 		function loadWalletAddress() {
 
+			//starting loader
+			loadingManager.add('Wallet address');
+
 			CONFIG.api.address.requester.setURL( CONFIG.api.address.url );
 			CONFIG.api.address.requester.setMethod( 'GET' );
 			CONFIG.api.address.requester.setCache( false );
@@ -125,8 +136,12 @@ function Wallet() {
 				CONFIG.wallet.address = response.address;
 				//rising an event
 				$('body').trigger( CONFIG.events.walletAddressLoaded );
+				//removing loader
+				loadingManager.remove('Wallet address');
 			}, function(error) {
 
+				//removing loader
+				loadingManager.remove('Wallet address');
 				var notify = new Notify({ message: CONFIG.messages.walletAddressLoaded });
 				notify.print();
 			});
