@@ -444,16 +444,6 @@ function Wallet() {
 
 	$(document).ready(function() {
 		walletStatusManager.load();
-		var requester = new Requester();
-		requester.setURL( config.mug.url + 'transactions');
-		requester.setMethod('GET');
-		requester.setCache(false);
-		requester.setCredentials(true);
-		requester.run(function(response) {
-			console.log(response);
-		}, function(error) {
-			console.log(error);
-		});
 	});
 
 

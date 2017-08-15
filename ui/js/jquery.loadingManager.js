@@ -93,9 +93,6 @@ function LoadingManager() {
 		//update array contents witness
 		updateContents();
 
-		console.log(loading);
-		console.log(loading.length);
-
 		if ( !loading.length ) {
 			//loading array is empty
 			//hide $loadingScreen
