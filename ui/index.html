@@ -11,6 +11,8 @@
     <link type="text/css" rel="stylesheet" href="css/heebo.css" />
     <link type="text/css" rel="stylesheet" href="css/type.css" />
     <link type="text/css" rel="stylesheet" href="css/genericCloseButton.css" />
+    <link type="text/css" rel="stylesheet" href="css/loadingManager.css" />
+    <link type="text/css" rel="stylesheet" href="css/loadingWitness.css" />
     <link type="text/css" rel="stylesheet" href="css/notify.css" />
     <link type="text/css" rel="stylesheet" href="css/menu.css" />
     <link type="text/css" rel="stylesheet" href="css/form.css" />
@@ -73,6 +75,18 @@
     </div>
 
 
+
+    <div id="loading-screen">
+      <div id="loading-witness" class="active"></div>
+      <div id="loading-contents">
+        <img src="assets/images/logo/minebox-logo-white.png" class="logo" />
+        <h4>Loading</h4>
+        <p>[&nbsp;<span class="loading-contents"></span>&nbsp;]</p>
+      </div>
+    </div>
+
+
+
     <div id="displays" style="width:0;height:0;opacity:0;overflow:hidden;">
       <div class="display col-xs-12 hidden-sm hidden-md hidden-lg" data-size="phone"></div>
       <div class="display hidden-xs col-sm-12 hidden-md hidden-lg" data-size="tablet"></div>
@@ -91,6 +105,7 @@
     <script type="text/javascript" src="js/instascan.js"></script>
     <script type="text/javascript" src="js/qrcode.min.js"></script>
     <script type="text/javascript" src="js/jquery.copyToClipboard.js"></script>
+    <script type="text/javascript" src="js/jquery.loadingManager.js"></script>
     <script type="text/javascript" src="js/jquery.requester.js"></script>
     <script type="text/javascript" src="js/jquery.display.js"></script>
     <script type="text/javascript" src="js/jquery.menuManager.js"></script>
