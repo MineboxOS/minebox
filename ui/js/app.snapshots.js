@@ -16,6 +16,16 @@ function Snapshot() {
       laptop: 12,
       tablet: 8,
       phone: 4
+    },
+    snapshotsList: [],
+    snapshots: [],
+    messages: {
+      loadSnapshots: {
+        fail: 'We couldn\'t get your backup list. Try again in a few minutes.'
+      },
+      loadSpecificSnapshots: {
+        fail: 'We couldn\'t retrieve data from current backups. Try again later.'
+      }
     }
   };
 
@@ -46,17 +56,57 @@ function Snapshot() {
 
 
   function loadsnapshots() {
-    //CONFIG.mug.requester.setURL( CONFIG.mug.url + '');
-    CONFIG.mug.requester.setURL('json/snapshotStatus.json'); //temporal override
-    CONFIG.mug.requester.setMethod('GET');
-    CONFIG.mug.requester.setType('JSON');
-    CONFIG.mug.requester.setCache(false);
-    CONFIG.mug.requester.run(function(response) {
-      snapshotInterface.print(response);
-      snapshotInterface.build();
-    }, function(error) {
-      console.log(error);
-    });
+
+
+    (function init() {
+      //loading all backup names
+      CONFIG.mug.requester.setURL( CONFIG.mug.url + 'backup/list');
+      console.log(CONFIG.mug.url + 'backup/list');
+      CONFIG.mug.requester.setMethod('GET');
+      //CONFIG.mug.requester.setType('JSON');
+      CONFIG.mug.requester.setCache(false);
+      CONFIG.mug.requester.run(function(response) {
+
+        //saving snapshotsList array
+        CONFIG.snapshotsList = response;
+
+        //iterating through snapshotsList and calling to the server on each iteration to get their info
+        for ( var n = 0; n < snapshotsList.length; n++ ) {
+          loadSnapshotInfo( snapshostList[n], function(response) {
+            snapshots.push( response );
+          });
+        }
+
+        //once snapshots array is filled with info, print them and build the interface
+        snapshotInterface.print(snapshots);
+        snapshotInterface.build();
+
+      }, function(error) {
+
+        var notify = new Notify({ message: CONFIG.messages.loadSnapshots.fail });
+        notify.print();
+
+      });
+    }());
+
+
+    function loadSnapshotInfo(snapshotName, cb) {
+      CONFIG.mug.requester.setURL( CONFIG.mug.url + '/backup/' + snapshotName + '/');
+      CONFIG.mug.requester.setMethod('GET');
+      CONFIG.mug.requester.setType('JSON');
+      CONFIG.mug.requester.setCache(false);
+      CONFIG.mug.requester.run(function(response) {
+
+        cb(response);
+
+      }, function(error) {
+
+        var notify = new Notify({ message: CONFIG.messages.loadSpecificSnapshots.fail });
+        notify.print();
+
+      });
+    }
+
   }
 
 
