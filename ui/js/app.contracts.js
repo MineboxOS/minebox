@@ -9,8 +9,7 @@ function Contracts() {
 	var CONFIG = {
 		api: {
 			requester: new Requester(),
-			//url: config.mug.url + 'contracts'
-			url: 'json/contracts.json'
+			url: config.mug.url + 'contracts'
 		},
 		messages: {
 			loadContracts: {
@@ -38,6 +37,7 @@ function Contracts() {
 			CONFIG.api.requester.setURL( CONFIG.api.url );
 			CONFIG.api.requester.setMethod( 'GET' );
 			CONFIG.api.requester.setCache( false );
+			CONFIG.api.requester.setCredentials( true );
 			CONFIG.api.requester.run(function(response) {
 
 				//saving response in contracts
