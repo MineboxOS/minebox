@@ -1,12 +1,6 @@
 function LoadingManager() {
 
-	//there is an array of loading identifiers
-
-	//there is a loop/events based function that feels the changes on the array and
-		//whenever there is something on it, displays the loader screen and the ids list
-		//whenever there is nothing on it, hides the loader screen
-
-	//the loader screen may work as a click-prevention-map and disallow the user to interact with the layout underneath
+	//requires loadingWitness.js
 
 	var CONFIG = {
 		events: {
@@ -18,7 +12,8 @@ function LoadingManager() {
 	var loading = [];
 
 	var $loadingScreen = $('#loading-screen'),
-		$loadingContents = $('#loading-contents .loading-contents');
+		$loadingContents = $('#loading-contents .loading-contents'),
+		$closeButton = $('#loading-screen .generic-close-button');
 
 
 
@@ -55,8 +50,20 @@ function LoadingManager() {
 	//writes down in #loading-contents whatever is on array
 	//it is executed anytime the array have changed
 	function updateContents() {
-		//emptying container
-		$loadingContents.html( loading.toString() );
+		//filling with current contents
+		//not using .toString() because we want spaces between elements
+		var html = '';
+		for ( var n = 0; n < loading.length; n++ ) {
+
+			if ( n > 0 ) {
+				html += ', '; //adding comma and space
+			}
+
+			//adding current loading id
+			html += loading[n];
+		}
+		//printing string
+		$loadingContents.html(html);
 	}
 
 
@@ -64,15 +71,31 @@ function LoadingManager() {
 
 	//displays loading screen
 	function show() {
-		$loadingScreen.fadeIn( CONFIG.speed );
+		showLoadingScreen();
+		showLoadingWitness();
 	}
+
+		function showLoadingScreen() {
+			$loadingScreen.fadeIn( CONFIG.speed );
+		}
+		function showLoadingWitness() {
+			loadingWitness.start();
+		}
 
 
 
 	//hides loading screen
 	function hide() {
-		$loadingScreen.fadeOut( CONFIG.speed );
+		hideLoadingScreen();
+		hideLoadingWitness();
 	}
+
+		function hideLoadingScreen() {
+			$loadingScreen.fadeOut( CONFIG.speed );
+		}
+		function hideLoadingWitness() {
+			loadingWitness.stop();
+		}
 
 
 	//when a loader id has been added
@@ -99,6 +122,11 @@ function LoadingManager() {
 			hide();
 		}
 	});
+
+
+
+	//when user clicks on $closeButton hide only loading screen and leave loading witness
+	$closeButton.on('click', hideLoadingScreen);
 
 
 	return {
