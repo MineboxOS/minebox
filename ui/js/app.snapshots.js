@@ -62,6 +62,10 @@ function Snapshot() {
 
 
     (function init() {
+
+      //start loading
+      loadingManager.add('Snapshots list');
+
       //loading all backup names
       CONFIG.mug.requester.setURL( CONFIG.mug.url + 'backup/list');
       CONFIG.mug.requester.setMethod('GET');
@@ -91,8 +95,15 @@ function Snapshot() {
           });
         }
 
+        //stop loading
+        loadingManager.remove('Snapshots list');
+
       }, function(error) {
 
+        //stop loading
+        loadingManager.remove('Snapshots list');
+
+        //printing message
         var notify = new Notify({ message: CONFIG.messages.loadSnapshots.fail });
         notify.print();
 
@@ -101,16 +112,27 @@ function Snapshot() {
 
 
     function loadSnapshotInfo(snapshotName, cb) {
+
+      //start loading
+      loadingManager.add('Snapshot info #' + snapshotName);
+
       CONFIG.mug.requester.setURL( CONFIG.mug.url + 'backup/' + snapshotName + '/status');
       CONFIG.mug.requester.setMethod('GET');
       CONFIG.mug.requester.setType('JSON');
       CONFIG.mug.requester.setCache(false);
       CONFIG.mug.requester.run(function(response) {
 
+        //stop loading
+        loadingManager.remove('Snapshot info #' + snapshotName);
+
         cb(response);
 
       }, function(error) {
 
+        //stop loading
+        loadingManager.remove('Snapshot info #' + snapshotName);
+
+        //printing message
         var notify = new Notify({ message: CONFIG.messages.loadSpecificSnapshots.fail });
         notify.print();
 

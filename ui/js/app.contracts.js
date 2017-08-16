@@ -34,11 +34,17 @@ function Contracts() {
 
 		function load( cb ) {
 
+			//startin loading
+			loadingManager.add('Contracts list');
+
 			CONFIG.api.requester.setURL( CONFIG.api.url );
 			CONFIG.api.requester.setMethod( 'GET' );
 			CONFIG.api.requester.setCache( false );
 			CONFIG.api.requester.setCredentials( true );
 			CONFIG.api.requester.run(function(response) {
+
+				//stopping loading
+				loadingManager.remove('Contracts list');
 
 				//saving response in contracts
 				CONFIG.contracts = response;
@@ -47,6 +53,9 @@ function Contracts() {
 				if ( cb ) { cb() };
 
 			}, function(error) {
+
+				//stopping loading
+				loadingManager.remove('Contracts list');
 
 				//printing error if load fails
 				var notify = new Notify({ message: CONFIG.messages.loadContracts.fail });
