@@ -341,7 +341,8 @@ which this exactly forwards to.
 
 Sends siacoins to an address. Takes an `amount` in hastings (as a string to not
 run afoul of JavaScript's limits of numerical values) and an `address` to
-receive the siacoins, both as urlencoded form values.
+receive the siacoins, both as urlencoded form values. If no `amount` is given,
+an `amount_sc` in siacoins (numeric, en-US-style float value) is supported.
 
 Also see [ Sia API /wallet/siacoins documentation](https://github.com/NebulousLabs/Sia/blob/master/doc/API.md#walletsiacoins-post),
 which is used behind the scenes.

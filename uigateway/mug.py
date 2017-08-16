@@ -459,12 +459,14 @@ def api_wallet_send():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-post-walletsend
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    # The sia daemon takes the amount in hastings. Should we also/instead
-    # support an amount specified in SC?
-    amount = request.form["amount"]
+    # The sia daemon takes the amount in hastings.
+    # If no amount in hastings is given, we support an amount_sc in siacoins.
+    amount = int(request.form["amount"])
+    if not amount:
+        amount = int(request.form["amount_sc"]) * H_PER_SC
     destination = request.form["destination"]
     siadata, status_code = post_to_sia('wallet/siacoin',
-                                       {"amount": amount,
+                                       {"amount": str(amount),
                                         "destination": destination})
     if status_code == 200:
         # siadata["transactionids"] is a list of IDs of the transactions that
