@@ -198,20 +198,20 @@ def save_metadata(status):
     snapname = status["snapname"]
     backupname = status["backupname"]
     metadir = path.join(METADATA_BASE, backupname)
-    # Copy .sia files to metadata directory.
-    for bfile in status["backupfileinfo"]:
-        dest_siafile = path.join(metadir, "%s.sia" % bfile["siapath"])
-        if not path.isfile(dest_siafile):
-            shutil.copy2(path.join(SIA_DIR, "renter", "%s.sia" % bfile["siapath"]), metadir)
+    # Copy renter/ folder to metadata directory.
+    shutil.copytree(path.join(SIA_DIR, "renter"), metadir)
     # Create a bundle of all metadata for this backup.
     zipname = join(METADATA_BASE, "%s.zip" % backupname)
     if path.isfile(zipname):
         remove(zipname)
     with ZipFile(zipname, 'w') as backupzip:
-        for bfile in status["backupfileinfo"]:
-            siafilename = "%s.sia" % bfile["siapath"]
-            siafile = path.join(metadir, siafilename)
-            backupzip.write(siafile, siafilename)
+        for rfile in glob(path.join(metadir, "renter", "*")):
+            # Exclude files we do not require in the zip.
+            if re.match(r'.*\.(json_temp|log)$', rfile):
+                continue
+            basefilename = path.basename(rfile)
+            inzipfilename = path.join("renter", basefilename)
+            backupzip.write(rfile, inzipfilename)
         backupzip.write(path.join(metadir, INFO_FILENAME), INFO_FILENAME)
     # Upload metadata bundle.
     current_app.logger.info("Upload metadata.")
