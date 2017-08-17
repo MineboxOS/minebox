@@ -175,13 +175,6 @@ function Wallet() {
 			$amountToSend = $('#amount-to-send'),
 			$addressToSend = $('#send-to-address');
 
-		function cbFunc() {
-			//when sendFunc is success
-			//exec this func onAccept and onClose
-			walletStatusManager.load();
-			walletAddressManager.load();
-		}
-
 		function collectData() {
 			return {
 				amount_sc: $amountToSend.val(),
@@ -208,12 +201,13 @@ function Wallet() {
 				//stop loading
 				loadingManager.remove('Sending funds');
 
+				//re-load wallet funds
+				walletStatusManager.load();
+
+				console.log(response);
+
 				//print notification
-				var notify = new Notify({
-					message: CONFIG.messages.walletSend.success,
-					onAccept: cbFunc,
-					onClose: cbFunc
-				});
+				var notify = new Notify({message: CONFIG.messages.walletSend.success});
 				notify.print();
 
 			}, function(error) {
