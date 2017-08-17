@@ -12,6 +12,7 @@ function Wallet() {
 			},
 			send: {
 				url: config.mug.url + 'wallet/send',
+				//url: 'api/send/',
 				requester: new Requester()
 			},
 			status: {
@@ -30,12 +31,13 @@ function Wallet() {
 			},
 			walletAddressLoaded: {
 				fail: 'Couldn\'t retrieve your wallet address. Please try again in a few minutes.'
+			},
+			walletSend: {
+				fail: 'Funds failed to send. Try again in a few minutes.',
+				success: 'Your funds were sent successfully.'
 			}
 		}
 	};
-
-	var availableFunds = null;
-	var walletAddress = null;
 
 
 
@@ -119,7 +121,7 @@ function Wallet() {
 
 
 	/* Handles loading of wallet address */
-	(function WalletAddressManager() {
+	function WalletAddressManager() {
 
 		function loadWalletAddress() {
 
@@ -155,9 +157,79 @@ function Wallet() {
 			$('#user-wallet-address').val( CONFIG.wallet.address );
 		}
 
-		$(document).ready(function() {
-			loadWalletAddress();
-		});
+		return {
+			load: loadWalletAddress
+		}
+	}
+	var walletAddressManager = WalletAddressManager();
+
+
+
+
+
+	/* Handles send function */
+	(function Send() {
+
+		//init vars
+		var $sendButton = $('#send-button'),
+			$amountToSend = $('#amount-to-send'),
+			$addressToSend = $('#send-to-address');
+
+		function cbFunc() {
+			//when sendFunc is success
+			//exec this func onAccept and onClose
+			walletStatusManager.load();
+			walletAddressManager.load();
+		}
+
+		function collectData() {
+			return {
+				amount_sc: $amountToSend.val(),
+				address: $addressToSend.val()
+			}
+		}
+
+		function sendFunc() {
+
+			//start loading
+			loadingManager.add('Sending funds');
+
+			//collecting form data
+			var data = collectData();
+
+			//sending
+			CONFIG.api.send.requester.setURL( CONFIG.api.send.url );
+			CONFIG.api.send.requester.setMethod( 'POST' );
+			CONFIG.api.send.requester.setCache( false );
+			CONFIG.api.send.requester.setCredentials( true );
+			CONFIG.api.send.requester.setData( data );
+			CONFIG.api.send.requester.run(function(response) {
+
+				//stop loading
+				loadingManager.remove('Sending funds');
+
+				//print notification
+				var notify = new Notify({
+					message: CONFIG.messages.walletSend.success,
+					onAccept: cbFunc,
+					onClose: cbFunc
+				});
+				notify.print();
+
+			}, function(error) {
+
+				//stop loading
+				loadingManager.remove('Sending funds');
+
+				//print notification
+				var notify = new Notify({message: CONFIG.messages.walletSend.fail});
+				notify.print();
+
+			});
+		}
+
+		$sendButton.on('click', sendFunc);
+
 	}());
 
 
@@ -245,51 +317,80 @@ function Wallet() {
 
 
 	/* Handles user amount-to-send input */
-	(function AmountToSendManager() {
+	(function SendFormValidator() {
 
 		//init vars
-		var $input = $('#amount-to-send'),
-			$trigger = $('#available-amount'),
+		var $amountInput = $('#amount-to-send'),
+			$addressInput = $('#send-to-address'),
+			$sendButton = $('#send-button'),
 			$amountFeedback = $('#amount-feedback');
 
 		var errorMessages = {
 			notEnoughAmount: 'You don\'t have that many coins.'
 		};
 
-		$trigger.on('click', function() {
-			$input
-				.val( $(this).html() )
-				.trigger('change');
+		$amountInput.on('keyup', function() {
+			validateSendForm();
 		});
 
-		$input.on('keyup', function() {
-			checkIfEnoughAmount();
+		$amountInput.on('change', function() {
+			validateSendForm();
 		});
 
-		$input.on('change', function() {
-			checkIfEnoughAmount();
+		$addressInput.on('keyup', function() {
+			validateSendForm();
 		});
 
-		function checkIfEnoughAmount() {
-			if ( $input.val() > availableFunds ) {
-				printMessage( errorMessages.notEnoughAmount );
+		$addressInput.on('change', function() {
+			validateSendForm();
+		});
+
+		function validateSendForm() {
+			if ( !$addressInput.val().length || !$amountInput.val().length || !checkIfEnoughAmount() ) {
+				//if any of the inputs is empty or not enough amount
+				disableSendButton();
+				return false;
 			} else {
-				hideFeedback();
+				//if all above is correct
+				enableSendButton();
 			}
 		}
 
-		function printMessage( message ) {
-			$amountFeedback
-				.html( message )
-				.fadeIn(60);
-		}
+			function checkIfEnoughAmount() {
+				if ( $amountInput.val() > CONFIG.wallet.status.confirmedsiacoinbalance_sc ) {
+					printAmountFeedbackMessage( errorMessages.notEnoughAmount );
+					return false;
+				} else {
+					hideAmountFeedback();
+					return true;
+				}
+			}
 
-		function hideFeedback() {
-			$amountFeedback
-				.fadeOut(60, function() {
-					$(this).html(''); //emptying as a callback
-				});
-		}
+				function printAmountFeedbackMessage( message ) {
+					$amountFeedback
+						.html( message )
+						.fadeIn(60);
+				}
+
+				function hideAmountFeedback() {
+					$amountFeedback
+						.fadeOut(60, function() {
+							$(this).html(''); //emptying as a callback
+						});
+				}
+
+
+			function disableSendButton() {
+				$sendButton.attr('disabled', 'disabled');
+			}
+
+			function enableSendButton() {
+				$sendButton.removeAttr('disabled');
+			}
+
+
+		//execute validation on document ready
+		$(document).ready(validateSendForm);
 
 
 	}());
@@ -444,6 +545,7 @@ function Wallet() {
 
 	$(document).ready(function() {
 		walletStatusManager.load();
+		walletAddressManager.load();
 	});
 
 
