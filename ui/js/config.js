@@ -10,7 +10,7 @@ var config = {
 			'dashboard': 'dashboard.html',
 			'wallet': 'wallet.html',
 			'contracts': 'contracts.html',
-			'snapshots': 'snapshots.html',
+			'backups': 'backups.html',
 			'settings': 'settings.html'
 		},
 		buttons: {

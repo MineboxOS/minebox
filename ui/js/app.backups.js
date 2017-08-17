@@ -1,7 +1,7 @@
-viewLoader.add('snapshots', Snapshot);
+viewLoader.add('backups', Backups);
 
 //requires display();
-function Snapshot() {
+function Backups() {
 
   var CONFIG = {
     mug: {
