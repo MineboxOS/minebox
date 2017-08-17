@@ -13,7 +13,10 @@ import time
 from connecttools import (get_from_sia, post_to_sia, get_from_minebd,
                           get_from_mineboxconfig, get_from_faucetservice)
 
-H_PER_SC=1e24 # hastings per siacoin ("siacoinprecision" in /daemon/constants)
+# Note: no not use float (e.g. 1e24) for numers that need high precision!
+# The ** operator produces int, which is fine, or use decimal.Decimal()
+# if you want to do decimal math with such high precision.
+H_PER_SC=10**24 # hastings per siacoin ("siacoinprecision" in /daemon/constants)
 SEC_PER_BLOCK=600 # seconds per block ("blockfrequency" in /daemon/constants)
 SIA_CONFIG_JSON="/etc/minebox/sia_config.json"
 SIA_DIR="/mnt/lower1/sia"

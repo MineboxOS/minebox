@@ -15,6 +15,7 @@ import logging
 import time
 import subprocess
 import pwd
+import decimal
 import backupinfo
 from connecttools import (set_origin, check_login, get_demo_url,
                           get_from_sia, post_to_sia, get_from_minebd,
@@ -464,7 +465,9 @@ def api_wallet_send():
     if "amount" in request.form:
         amount = int(request.form["amount"])
     elif "amount_sc" in request.form:
-        amount = int(float(request.form["amount_sc"]) * H_PER_SC)
+        # User decimal.Decimal as float math would not give good enough precision.
+        decimal.getcontext().prec = 36 # 24 decimals for hastings + 12 for SC part
+        amount = int(decimal.Decimal(request.form["amount_sc"]) * H_PER_SC)
     else:
         amount = 0
     destination = request.form["destination"] if "destination" in request.form else ""
