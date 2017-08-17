@@ -316,3 +316,39 @@ Number.prototype.format = function(n, x) {
 function priceFormatter( number ) {
     return number.format(2, 3);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+function make2Digits( number ) {
+
+  if ( number > 9 ) {
+    return number;
+  } else {
+    return '0' + number;
+  }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function formatNumber( number ) {
+  return parseFloat( number ).toFixed(2);
+}

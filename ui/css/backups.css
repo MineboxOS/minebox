@@ -232,6 +232,7 @@
           left: 0;
           font-size: 9px;
           line-height: 10px;
+          padding: 4px 0;
           color: rgba(36,172,206,.5);
         }
         #size-scale>.positive>.fourty      { bottom: 40%; }

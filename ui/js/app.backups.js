@@ -82,6 +82,10 @@ function Backups() {
         //iterating through snapshotsList and calling to the server on each iteration to get their info
         for ( var n = 0; n < CONFIG.snapshotsList.length; n++ ) {
           loadSnapshotInfo( CONFIG.snapshotsList[n], function(response) {
+
+            //converting timestamp into miliseconds
+            response.time_snapshot = response.time_snapshot * 1000;
+
             //store snapshot info
             CONFIG.snapshots.push( response );
 
@@ -330,9 +334,9 @@ function Backups() {
           function printData($element) {
             var d = new Date( parseInt($element.attr('data-timestamp')) );
             var info = {
-              date: d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear(),
+              date: make2Digits( d.getDate() ) + '/' + make2Digits( d.getMonth() + 1 ) + '/' + d.getFullYear(),
               name: '#' + $element.attr('data-name'),
-              size: ( parseInt( $element.attr('data-size') ) / 1000000 ) + 'MB'
+              size: formatNumber( parseInt( $element.attr('data-size') ) / 1000000 ) + ' MB'
             };
             $element.find('.date').html( info.date );
             $element.find('.name').html( info.name );
@@ -340,10 +344,10 @@ function Backups() {
           }
 
           function adjustSizeScaleValues( maximum ) {
-            $sizeScale.find('.fourty').html( ( ( maximum * 40 ) / 100 ) / 1000000 + 'MB' );
-            $sizeScale.find('.sixty').html( ( ( maximum * 60 ) / 100 ) / 1000000 + 'MB' );
-            $sizeScale.find('.seventy').html( ( ( maximum * 70 ) / 100 ) / 1000000 + 'MB' );
-            $sizeScale.find('.seventyfive').html( ( ( maximum * 75 ) / 100 ) / 1000000 + 'MB' );
+            $sizeScale.find('.fourty').html( formatNumber( ( ( maximum * 40 ) / 100 ) / 1000000 ) + ' MB' );
+            $sizeScale.find('.sixty').html( formatNumber( ( ( maximum * 60 ) / 100 ) / 1000000 ) + ' MB' );
+            $sizeScale.find('.seventy').html( formatNumber( ( ( maximum * 70 ) / 100 ) / 1000000 ) + ' MB' );
+            $sizeScale.find('.seventyfive').html( formatNumber( ( ( maximum * 75 ) / 100 ) / 1000000 ) + ' MB' );
           }
 
           function takeNewSnapshot() {
