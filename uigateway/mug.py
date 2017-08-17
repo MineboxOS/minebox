@@ -461,11 +461,14 @@ def api_wallet_send():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     # The sia daemon takes the amount in hastings.
     # If no amount in hastings is given, we support an amount_sc in siacoins.
-    amount = int(request.form["amount"])
-    if not amount:
-        amount = int(request.form["amount_sc"]) * H_PER_SC
-    destination = request.form["destination"]
-    siadata, status_code = post_to_sia('wallet/siacoin',
+    if "amount" in request.form:
+        amount = int(request.form["amount"])
+    elif "amount_sc" in request.form:
+        amount = int(float(request.form["amount_sc"]) * H_PER_SC)
+    else:
+        amount = 0
+    destination = request.form["destination"] if "destination" in request.form else ""
+    siadata, status_code = post_to_sia('wallet/siacoins',
                                        {"amount": str(amount),
                                         "destination": destination})
     if status_code == 200:
