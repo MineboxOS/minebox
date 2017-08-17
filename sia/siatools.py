@@ -296,7 +296,7 @@ def get_sia_config():
                   % (cf_status_code,  cfdata["message"]))
         if not sia_settings and os.path.isfile(SIA_CONFIG_JSON):
             # If we did not get settings remotely, read them from the file.
-            with open(CONFIG_JSON_PATH) as json_file:
+            with open(SIA_CONFIG_JSON) as json_file:
                 sia_settings = json.load(json_file)
         # Convert values to units that siad is using.
         # Set useful defaults in case either a value is missing or both the
