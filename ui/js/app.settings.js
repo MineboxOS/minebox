@@ -21,7 +21,7 @@ function Settings() {
 		function loadSettings(cb) {
 
 			//init loading witness
-			loadingWitness = true; //hard coded
+			loadingManager.add('User settings');
 
 			setTimeout(function() {
 				//connects to mug
@@ -39,7 +39,7 @@ function Settings() {
 				};
 
 				//end loading witness
-				loadingWitness = false; //hard coded
+				loadingManager.remove('User settings');
 
 				if (cb) {
 					cb(settings);
