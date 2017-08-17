@@ -179,7 +179,6 @@ input[type="checkbox"]:before {
 }
 .notify-window .obfuscation-layer {
   background-color: #001;
-  border: 1px solid #24acce;
 }
 .notify-window .close-btn:after,
 .notify-window .close-btn:before {
