@@ -57,6 +57,7 @@
   border: 0;
   appearance: none;
   -webkit-appearance: none;
+  min-width: 120px;
 }
 .notify-window button.accept {
   background-color: #24acce;

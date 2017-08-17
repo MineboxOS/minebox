@@ -97,6 +97,7 @@
 			margin-top: -154px;
 			top: 40%;
 			left: 50%;
+			display: none;
 			background: #1a7d96;  /* fallback for old browsers */
 			background: -webkit-linear-gradient(to bottom, #1a7d96, #16677c);  /* Chrome 10-25, Safari 5.1-6 */
 			background: linear-gradient(to bottom, #1a7d96, #16677c); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
