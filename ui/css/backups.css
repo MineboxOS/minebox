@@ -4,10 +4,10 @@
 
 #snapshots-app {
   position: fixed;
-  top: 60px; /* header's height */
+  top: 36px; /* header's height */
   left: 0;
   width: 100%;
-  height: calc(100% - 60px); /* header's height */
+  height: calc(100% - 36px); /* header's height */
 }
 
 

@@ -27,6 +27,11 @@
   cursor: pointer;
   transition: background ease .2s;
 }
+#menu li>a {
+  font: inherit;
+  text-decoration: none;
+  color: inherit;
+}
 #menu li:after {
   content: '';
   width: 100%;
