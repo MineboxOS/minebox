@@ -123,10 +123,12 @@ function Wallet() {
 	/* Handles loading of wallet address */
 	function WalletAddressManager() {
 
+		var $walletAddressInput = $('#user-wallet-address');
+
 		function loadWalletAddress() {
 
 			//starting loader
-			loadingManager.add('Wallet address');
+			$walletAddressInput.val('Loading wallet address...');
 
 			CONFIG.api.address.requester.setURL( CONFIG.api.address.url );
 			CONFIG.api.address.requester.setMethod( 'GET' );
@@ -138,12 +140,9 @@ function Wallet() {
 				CONFIG.wallet.address = response.address;
 				//rising an event
 				$('body').trigger( CONFIG.events.walletAddressLoaded );
-				//removing loader
-				loadingManager.remove('Wallet address');
+				
 			}, function(error) {
 
-				//removing loader
-				loadingManager.remove('Wallet address');
 				var notify = new Notify({ message: CONFIG.messages.walletAddressLoaded });
 				notify.print();
 			});
@@ -154,7 +153,7 @@ function Wallet() {
 		});
 
 		function printWalletAddress() {
-			$('#user-wallet-address').val( CONFIG.wallet.address );
+			$walletAddressInput.val( CONFIG.wallet.address );
 		}
 
 		return {
@@ -260,6 +259,7 @@ function Wallet() {
 			hideTabs();
 			showWalletTabs();
 			$('#' + targetID)
+				.trigger('show')
 				.addClass( activeClass )
 				.fadeIn( speed );
 		}
@@ -539,6 +539,9 @@ function Wallet() {
 
 	$(document).ready(function() {
 		walletStatusManager.load();
+	});
+
+	$('#receive-tab').bind('show', function() {
 		walletAddressManager.load();
 	});
 
