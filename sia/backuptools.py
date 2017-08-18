@@ -199,7 +199,8 @@ def save_metadata(status):
     backupname = status["backupname"]
     metadir = path.join(METADATA_BASE, backupname)
     # Copy renter/ folder to metadata directory.
-    shutil.copytree(path.join(SIA_DIR, "renter"), metadir)
+    # The copytree target needs to be the not-yet-existing target directory.
+    shutil.copytree(path.join(SIA_DIR, "renter"), path.join(metadir, "renter"))
     # Create a bundle of all metadata for this backup.
     zipname = join(METADATA_BASE, "%s.zip" % backupname)
     if path.isfile(zipname):
