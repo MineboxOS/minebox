@@ -20,12 +20,12 @@
 .notify-window .window {
   position: fixed;
   z-index: 100;
-  width: 500px;
+  width: 600px;
   padding: 40px;
   min-height: 200px;
-  top: 50%;
+  top: 45%;
   left: 50%;
-  margin-left: -250px;
+  margin-left: -300px;
   margin-top: -200px;
 }
 .notify-window .logo {
@@ -74,6 +74,7 @@
 .notify-window .text {
   color: #fff;
   text-align: center;
+  overflow: hidden;
 }
 .notify-window .buttons {
   margin-top: 15px;
@@ -83,7 +84,7 @@
   margin-right: 15px;
 }
 
-@media ( max-width: 500px ) {
+@media (max-width: 700px) {
   .notify-window .window {
     position: absolute;
     left: 0;
