@@ -1,15 +1,122 @@
 <div id="dashboard" class="clearfix">
-  <aside id="sidebar" class="hidden-xs hidden-sm col-md-2 col-lg-2 sidebar">
-    <div class="sidebar-inner">
-      <div class="sidebar-block">
-        <h5>Sidebar menu</h5>
-        <ul>
-        </ul>
-      </div>
-    </div>
-  </aside>
 
-  <div id="content" class="col-xs-12 col-sm-12 col-md-10 col-lg-10 content">
-    <div id="widgets-box"></div>
-  </div>
+	<div class="container widget-container">
+
+
+		<div class="row widget-row">
+
+			<div id="status-widget" class="col-xs-12 col-sm-12 col-md-4 col-lg-4 widget">
+				<div class="widget-inner clearfix">
+					<div class="widget-top-bar">
+						<h4 class="widget-top-bar-title">Minebox Status</h4>
+						<div class="widget-led-status loading"></div>
+					</div>
+					<ul class="widget-list-elements">
+						<li><span class="widget-list-element">minebd_running</span><span id="minebd_running_witness" class="widget-list-value"> - </span></li>
+						<li><span class="widget-list-element">minebd_encrypted</span><span id="minebd_encrypted_witness" class="widget-list-value"> - </span></li>
+						<li><span class="widget-list-element">minebd_storage_mounted</span><span id="minebd_storage_mounted_witness" class="widget-list-value"> - </span></li>
+					</ul>
+				</div>
+			</div>
+
+			<div id="network-widget" class="col-xs-12 col-sm-12 col-md-4 col-lg-4 widget">
+				<div class="widget-inner clearfix">
+					<div class="widget-top-bar">
+						<h4 class="widget-top-bar-title">Network</h4>
+						<div class="widget-led-status loading"></div>
+					</div>
+					<ul class="widget-list-elements">
+						<li><span class="widget-list-element">consensus_synced</span><span id="consensus_synced_witness" class="widget-list-value"> - </span></li>
+						<li><span class="widget-list-element">consensus_height</span><span id="consensus_height_witness" class="widget-list-value"> - </span></li>
+						<li><span class="widget-list-element">contracts</span><span id="contracts_witness" class="widget-list-value"> - </span></li>
+					</ul>
+				</div>
+			</div>
+
+			<div id="wallet-widget" class="col-xs-12 col-sm-12 col-md-4 col-lg-4 widget">
+				<div class="widget-inner clearfix">
+					<div class="widget-top-bar">
+						<h4 class="widget-top-bar-title">Wallet</h4>
+						<div class="widget-led-status loading"></div>
+					</div>
+					<ul class="widget-list-elements">
+						<li><span class="widget-list-element">Locked</span><span id="wallet_locked_witness" class="widget-list-value"> - </span></li>
+						<li><span class="widget-list-element">Encrypted</span><span id="wallet_encrypted_witness" class="widget-list-value"> - </span></li>
+						<li><span class="widget-list-element">Balance</span><span id="wallet_balance_witness" class="widget-list-value"> - </span></li>
+						<li><span class="widget-list-element">Unconfirmed balance</span><span id="wallet_unconfirmed_balance_witness" class="widget-list-value"> - </span></li>
+					</ul>
+				</div>
+			</div>
+			
+		</div>
+
+
+
+		<div class="row widget-row">
+
+			<div id="restore-widget" class="col-xs-12 col-sm-12 col-md-6 col-lg-6 widget">
+				<div class="widget-inner clearfix progress-tab" style="display:none;">
+					<div class="widget-top-bar">
+						<h4 class="widget-top-bar-title">Restore status</h4>
+						<div class="widget-led-status loading"></div>
+					</div>
+					<div class="widget-progress-bar-box">
+						<div class="widget-progress-bar">
+							<div class="fill">
+								<div class="real-fill"></div>
+								<span class="percent-witness"><span class="value">0</span>%</span>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="widget-inner clearfix done-tab">
+					<div class="widget-check-icon-box"></div>
+					<h4 class="widget-system-status">Your system is restored</h4>
+				</div>
+			</div>
+
+			<div id="backup-widget" class="col-xs-12 col-sm-12 col-md-6 col-lg-6 widget">
+				<div class="widget-inner clearfix progress-tab" style="display:none;">
+					<div class="widget-top-bar">
+						<h4 class="widget-top-bar-title">Backup status</h4>
+						<div class="widget-led-status loading"></div>
+					</div>
+					<div class="widget-progress-bar-box">
+						<div class="widget-progress-bar">
+							<div class="fill">
+								<div class="real-fill"></div>
+								<span class="percent-witness"><span class="value">0</span>%</span>
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+							<ul class="widget-list-elements">
+								<li><span class="widget-list-element">Timestamp</span><span id="backup_timestamp_witness" class="widget-list-value"> - </span></li>
+								<li><span class="widget-list-element">Status</span><span id="backup_status_witness" class="widget-list-value"> - </span></li>
+								<li><span class="widget-list-element">Metadata</span><span id="backup_metadata_witness" class="widget-list-value"> - </span></li>
+								<li><span class="widget-list-element">Files number</span><span id="backup_files_number_witness" class="widget-list-value"> - </span></li>
+							</ul>
+						</div>
+						<div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+							<ul class="widget-list-elements">
+								<li><span class="widget-list-element">Size</span><span id="backup_size_witness" class="widget-list-value"> - </span></li>
+								<li><span class="widget-list-element">Rel. size</span><span id="backup_relative_size_witness" class="widget-list-value"> - </span></li>
+								<li><span class="widget-list-element">Progress</span><span id="backup_progress_witness" class="widget-list-value"> - </span></li>
+								<li><span class="widget-list-element">Rel. progress</span><span id="backup_relative_progress_witness" class="widget-list-value"> - </span></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<div class="widget-inner clearfix done-tab">
+					<div class="widget-check-icon-box"></div>
+					<h4 class="widget-system-status">Your system is backed up</h4>
+				</div>
+			</div>
+
+		</div>
+
+
+	</div>
+
 </div>
