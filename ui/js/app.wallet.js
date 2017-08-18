@@ -177,7 +177,7 @@ function Wallet() {
 		function collectData() {
 			return {
 				amount_sc: $amountToSend.val(),
-				address: $addressToSend.val()
+				destination: $addressToSend.val()
 			}
 		}
 
@@ -203,10 +203,25 @@ function Wallet() {
 				//re-load wallet funds
 				walletStatusManager.load();
 
-				console.log(response);
+				//saving details
+				var details = response;
 
 				//print notification
-				var notify = new Notify({message: CONFIG.messages.walletSend.success});
+				var notify = new Notify({
+					message: CONFIG.messages.walletSend.success,
+					cancelText: 'Details',
+					onCancel: function() {
+						//adding response's message to notification message
+						var message = details.message + '<br />';
+						//adding transaction ids
+						message += 'Transaction IDs:<br />';
+						for ( var n = 0; n < details.transactionids.length; n++ ) {
+							message += '<small>' + details.transactionids[n] + '</small><br />';
+						}
+						var notifyDetails = new Notify({message: message});
+						notifyDetails.print();
+					}
+				});
 				notify.print();
 
 			}, function(error) {
