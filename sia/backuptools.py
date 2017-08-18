@@ -162,9 +162,9 @@ def wait_for_uploads(status):
                 if bfile["siapath"] in sia_map:
                     fdata = sia_filedata["files"][sia_map[bfile["siapath"]]]
                     total_uploaded_size += fdata["filesize"] * fdata["uploadprogress"] / 100.0
+                    redundancy.append(fdata["redundancy"])
                     if fdata["siapath"] in status["uploadfiles"]:
                         uploaded_size += fdata["filesize"] * fdata["uploadprogress"] / 100.0
-                        redundancy.append(fdata["redundancy"])
                     if not fdata["available"]:
                         fully_available = False
                 elif re.match(r'.*\.dat$', bfile["siapath"]):
