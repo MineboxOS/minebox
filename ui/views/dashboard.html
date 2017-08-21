@@ -9,7 +9,7 @@
 				<div class="widget-inner clearfix">
 					<div class="widget-top-bar">
 						<h4 class="widget-top-bar-title">Minebox Status</h4>
-						<div class="widget-led-status loading"></div>
+						<div class="widget-led-status" data-led="loading"></div>
 					</div>
 					<ul class="widget-list-elements">
 						<li><span class="widget-list-element">minebd_running</span><span id="minebd_running_witness" class="widget-list-value"> - </span></li>
@@ -23,7 +23,7 @@
 				<div class="widget-inner clearfix">
 					<div class="widget-top-bar">
 						<h4 class="widget-top-bar-title">Network</h4>
-						<div class="widget-led-status loading"></div>
+						<div class="widget-led-status" data-led="loading"></div>
 					</div>
 					<ul class="widget-list-elements">
 						<li><span class="widget-list-element">consensus_synced</span><span id="consensus_synced_witness" class="widget-list-value"> - </span></li>
@@ -37,10 +37,10 @@
 				<div class="widget-inner clearfix">
 					<div class="widget-top-bar">
 						<h4 class="widget-top-bar-title">Wallet</h4>
-						<div class="widget-led-status loading"></div>
+						<div class="widget-led-status" data-led="loading"></div>
 					</div>
 					<ul class="widget-list-elements">
-						<li><span class="widget-list-element">Locked</span><span id="wallet_locked_witness" class="widget-list-value"> - </span></li>
+						<li><span class="widget-list-element">Unlocked</span><span id="wallet_unlocked_witness" class="widget-list-value"> - </span></li>
 						<li><span class="widget-list-element">Encrypted</span><span id="wallet_encrypted_witness" class="widget-list-value"> - </span></li>
 						<li><span class="widget-list-element">Balance</span><span id="wallet_balance_witness" class="widget-list-value"> - </span></li>
 						<li><span class="widget-list-element">Unconfirmed balance</span><span id="wallet_unconfirmed_balance_witness" class="widget-list-value"> - </span></li>
@@ -58,7 +58,7 @@
 				<div class="widget-inner clearfix progress-tab" style="display:none;">
 					<div class="widget-top-bar">
 						<h4 class="widget-top-bar-title">Restore status</h4>
-						<div class="widget-led-status loading"></div>
+						<div class="widget-led-status" data-led="loading"></div>
 					</div>
 					<div class="widget-progress-bar-box">
 						<div class="widget-progress-bar">
@@ -70,8 +70,7 @@
 					</div>
 				</div>
 				<div class="widget-inner clearfix done-tab">
-					<div class="widget-check-icon-box"></div>
-					<h4 class="widget-system-status">Your system is restored</h4>
+					<h4 class="widget-system-status"><i class="icon ic ic-checkmark"></i>&nbsp;Your system is restored</h4>
 				</div>
 			</div>
 
@@ -79,7 +78,7 @@
 				<div class="widget-inner clearfix progress-tab" style="display:none;">
 					<div class="widget-top-bar">
 						<h4 class="widget-top-bar-title">Backup status</h4>
-						<div class="widget-led-status loading"></div>
+						<div class="widget-led-status" data-led="loading"></div>
 					</div>
 					<div class="widget-progress-bar-box">
 						<div class="widget-progress-bar">
@@ -109,8 +108,7 @@
 					</div>
 				</div>
 				<div class="widget-inner clearfix done-tab">
-					<div class="widget-check-icon-box"></div>
-					<h4 class="widget-system-status">Your system is backed up</h4>
+					<h4 class="widget-system-status"><i class="icon ic ic-checkmark"></i>&nbsp;Your system is backed up</h4>
 				</div>
 			</div>
 
@@ -118,5 +116,8 @@
 
 
 	</div>
+
+
+	<div id="dashboard-notification-box"></div>
 
 </div>
