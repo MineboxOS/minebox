@@ -162,9 +162,9 @@ def wait_for_uploads(status):
                 if bfile["siapath"] in sia_map:
                     fdata = sia_filedata["files"][sia_map[bfile["siapath"]]]
                     total_uploaded_size += fdata["filesize"] * fdata["uploadprogress"] / 100.0
+                    redundancy.append(fdata["redundancy"])
                     if fdata["siapath"] in status["uploadfiles"]:
                         uploaded_size += fdata["filesize"] * fdata["uploadprogress"] / 100.0
-                        redundancy.append(fdata["redundancy"])
                     if not fdata["available"]:
                         fully_available = False
                 elif re.match(r'.*\.dat$', bfile["siapath"]):
@@ -199,7 +199,8 @@ def save_metadata(status):
     backupname = status["backupname"]
     metadir = path.join(METADATA_BASE, backupname)
     # Copy renter/ folder to metadata directory.
-    shutil.copytree(path.join(SIA_DIR, "renter"), metadir)
+    # The copytree target needs to be the not-yet-existing target directory.
+    shutil.copytree(path.join(SIA_DIR, "renter"), path.join(metadir, "renter"))
     # Create a bundle of all metadata for this backup.
     zipname = join(METADATA_BASE, "%s.zip" % backupname)
     if path.isfile(zipname):
