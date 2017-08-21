@@ -9,4 +9,6 @@ public class ApiConfig extends Configuration {
 
     public MinebdConfig minebd;
 
+    public String siaDataDirectory;
+
 }

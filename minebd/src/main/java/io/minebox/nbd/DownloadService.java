@@ -8,9 +8,12 @@ import com.google.inject.ImplementedBy;
 /**
  * Created by andreas on 27.04.17.
  */
-@ImplementedBy(MetadataServiceImpl.class)
-public interface MetadataService {
+@ImplementedBy(MineboxHostedDownload.class)
+public interface DownloadService {
+
     boolean downloadIfPossible(File file);
+
+    boolean wasInitialized();
 
     boolean hasMetadata();
 

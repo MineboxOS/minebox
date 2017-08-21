@@ -5,6 +5,8 @@ server:
 swagger:
   resourcePackage: io.minebox.resource
 
+siaDataDirectory: /mnt/lower1/sia
+
 # Logging settings.
 logging:
   level: INFO

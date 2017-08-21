@@ -33,7 +33,7 @@ public class BucketTest {
     @Test
     public void testExport() throws IOException {
         final MinebdConfig cfg = TestUtil.createSampleConfig();
-        final BucketFactory bucketFactory = new BucketFactory(new SerialNumberService(new StaticEncyptionKeyProvider("testJunit")), cfg, new NullEncryption(), new NullMetadataService());
+        final BucketFactory bucketFactory = new BucketFactory(new SerialNumberService(new StaticEncyptionKeyProvider("testJunit")), cfg, new NullEncryption(), new NullDownloadService());
         final MineboxExport export = new MineboxExport(cfg, new MetricRegistry(), bucketFactory);
         export.open("test");
         export.write(0, ByteBuffer.wrap(new byte[]{1, 2, 3}), true);
@@ -46,7 +46,7 @@ public class BucketTest {
         MinebdConfig cfg = TestUtil.createSampleConfig();
         cfg.bucketSize = Size.megabytes(40);
         long bucketSize = cfg.bucketSize.toBytes();
-        final BucketFactory bucketFactory = new BucketFactory(new SerialNumberService(new StaticEncyptionKeyProvider("testJunit")), cfg, new NullEncryption(), new NullMetadataService());
+        final BucketFactory bucketFactory = new BucketFactory(new SerialNumberService(new StaticEncyptionKeyProvider("testJunit")), cfg, new NullEncryption(), new NullDownloadService());
 
         final BucketFactory.BucketImpl underTest = (BucketFactory.BucketImpl) bucketFactory.create(0);
 

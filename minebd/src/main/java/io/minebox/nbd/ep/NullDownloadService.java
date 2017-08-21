@@ -4,15 +4,20 @@ import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 
-import io.minebox.nbd.MetadataService;
+import io.minebox.nbd.DownloadService;
 
 /**
  * Created by andreas on 27.04.17.
  */
-public class NullMetadataService implements MetadataService {
+public class NullDownloadService implements DownloadService {
     @Override
     public boolean downloadIfPossible(File file) {
         return false;
+    }
+
+    @Override
+    public boolean wasInitialized() {
+        return true;
     }
 
     @Override

@@ -1,1 +1,3 @@
-//include 'minebd'
+include 'minebd', 'client_shared'
+
+project(":client_shared").setProjectDir(new File("../client_shared"))
