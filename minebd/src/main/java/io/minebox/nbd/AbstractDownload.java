@@ -14,6 +14,8 @@ import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import io.minebox.nbd.encryption.EncyptionKeyProvider;
 import org.apache.commons.lang3.tuple.Pair;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +60,7 @@ public abstract class AbstractDownload implements DownloadService {
     }
 
     @Inject
-    public void initKeyListener(){
+    public void initKeyListener() {
         encyptionKeyProvider.onLoadKey(this::init);
     }
 
@@ -105,20 +107,25 @@ public abstract class AbstractDownload implements DownloadService {
             final InputStream body = downloadLatestMetadataZip(token.get());
             final ZipInputStream zis = new ZipInputStream(body);
             ZipEntry entry;
-            final ImmutableList.Builder<String> filenamesBuilder = ImmutableList.builder();
+
+            ImmutableList<String> ret = null;
             while ((entry = zis.getNextEntry()) != null) {
-                final String siaName = entry.getName();
-                //    backup.1492640813/minebox_v1_0.1492628694.dat.sia
-                digestEntry(entry, zis);
-                if (siaName.endsWith(".sia") && siaName.contains("/")) {
-                    final String datName = siaName.substring(siaName.lastIndexOf('/') + 1, siaName.length() - 4);
-                    //minebox_v1_0.1492628694.dat
-                    filenamesBuilder.add(datName);
+                final String entryName = entry.getName();
+                if (entryName.startsWith("renter")) {
+                    digestRenterFile(entry, zis);
                 }
+                if (entryName.equals("fileinfo")) {
+                    ret = readSiaPathsFromInfo(zis);
+                }
+
+            }
+            //one of those files must have been fileinfo...
+            if (ret == null) {
+                throw new IllegalArgumentException("unable to read siapaths from fileinfo");
             }
             connectedToMetadata = true;
             LOGGER.info("loaded backup from metadata service");
-            final ImmutableList<String> ret = filenamesBuilder.build();
+
             hasMetadata = !ret.isEmpty();
             return ret;
         } catch (UnirestException | IOException e) {
@@ -132,6 +139,25 @@ public abstract class AbstractDownload implements DownloadService {
 
     }
 
+    private ImmutableList<String> readSiaPathsFromInfo(ZipInputStream zis) {
+        ImmutableList<String> ret;
+        JSONArray fileInfo = new JSONArray(convertStreamToString(zis));
+        final ImmutableList.Builder<String> filenamesBuilder = ImmutableList.builder();
+        for (Object o : fileInfo) {
+            JSONObject o2 = (JSONObject) o;
+            final String siapath = o2.getString("siapath");
+            filenamesBuilder.add(siapath);
+        }
+        ret = filenamesBuilder.build();
+        return ret;
+    }
+
+    public static String convertStreamToString(java.io.InputStream is) {
+        java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
+        return s.hasNext() ? s.next() : "";
+    }
+
+
     protected InputStream downloadLatestMetadataZip(String token) throws UnirestException {
         final HttpResponse<InputStream> response = Unirest.get(metadataUrl + "file/latestMeta")
                 .header("X-Auth-Token", token)
@@ -139,7 +165,7 @@ public abstract class AbstractDownload implements DownloadService {
         return response.getBody();
     }
 
-    protected abstract void digestEntry(ZipEntry entry, ZipInputStream zis);
+    protected abstract void digestRenterFile(ZipEntry entry, ZipInputStream zis);
 
     @Override
     public boolean downloadIfPossible(File file) {

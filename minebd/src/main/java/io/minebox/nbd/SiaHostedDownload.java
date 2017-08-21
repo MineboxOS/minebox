@@ -4,11 +4,14 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.minebox.SiaUtil;
 import io.minebox.nbd.encryption.EncyptionKeyProvider;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,6 +23,7 @@ public class SiaHostedDownload extends AbstractDownload {
     private static final Logger LOGGER = LoggerFactory.getLogger(SiaHostedDownload.class);
     private final SiaUtil siaUtil;
     private final Path siaDir;
+    private JSONArray fileInfo;
 
     @Inject
     SiaHostedDownload(SiaUtil siaUtil,
@@ -39,16 +43,18 @@ public class SiaHostedDownload extends AbstractDownload {
     }
 
     @Override
-    protected void digestEntry(ZipEntry entry, ZipInputStream zis) {
-        final Path dest = siaDir.resolve(entry.getName());
-        try {
-            Files.deleteIfExists(dest); //yes, we overwrite everything we find
-            Files.copy(zis, dest);
-        } catch (IOException e) {
-            throw new RuntimeException("unable to create renter file", e);
+    protected void digestRenterFile(ZipEntry entry, ZipInputStream zis) {
+        final String entryName = entry.getName();
+        final Path dest = siaDir.resolve(entryName);
+        if (entryName.startsWith("renter")) {
+            try {
+                Files.deleteIfExists(dest); //yes, we overwrite everything we find
+                Files.copy(zis, dest);
+            } catch (IOException e) {
+                throw new RuntimeException("unable to create renter file", e);
+            }
         }
     }
-
 
     @Override
     protected void downloadFile(File file, String toDownload) {

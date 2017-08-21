@@ -10,11 +10,16 @@ import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.HttpRequest;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.nio.file.Path;
 
 public class SiaUtil {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SiaUtil.class);
+
 
     final private String path;
 
@@ -33,12 +38,23 @@ public class SiaUtil {
         return checkErrorFragment(unlockReply, "another wallet rescan is already underway");
     }
 
+    static boolean notSynced(HttpResponse<JsonNode> unlockReply) {
+        return checkErrorFragment(unlockReply, "cannot init from seed until blockchain is synced");
+    }
+
     static boolean needsEncryption(HttpResponse<JsonNode> unlockReply) {
         return checkErrorFragment(unlockReply, SEED_MISSING);
     }
 
     private static boolean checkErrorFragment(HttpResponse<JsonNode> reply, String fragment) {
-        JSONObject object = reply.getBody().getObject();
+        if (reply == null){
+            throw new RuntimeException("reply was null!. checking for fragment: "+fragment);
+        }
+        final JsonNode body = reply.getBody();
+        if (body == null){
+            throw new RuntimeException("replybody was null! checking for fragment: "+fragment);
+        }
+        JSONObject object = body.getObject();
         if (!object.has("message")) {
             return false;
         }
@@ -109,13 +125,47 @@ public class SiaUtil {
         return siaCommand(Command.INITSEED, ImmutableMap.of("encryptionpassword", seed, "seed", seed));
     }
 
-    boolean unlockWallet(String seed) {
+    public void waitForConsensus() {
+        boolean synced = false;
+        while (true) {
+            LOGGER.warn("checking if blockchain is ready");
+            final HttpResponse<JsonNode> result = this.siaCommand(Command.CONSENSUS, ImmutableMap.of());
+            final JSONObject result2 = result.getBody().getObject();
+            synced = result2.getBoolean("synced");
+            if (synced) {
+                LOGGER.info("blockchain ready (height " + result2.getInt("height") + ")");
+                break;
+            }
+            LOGGER.warn("blockchain not ready (height " + result2.getInt("height") + "), retrying in 10 seconds...");
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+        }
+
+
+    }
+
+    public boolean unlockWallet(String seed) {
         HttpResponse<JsonNode> unlockReply = siaCommand(Command.UNLOCK, ImmutableMap.of("encryptionpassword", seed));
         if (alreadyUnderway(unlockReply)) {
+            LOGGER.info("unable to unlock, operation was already started..");
             return false;
         }
         if (needsEncryption(unlockReply)) {
+            LOGGER.info("no seed yet, (encryption missing) - running init");
             HttpResponse<JsonNode> seedReply = initSeed(seed);
+            if (notSynced(seedReply)) {
+                LOGGER.warn("blockchain not ready, retrying in 10 seconds...");
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            LOGGER.info("retrying unlock after init");
             return unlockWallet(seed);
         }
         return true;

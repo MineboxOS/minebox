@@ -29,7 +29,7 @@ public class MineboxHostedDownload extends AbstractDownload {
     }
 
     @Override
-    protected void digestEntry(ZipEntry entry, ZipInputStream zis) {
+    protected void digestRenterFile(ZipEntry entry, ZipInputStream zis) {
         //do nothing, the
     }
 

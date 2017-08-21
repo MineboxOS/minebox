@@ -8,6 +8,7 @@ repositories {
 
 dependencies {
 
+    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.24'
     compile group: 'com.google.guava', name: 'guava', version: '21.0'
     compile group: 'com.google.inject', name: 'guice', version: '4.0'
     compile group: 'com.mashape.unirest', name: 'unirest-java', version: '1.4.9'
