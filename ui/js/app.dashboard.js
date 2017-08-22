@@ -48,7 +48,12 @@ function Dashboard() {
 		},
 		loop: {
 			func: null, //setInterval handler
-			time: 3000 //the time for interval
+			time: 5000 //the time for interval
+		},
+		errorHandler: {
+			template: '<div style="display:none;" id="{{id}}" class="{{type}} dashboard-notification"><div class="icon-box"><i class="ic ic-cross"></i><i class="ic ic-checkmark"></i><i class="ic ic-warning"></i></div><div class="notification-content"><h3 class="notification-title" style="display:{{title-visibility}}">{{title}}</h3><p class="notification-text">{{message}}</p></div></div>',
+			fadeSpeed: 300,
+			timeout: 3000
 		},
 		messages: {
 			mineboxStatusFailed: 'Minebox Status not updated. Re-trying in several seconds.',
@@ -92,16 +97,26 @@ function Dashboard() {
 
 	//getters
 	function getMineboxStatus() {
+		//adding witness to loop.activeRequests
+		loop.addActiveRequest('minebox');
+
 		//requesting status/
 		CONFIG.api.mineboxStatus.requester.setURL( CONFIG.api.mineboxStatus.url );
 		CONFIG.api.mineboxStatus.requester.setCache(false);
 		CONFIG.api.mineboxStatus.requester.setCredentials(true);
+		CONFIG.api.mineboxStatus.requester.setTimeoutFunc(function() {
+			//changing led color to loading
+			mineboxLEDColor( CONFIG.LEDColors.loading );
+			//not printing any error because time expiration executes also FAIL function
+		});
 		CONFIG.api.mineboxStatus.requester.run(function(response) {
 
 			//update global object
 			STATUS.mineboxStatus = response;
 			//rise event
 			$('body').trigger(CONFIG.events.mineboxStatus.updated);
+			//remove witness from loop
+			loop.removeActiveRequest('minebox');
 
 		}, function(error) {
 
@@ -116,6 +131,8 @@ function Dashboard() {
 			STATUS.mineboxStatus = {};
 			//rise event
 			$('body').trigger(CONFIG.events.mineboxStatus.failed);
+			//remove witness from loop
+			loop.removeActiveRequest('minebox');
 
 		});
 	}
@@ -125,16 +142,26 @@ function Dashboard() {
 
 
 	function getConsensusStatus() {
+		//adding witness to loop.activeRequests
+		loop.addActiveRequest('consensus');
+
 		//requesting consensus/
 		CONFIG.api.consensusStatus.requester.setURL( CONFIG.api.consensusStatus.url );
 		CONFIG.api.consensusStatus.requester.setCache(false);
 		CONFIG.api.consensusStatus.requester.setCredentials(true);
+		CONFIG.api.consensusStatus.requester.setTimeoutFunc(function() {
+			//changing led color to loading
+			networkLEDColor( CONFIG.LEDColors.loading );
+			//not printing any error because time expiration executes also FAIL function
+		});
 		CONFIG.api.consensusStatus.requester.run(function(response) {
 
 			//update global object
 			STATUS.consensusStatus = response;
 			//rise event
 			$('body').trigger(CONFIG.events.networkStatus.updated);
+			//remove witness from loop
+			loop.removeActiveRequest('consensus');
 
 		}, function(error) {
 
@@ -149,6 +176,8 @@ function Dashboard() {
 			STATUS.consensusStatus = {};
 			//rise event
 			$('body').trigger(CONFIG.events.networkStatus.failed);
+			//remove witness from loop
+			loop.removeActiveRequest('consensus');
 
 		});
 	}
@@ -158,16 +187,26 @@ function Dashboard() {
 
 
 	function getSiaStatus() {
+		//adding witness to loop.activeRequests
+		loop.addActiveRequest('sia');
+
 		//requesting sia/status/
 		CONFIG.api.siaStatus.requester.setURL( CONFIG.api.siaStatus.url );
 		CONFIG.api.siaStatus.requester.setCache(false);
 		CONFIG.api.siaStatus.requester.setCredentials(true);
+		CONFIG.api.siaStatus.requester.setTimeoutFunc(function() {
+			//changing led color to loading
+			mineboxLEDColor( CONFIG.LEDColors.loading );
+			//not printing any error because time expiration executes also FAIL function
+		});
 		CONFIG.api.siaStatus.requester.run(function(response) {
 
 			//update global object
 			STATUS.siaStatus = response;
 			//rise event
 			$('body').trigger(CONFIG.events.siaStatus.updated);
+			//remove witness from loop
+			loop.removeActiveRequest('sia');
 
 		}, function(error) {
 
@@ -182,6 +221,8 @@ function Dashboard() {
 			STATUS.siaStatus = {};
 			//rise event
 			$('body').trigger(CONFIG.events.siaStatus.failed);
+			//remove witness from loop
+			loop.removeActiveRequest('sia');
 
 		});
 	}
@@ -229,7 +270,7 @@ function Dashboard() {
 
 
 	//those functions indicate the LED color for each of the widgets
-	function mineboxLEDColor() {
+	function mineboxLEDColor( LEDColor ) {
 		if ( !$.isEmptyObject( STATUS.mineboxStatus ) ) {
 			//there is data within mineboxStatus
 
@@ -254,11 +295,15 @@ function Dashboard() {
 			//change to loading
 			$mineboxStatusLED.attr('data-led', CONFIG.LEDColors.loading);
 		}
+
+		if ( LEDColor ) {
+			$mineboxStatusLED.attr('data-led', LEDColor);
+		}
 	}
 
 
 
-	function networkLEDColor() {
+	function networkLEDColor( LEDColor ) {
 		if ( !$.isEmptyObject( STATUS.consensusStatus ) && !$.isEmptyObject( STATUS.siaStatus ) ) {
 			//there is data within consensusStatus
 
@@ -281,12 +326,16 @@ function Dashboard() {
 			//change to loading
 			$networkStatusLED.attr('data-led', CONFIG.LEDColors.loading);
 		}
+
+		if ( LEDColor ) {
+			$networkStatusLED.attr('data-led', LEDColor);
+		}
 	}
 
 
 
 
-	function siaLEDColor() {
+	function siaLEDColor( LEDColor ) {
 
 		if ( !$.isEmptyObject( STATUS.siaStatus ) ) {
 			//there is data within siaStatus
@@ -313,6 +362,10 @@ function Dashboard() {
 		} else {
 			//change to loading
 			$walletStatusLED.attr('data-led', CONFIG.LEDColors.loading);
+		}
+
+		if ( LEDColor ) {
+			$siaStatusLED.attr('data-led', LEDColor);
 		}
 	}
 
@@ -342,14 +395,16 @@ function Dashboard() {
 
 
 	//error handler
-	function DashboardErrorHandler() {
+	function DashboardErrorHandler( cfg ) {
 
 		var $dashboardNotificationBox = $('#dashboard-notification-box');
-		var template = '<div style="display:none;" id="{{id}}" class="{{type}} dashboard-notification"><div class="icon-box"><i class="ic ic-cross"></i><i class="ic ic-checkmark"></i><i class="ic ic-warning"></i></div><div class="notification-content"><h3 class="notification-title" style="display:{{title-visibility}}">{{title}}</h3><p class="notification-text">{{message}}</p></div></div>';
 		var CONFIG = {
+			template: '<div style="display:none;" id="{{id}}" class="{{type}} dashboard-notification"><div class="icon-box"><i class="ic ic-cross"></i><i class="ic ic-checkmark"></i><i class="ic ic-warning"></i></div><div class="notification-content"><h3 class="notification-title" style="display:{{title-visibility}}">{{title}}</h3><p class="notification-text">{{message}}</p></div></div>',
 			fadeSpeed: 300,
 			timeout: 3000
 		};
+		//overriding CONFIG
+		$.extend( CONFIG, cfg, true );
 
 
 		function print( data ) {
@@ -366,7 +421,7 @@ function Dashboard() {
 			}
 
 			var randomID = getRandomString(10);
-			var print = template;
+			var print = CONFIG.template;
 			//printing id
 			print = replaceAll( print, '{{id}}', randomID );
 			//printing type
@@ -410,26 +465,82 @@ function Dashboard() {
 		}
 
 	}
-	var dashboardErrorHandler = DashboardErrorHandler();
+	var dashboardErrorHandler = DashboardErrorHandler( CONFIG.errorHandler );
 
 
 
 
 
 	//dashboard loop
-	function loop() {
-		//this function is being executed every CONFIG.loop.timeout and if all calls are 
-		getMineboxStatus();
-		getConsensusStatus();
-		getSiaStatus();
-	}
+	function Loop() {
 
+		var activeRequests = [];
+
+		function theLoop() {
+			//this function is being executed every CONFIG.loop.timeout and if all calls are 
+			getMineboxStatus();
+			getConsensusStatus();
+			getSiaStatus();
+		}
+
+		function addActiveRequest( name ) {
+			if ( activeRequests.indexOf(name) < 0 ) {
+				//if no active requests matches this name, add it
+				activeRequests.push(name);
+				return true;
+			} else {
+				//current name already exists into array
+				return false;
+			}
+		}
+
+		function removeActiveRequest( name ) {
+			if ( activeRequests.indexOf(name) < 0 ) {
+				//no active requests matching this name
+				return false;
+			} else {
+				//current name exist in active requests
+				var index = activeRequests.indexOf(name);
+				//removing array's matching index
+				activeRequests.splice(index, 1);
+				return true;
+			}
+		}
+
+		function getActiveRequests() {
+			return activeRequests.length;
+		}
+
+		function init() {
+			//exec loop for first time
+			theLoop();
+			//init the loop and asigning it to global CONFIG var
+			CONFIG.loop.func = setInterval(function() {
+				//execting theLoop() on each iteration only if activeRequests is empty
+				if ( !getActiveRequests() ) {
+					theLoop();
+				}
+			}, CONFIG.loop.time);
+		}
+
+		return {
+			init: init,
+			addActiveRequest: addActiveRequest,
+			removeActiveRequest: removeActiveRequest
+		}
+
+	}
+	var loop = Loop();
+
+	$(document).ready(function() {
+		loop.init();
+	});
 
 	//setting up interval and executing the loop for first time
 	/*CONFIG.loop.func = setInterval(function() {
 		loop();
 	}, CONFIG.loop.time);*/
 	//first time
-	loop();
+	//loop();
 
 }
