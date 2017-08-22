@@ -11,8 +11,8 @@ import io.minebox.nbd.DownloadService;
  */
 public class NullDownloadService implements DownloadService {
     @Override
-    public boolean downloadIfPossible(File file) {
-        return false;
+    public RecoveryStatus downloadIfPossible(File file) {
+        return RecoveryStatus.NO_FILE;
     }
 
     @Override

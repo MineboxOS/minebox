@@ -81,9 +81,13 @@ public class BucketFactory {
 
         private void ensureFileExists(File file) {
             if (!file.exists()) {
-                boolean wasDownloaded = downloadService.downloadIfPossible(file);
-                if (!wasDownloaded) {
+                DownloadService.RecoveryStatus wasDownloaded = downloadService.downloadIfPossible(file);
+                if (DownloadService.RecoveryStatus.ERROR.equals(wasDownloaded)) {
+                    throw new RuntimeException("i was unable to obtain the expected file");
+                } else if (DownloadService.RecoveryStatus.NO_FILE.equals(wasDownloaded)) {
                     createEmptyFile(file);
+                } else {
+                    LOGGER.info("bucket {} is now happy that we got the file {}", bucketNumber, file.getName());
                 }
             }
         }
@@ -156,7 +160,7 @@ public class BucketFactory {
         }
 
         public void flush() {
-            if (!needsFlush){
+            if (!needsFlush) {
                 return;
             }
             needsFlush = false;

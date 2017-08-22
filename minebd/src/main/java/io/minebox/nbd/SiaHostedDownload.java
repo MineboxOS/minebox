@@ -5,13 +5,11 @@ import com.google.inject.name.Named;
 import io.minebox.SiaUtil;
 import io.minebox.nbd.encryption.EncyptionKeyProvider;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,10 +34,10 @@ public class SiaHostedDownload extends AbstractDownload {
 
         this.siaUtil = siaUtil;
         siaDir = Paths.get(siaDataDirectory).toAbsolutePath();
-        final boolean consensusExists = siaDir.resolve("consensus").toFile().exists();
+       /* final boolean consensusExists = siaDir.resolve("consensus").toFile().exists();
         if (!consensusExists) {
             throw new IllegalStateException("does not seem to be the right place");
-        }
+        }*/
     }
 
     @Override
@@ -57,8 +55,8 @@ public class SiaHostedDownload extends AbstractDownload {
     }
 
     @Override
-    protected void downloadFile(File file, String toDownload) {
-        siaUtil.download(toDownload, file.toPath());
+    protected boolean downloadFile(File file, String toDownload) {
+        return siaUtil.download(toDownload, file.toPath());
     }
 
     @Override

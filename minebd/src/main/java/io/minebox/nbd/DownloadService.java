@@ -8,10 +8,14 @@ import com.google.inject.ImplementedBy;
 /**
  * Created by andreas on 27.04.17.
  */
-@ImplementedBy(MineboxHostedDownload.class)
+@ImplementedBy(SiaHostedDownload.class)
 public interface DownloadService {
 
-    boolean downloadIfPossible(File file);
+    enum RecoveryStatus{
+        NO_FILE, RECOVERED, ERROR
+    }
+
+    RecoveryStatus downloadIfPossible(File file);
 
     boolean wasInitialized();
 

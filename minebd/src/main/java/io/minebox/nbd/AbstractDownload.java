@@ -119,6 +119,7 @@ public abstract class AbstractDownload implements DownloadService {
                 }
 
             }
+            finishedDigest();
             //one of those files must have been fileinfo...
             if (ret == null) {
                 throw new IllegalArgumentException("unable to read siapaths from fileinfo");
@@ -137,6 +138,10 @@ public abstract class AbstractDownload implements DownloadService {
             Path latestMeta = Paths.get("staging/" + filename);
             Files.copy(response.getBody(), latestMeta);*/
 
+    }
+
+    protected void finishedDigest() {
+        //override this in testcase, so we can restart siad at the right time
     }
 
     private ImmutableList<String> readSiaPathsFromInfo(ZipInputStream zis) {
@@ -168,20 +173,24 @@ public abstract class AbstractDownload implements DownloadService {
     protected abstract void digestRenterFile(ZipEntry entry, ZipInputStream zis);
 
     @Override
-    public boolean downloadIfPossible(File file) {
+    public RecoveryStatus downloadIfPossible(File file) {
         if (!wasInit) throw new IllegalStateException("i was not inited yet");
         Preconditions.checkNotNull(file);
         final String name = file.getName();
         final String toDownload = filenameLookup.get(name);
         if (toDownload == null) {
-            return false;
+            return RecoveryStatus.NO_FILE;
         } else {
-            downloadFile(file, toDownload);
-            return true;
+            final boolean ret = downloadFile(file, toDownload);
+            if (ret) {
+                return RecoveryStatus.RECOVERED;
+            } else {
+                return RecoveryStatus.ERROR;
+            }
         }
     }
 
-    protected abstract void downloadFile(File file, String toDownload);
+    protected abstract boolean downloadFile(File file, String toDownload);
 
     @Override
     public boolean hasMetadata() {
@@ -199,6 +208,10 @@ public abstract class AbstractDownload implements DownloadService {
     @Override
     public Collection<String> allFilenames() {
         return filenameLookup.keySet();
+    }
+
+    public Collection<String> allSiaPaths() {
+        return filenameLookup.values();
     }
 
 }

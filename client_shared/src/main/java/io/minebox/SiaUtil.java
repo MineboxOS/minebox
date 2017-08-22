@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.mashape.unirest.http.HttpResponse;
-import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.HttpRequest;
@@ -15,6 +14,9 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.Month;
+import java.time.temporal.ChronoUnit;
 
 public class SiaUtil {
 
@@ -28,59 +30,54 @@ public class SiaUtil {
         this.path = siaClientUrl;
     }
 
+
+    private static final String NO_HOSTS = "insufficient hosts to recover file";
     private static final String NOT_SYNCED = "cannot init from seed until blockchain is synced";
     private static final String LOCKED = "wallet must be unlocked before it can be used";
     private static final String SEED_MISSING = "wallet has not been encrypted yet";
     private static final String NO_FUNDS = " unable to fund transaction: insufficient balance";
     private static final String NO_ADDRESS = "could not read address";
 
-    static boolean alreadyUnderway(HttpResponse<JsonNode> unlockReply) {
+    private static boolean alreadyUnderway(HttpResponse<String> unlockReply) {
         return checkErrorFragment(unlockReply, "another wallet rescan is already underway");
     }
 
-    static boolean notSynced(HttpResponse<JsonNode> unlockReply) {
+    private static boolean notSynced(HttpResponse<String> unlockReply) {
         return checkErrorFragment(unlockReply, "cannot init from seed until blockchain is synced");
     }
 
-    static boolean needsEncryption(HttpResponse<JsonNode> unlockReply) {
+    private static boolean needsEncryption(HttpResponse<String> unlockReply) {
         return checkErrorFragment(unlockReply, SEED_MISSING);
     }
 
-    private static boolean checkErrorFragment(HttpResponse<JsonNode> reply, String fragment) {
-        if (reply == null){
-            throw new RuntimeException("reply was null!. checking for fragment: "+fragment);
+    private static boolean checkErrorFragment(HttpResponse<String> reply, String fragment) {
+        if (reply == null) {
+            throw new RuntimeException("reply was null!. checking for fragment: " + fragment);
         }
-        final JsonNode body = reply.getBody();
-        if (body == null){
-            throw new RuntimeException("replybody was null! checking for fragment: "+fragment);
-        }
-        JSONObject object = body.getObject();
-        if (!object.has("message")) {
+        if (statusGood(reply)) {
             return false;
         }
-        String errorMessage = object.getString("message");
-        return errorMessage.contains(fragment);
+        final String body = reply.getBody();
+        if (body == null) {
+            throw new RuntimeException("replybody was null! checking for fragment: " + fragment);
+        }
+        return body.contains(fragment);
     }
 
-    static boolean notAnAddress(HttpResponse<JsonNode> reply) {
+    static boolean notAnAddress(HttpResponse<String> reply) {
         return checkErrorFragment(reply, NO_ADDRESS);
     }
 
-    static boolean notEnoughFunds(HttpResponse<JsonNode> reply) {
+    static boolean notEnoughFunds(HttpResponse<String> reply) {
         return checkErrorFragment(reply, NO_FUNDS);
     }
 
-    static boolean walletIsLocked(HttpResponse<JsonNode> reply) {
+    static boolean walletIsLocked(HttpResponse<String> reply) {
         return checkErrorFragment(reply, LOCKED);
 
     }
 
-    private static boolean walletHasNoSeed(HttpResponse<JsonNode> reply) {
-        throw new UnsupportedOperationException("not implemented");
-
-    }
-
-    static boolean isNotSynced(HttpResponse<JsonNode> reply) {
+    static boolean isNotSynced(HttpResponse<String> reply) {
         return checkErrorFragment(reply, NOT_SYNCED);
     }
 
@@ -98,45 +95,74 @@ public class SiaUtil {
     }
 
 
-    public HttpResponse<JsonNode> siaCommand(Command command, ImmutableMap<String, Object> params, String... extraCommand) {
+    private HttpResponse<String> siaCommand(Command command, ImmutableMap<String, Object> params, String... extraCommand) {
         try {
-            return command.unirest(path, extraCommand)
+            final HttpRequest httpRequest = command.unirest(path, extraCommand)
                     .header("User-Agent", "Sia-Agent")
-                    .queryString(params)
-                    .asJson();
+                    .queryString(params);
+            return httpRequest.asString();
         } catch (UnirestException e) {
-            throw new RuntimeException(e);
+            throw new NoConnectException(e);
         }
     }
 
 
-    HttpResponse<JsonNode> sendFunds(String amount, String destination) {
+    HttpResponse<String> sendFunds(String amount, String destination) {
         return siaCommand(Command.SENDCOINS, ImmutableMap.of("amount", amount, "destination", destination));
 
     }
 
-    public HttpResponse<JsonNode> download(String siaPath, Path destination) {
+    public boolean download(String siaPath, Path destination) {
         final String dest = destination.toAbsolutePath().toString();
-        return siaCommand(Command.DOWNLOAD, ImmutableMap.of("destination", dest), siaPath);
-
+        final HttpResponse<String> downloadResult = siaCommand(Command.DOWNLOAD, ImmutableMap.of("destination", dest), siaPath);
+        final boolean noHosts = checkErrorFragment(downloadResult, NO_HOSTS);
+        if (noHosts) {
+            LOGGER.warn("unable to download file {} due to NO_HOSTS  ", siaPath);
+            return false;
+        }
+        if (statusGood(downloadResult)) {
+            return true;
+        }
+        LOGGER.warn("unable to download file {} for an unexpected reason: {} ", siaPath, downloadResult.getBody().toString());
+        return false;
     }
 
-    HttpResponse<JsonNode> initSeed(String seed) {
+    private static boolean statusGood(HttpResponse<String> response) {
+        if (response == null) {
+            return false;
+        }
+        final int status = response.getStatus();
+        return status >= 200 && status < 300;
+    }
+
+    private HttpResponse<String> initSeed(String seed) {
         return siaCommand(Command.INITSEED, ImmutableMap.of("encryptionpassword", seed, "seed", seed));
     }
 
     public void waitForConsensus() {
-        boolean synced = false;
+        final long start = System.currentTimeMillis();
         while (true) {
             LOGGER.warn("checking if blockchain is ready");
-            final HttpResponse<JsonNode> result = this.siaCommand(Command.CONSENSUS, ImmutableMap.of());
-            final JSONObject result2 = result.getBody().getObject();
-            synced = result2.getBoolean("synced");
-            if (synced) {
-                LOGGER.info("blockchain ready (height " + result2.getInt("height") + ")");
-                break;
+            HttpResponse<String> result;
+            try {
+                result = this.siaCommand(Command.CONSENSUS, ImmutableMap.of());
+            } catch (NoConnectException e) {
+                result = null;
             }
-            LOGGER.warn("blockchain not ready (height " + result2.getInt("height") + "), retrying in 10 seconds...");
+            JSONObject result2 = null;
+            final long runtime = System.currentTimeMillis() - start;
+            if (statusGood(result)) {
+                result2 = new JSONObject(result.getBody());
+                if (result2.getBoolean("synced")) {
+                    LOGGER.info("blockchain ready (height " + result2.getInt("height") + ") after " + runtime + " ms");
+                    break;
+                }
+            }
+            if (result2 != null) {
+                LOGGER.warn("blockchain not ready (height " + result2.getInt("height") + ") after " + runtime + " ms" + ", retrying in 10 seconds...");
+            } else {
+                LOGGER.warn("blockchain not ready, unknown height after " + runtime + " ms");
+            }
             try {
                 Thread.sleep(10000);
             } catch (InterruptedException e) {
@@ -149,14 +175,14 @@ public class SiaUtil {
     }
 
     public boolean unlockWallet(String seed) {
-        HttpResponse<JsonNode> unlockReply = siaCommand(Command.UNLOCK, ImmutableMap.of("encryptionpassword", seed));
+        HttpResponse<String> unlockReply = siaCommand(Command.UNLOCK, ImmutableMap.of("encryptionpassword", seed));
         if (alreadyUnderway(unlockReply)) {
             LOGGER.info("unable to unlock, operation was already started..");
             return false;
         }
         if (needsEncryption(unlockReply)) {
             LOGGER.info("no seed yet, (encryption missing) - running init");
-            HttpResponse<JsonNode> seedReply = initSeed(seed);
+            HttpResponse<String> seedReply = initSeed(seed);
             if (notSynced(seedReply)) {
                 LOGGER.warn("blockchain not ready, retrying in 10 seconds...");
                 try {
@@ -171,10 +197,20 @@ public class SiaUtil {
         return true;
     }
 
+    public HttpResponse<String> gracefulStop() {
+        try {
+            return siaCommand(Command.STOP, ImmutableMap.of());
+        } catch (NoConnectException e) {
+            LOGGER.warn("unable to stop gracefully");
+            return null;
+        }
+    }
+
     public enum Command {
-        WALLET("/wallet", "GET"), //confirmedsiacoinbalance
+        //        WALLET("/wallet", "GET"), //confirmedsiacoinbalance
+        STOP("/daemon/stop", "GET"),
         CONSENSUS("/consensus", "GET"),
-        DOWNLOAD("/renter/download", "GET"),
+        DOWNLOAD("/renter/download", "GET", true),
         ADDRESS("/wallet/address", "GET"),
         INITSEED("/wallet/init/seed", "POST", true),
         SENDCOINS("/wallet/siacoins", "POST"),//        amount      // hastings //        destination // address
@@ -196,7 +232,7 @@ public class SiaUtil {
             this(command, method, false);
         }
 
-        public HttpRequest unirest(String baseUrl, String... extraPath) {
+        HttpRequest unirest(String baseUrl, String... extraPath) {
             if (longOperation) {
                 Unirest.setTimeouts(10000, 15 * 60000);
             } else {
@@ -212,6 +248,28 @@ public class SiaUtil {
                 return Unirest.post(baseUrl + command + joinedPath);
             }
             throw new IllegalStateException("unknown method");
+        }
+    }
+
+    public double estimatedPercent(long blocks) {
+        final LocalDateTime block100k = LocalDateTime.of(2017, Month.APRIL, 13, 23, 29, 49);
+        final long minutes = block100k.until(LocalDateTime.now(), ChronoUnit.MINUTES);
+        final int blockTime = 9;
+        final long diff = minutes / blockTime;
+
+        long estimatedHeight = 100000 + (diff / blockTime);
+        return ((double) blocks / (double) estimatedHeight);
+
+//        block100kTimestamp := time.Date(2017, time.April, 13, 23, 29, 49, 0, time.UTC)
+//        blockTime := float64(9) // overestimate block time for better UX
+//        diff := t.Sub(block100kTimestamp)
+//        estimatedHeight := 100e3 + (diff.Minutes() / blockTime)
+//        return types.BlockHeight(estimatedHeight + 0.5) // round to the nearest block
+    }
+
+    private static class NoConnectException extends RuntimeException {
+        public NoConnectException(UnirestException e) {
+            super(e);
         }
     }
 }

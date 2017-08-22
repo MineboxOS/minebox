@@ -33,7 +33,7 @@ public class MineboxHostedDownload extends AbstractDownload {
         //do nothing, the
     }
 
-    protected void downloadFile(File destination, String toDownload) {
+    protected boolean downloadFile(File destination, String toDownload) {
         final Optional<String> token = remoteTokenService.getToken();
         if (!token.isPresent()) {
             LOGGER.error("unable to obtain auth token needed to download file {}", toDownload);
@@ -52,6 +52,7 @@ public class MineboxHostedDownload extends AbstractDownload {
             LOGGER.error("unable to download file " + toDownload, e);
             throw new RuntimeException("unable to download file " + toDownload, e);
         }
+        return false;
     }
 
     @Override
