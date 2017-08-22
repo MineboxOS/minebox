@@ -50,6 +50,11 @@ function Dashboard() {
 			func: null, //setInterval handler
 			time: 3000 //the time for interval
 		},
+		errorHandler: {
+			template: '<div style="display:none;" id="{{id}}" class="{{type}} dashboard-notification"><div class="icon-box"><i class="ic ic-cross"></i><i class="ic ic-checkmark"></i><i class="ic ic-warning"></i></div><div class="notification-content"><h3 class="notification-title" style="display:{{title-visibility}}">{{title}}</h3><p class="notification-text">{{message}}</p></div></div>',
+			fadeSpeed: 300,
+			timeout: 3000
+		},
 		messages: {
 			mineboxStatusFailed: 'Minebox Status not updated. Re-trying in several seconds.',
 			consensusStatusFailed: 'Consensus Status not updated. Re-trying in several seconds.',
@@ -342,14 +347,16 @@ function Dashboard() {
 
 
 	//error handler
-	function DashboardErrorHandler() {
+	function DashboardErrorHandler( cfg ) {
 
 		var $dashboardNotificationBox = $('#dashboard-notification-box');
-		var template = '<div style="display:none;" id="{{id}}" class="{{type}} dashboard-notification"><div class="icon-box"><i class="ic ic-cross"></i><i class="ic ic-checkmark"></i><i class="ic ic-warning"></i></div><div class="notification-content"><h3 class="notification-title" style="display:{{title-visibility}}">{{title}}</h3><p class="notification-text">{{message}}</p></div></div>';
 		var CONFIG = {
+			template: '<div style="display:none;" id="{{id}}" class="{{type}} dashboard-notification"><div class="icon-box"><i class="ic ic-cross"></i><i class="ic ic-checkmark"></i><i class="ic ic-warning"></i></div><div class="notification-content"><h3 class="notification-title" style="display:{{title-visibility}}">{{title}}</h3><p class="notification-text">{{message}}</p></div></div>',
 			fadeSpeed: 300,
 			timeout: 3000
 		};
+		//overriding CONFIG
+		$.extend( CONFIG, cfg, true );
 
 
 		function print( data ) {
@@ -366,7 +373,7 @@ function Dashboard() {
 			}
 
 			var randomID = getRandomString(10);
-			var print = template;
+			var print = CONFIG.template;
 			//printing id
 			print = replaceAll( print, '{{id}}', randomID );
 			//printing type
@@ -410,7 +417,7 @@ function Dashboard() {
 		}
 
 	}
-	var dashboardErrorHandler = DashboardErrorHandler();
+	var dashboardErrorHandler = DashboardErrorHandler( CONFIG.errorHandler );
 
 
 
