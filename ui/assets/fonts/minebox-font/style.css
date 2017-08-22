@@ -1,10 +1,10 @@
 @font-face {
   font-family: 'Minebox-font-collection';
-  src:  url('fonts/Minebox-font-collection.eot?war3ql');
-  src:  url('fonts/Minebox-font-collection.eot?war3ql#iefix') format('embedded-opentype'),
-    url('fonts/Minebox-font-collection.ttf?war3ql') format('truetype'),
-    url('fonts/Minebox-font-collection.woff?war3ql') format('woff'),
-    url('fonts/Minebox-font-collection.svg?war3ql#Minebox-font-collection') format('svg');
+  src:  url('fonts/Minebox-font-collection.eot?ol07wq');
+  src:  url('fonts/Minebox-font-collection.eot?ol07wq#iefix') format('embedded-opentype'),
+    url('fonts/Minebox-font-collection.ttf?ol07wq') format('truetype'),
+    url('fonts/Minebox-font-collection.woff?ol07wq') format('woff'),
+    url('fonts/Minebox-font-collection.svg?ol07wq#Minebox-font-collection') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -54,6 +54,9 @@
 .ic-cart:before {
   content: "\e986";
 }
+.ic-checkmark:before {
+  content: "\e98e";
+}
 .ic-chevron-down:before {
   content: "\e907";
 }
@@ -77,6 +80,9 @@
 }
 .ic-crop:before {
   content: "\e90e";
+}
+.ic-cross-circle:before {
+  content: "\e98f";
 }
 .ic-cross:before {
   content: "\e90f";

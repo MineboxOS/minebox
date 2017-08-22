@@ -36,11 +36,15 @@
 						right: 3px;
 						border: 1px solid rgba(255,255,255,.4);
 						box-shadow: 0 0 10px rgba(0,0,0,0.2);
+						transition: all ease 1s;
+						-webkit-transition: all ease 1s;
+						-moz-transition: all ease 1s;
+						-o-transition: all ease 1s;
 					}
-					.widget-led-status.good { background-color: #20db80; }
-					.widget-led-status.check { background-color: #97a502; }
-					.widget-led-status.bad { background-color: #a50242; }
-					.widget-led-status.loading {
+					.widget-led-status[data-led="good"] { background-color: #20db80; }
+					.widget-led-status[data-led="check"] { background-color: #97a502; }
+					.widget-led-status[data-led="bad"] { background-color: #a50242; }
+					.widget-led-status[data-led="loading"] {
 						animation: status-led-loading-animation .4s;
 						-webkit-animation: status-led-loading-animation .4s;
 						-moz-animation: status-led-loading-animation .4s;
@@ -85,11 +89,11 @@
 							display: inline-block;
 						}
 						.widget-list-element {
-							width: 70%;
+							width: 60%;
 							color: rgba(255,255,255,0.8);
 						}
 						.widget-list-value {
-							width: 29%;
+							width: 39%;
 							text-align: right;
 							font-style: italic !important;
 							color: #24acce;
@@ -146,40 +150,23 @@
 									line-height: inherit;
 									display: inline-block;
 								}
-				.widget-check-icon-box {
-					position: relative;
-					width: 200px;
-					height: 200px;
-					margin: 0 auto 15px;
-					border-radius: 50%;
-					border: 2px solid #fff;
+				.widget-system-status {
+					text-align: center;
+					font-weight: 100;
+					text-transform: uppercase;
+					margin-bottom: 0;
 				}
-					.widget-check-icon-box:before {
-						content: '';
-						position: absolute;
-						top: 50%;
-						left: 50%;
-						width: 50px;
-						height: 2px;
-						margin-left: -50px;
-						margin-top: 30px;
-						background-color: #fff;
-						transform: rotate(30deg);
-					}
-					.widget-check-icon-box:after {
-						content: '';
-						position: absolute;
-						top: 50%;
-						left: 50%;
-						width: 100px;
-						height: 2px;
-						margin-left: -22px;
-						margin-top: 4px;
-						background-color: #fff;
-						transform: rotate(130deg);
-					}
-					.widget-system-status {
+					.widget-system-status>.icon {
+						display: inline-block;
+						vertical-align: middle;
+						width: 24px;
+						height: 24px;
+						line-height: 22px;
 						text-align: center;
-						font-weight: 100;
-						text-transform: uppercase;
+						border-radius: 50%;
+						border: 1px solid #fff;
+						margin-right: 5px;
 					}
+
+
+
