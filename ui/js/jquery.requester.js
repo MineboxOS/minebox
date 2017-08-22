@@ -3,7 +3,8 @@ function Requester() {
   var xhr;
 
   var CONFIG = {
-    cache: false
+    cache: false,
+    timeout: 10000
   };
 
   function setMethod(method) {
@@ -29,6 +30,12 @@ function Requester() {
       withCredentials: credentials
     };
   }
+  function setTimeoutTime(time) {
+    CONFIG.timeout = time;
+  }
+  function setTimeoutFunc(func) {
+    timeoutFunction = func;
+  }
 
   function abort() {
     xhr.abort();
@@ -39,8 +46,13 @@ function Requester() {
     .done(function( data ) {
       successCallback( data );
     })
-    .fail(function( response ) {
-      errorCallback( response )
+    .fail(function( response, textStatus ) {
+      errorCallback( response );
+
+      //executing timeout function if any
+      if ( textStatus == 'timeout' && timeoutFunction ) {
+        timeoutFunction();
+      }
     })
     .always(function() {
       if (callback_func) { callback_func(); }
@@ -55,6 +67,8 @@ function Requester() {
     setCache: setCache,
     setCredentials: setCredentials,
     setContentType: setContentType,
+    setTimeoutTime: setTimeoutTime,
+    setTimeoutFunc: setTimeoutFunc,
     abort: abort,
     run: run
   }
