@@ -170,3 +170,52 @@
 
 
 
+
+
+/* dashboard notification box */
+#dashboard-notification-box {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	height: auto;
+}
+	#dashboard-notification-box .dashboard-notification {
+		padding: 15px;
+		color: #fff;
+		width: 80%;
+		min-width: 460px;
+		margin: 15px auto;
+		position: relative;
+		padding-left: 60px;
+	}
+	#dashboard-notification-box .dashboard-notification.error { background-color: #a50242; }
+	#dashboard-notification-box .dashboard-notification.warning { background-color: #97a502; }
+	#dashboard-notification-box .dashboard-notification.notification { background-color: #20db80; }
+	#dashboard-notification-box .icon-box {
+		display: block;
+		line-height: 30px;
+		width: 30px;
+		height: 30px;
+		text-align: center;
+		border: 1px solid #fff;
+		border-radius: 50%;
+		position: absolute;
+		top: 50%;
+		left: 30px;
+		margin-top: -15px;
+		margin-left: -15px;
+	}
+	#dashboard-notification-box .dashboard-notification .ic {
+		display: none;
+		position: relative;
+		top: -1px;
+	}
+	#dashboard-notification-box .dashboard-notification.error .ic-cross {display: block !important;position: relative;top: -1px;}
+	#dashboard-notification-box .dashboard-notification.warning .ic-warning {display: block !important;top: -2px;}
+	#dashboard-notification-box .dashboard-notification.notification .ic-checkmark {display: block !important;font-size: 17px;}
+	#dashboard-notification-box .notification-text {
+		display: inline-block;
+		vertical-align: middle;
+		line-height: 24px;
+	}
