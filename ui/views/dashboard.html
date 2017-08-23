@@ -54,7 +54,47 @@
 
 		<div class="row widget-row">
 
-			<div id="restore-widget" class="col-xs-12 col-sm-12 col-md-6 col-lg-6 widget">
+
+			<div id="backup-widget" class="col-xs-12 col-sm-12 col-md-6 col-lg-6 widget">
+				<div class="widget-inner clearfix progress-tab" style="display:none;">
+					<div class="widget-top-bar">
+						<h4 class="widget-top-bar-title">Backup status #<span id="backup_name" class="backup-name"> - </span></h4>
+						<div class="widget-led-status" data-led="loading"></div>
+					</div>
+					<div class="widget-progress-bar-box">
+						<div class="widget-progress-bar">
+							<div class="fill">
+								<div class="real-fill"></div>
+								<span class="percent-witness"><span class="value">0</span>&nbsp;%</span>
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+							<ul class="widget-list-elements">
+								<li><span class="widget-list-element">Time</span><span id="backup_timestamp_witness" class="widget-list-value"> - </span></li>
+								<li><span class="widget-list-element">Status</span><span id="backup_status_witness" class="widget-list-value"> - </span></li>
+								<li><span class="widget-list-element">Metadata</span><span id="backup_metadata_witness" class="widget-list-value"> - </span></li>
+								<li><span class="widget-list-element">Files</span><span id="backup_files_number_witness" class="widget-list-value"> - </span></li>
+							</ul>
+						</div>
+						<div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+							<ul class="widget-list-elements">
+								<li><span class="widget-list-element">Size</span><span id="backup_size_witness" class="widget-list-value"> - </span></li>
+								<li><span class="widget-list-element">Rel. size</span><span id="backup_relative_size_witness" class="widget-list-value"> - </span></li>
+								<li><span class="widget-list-element">Progress</span><span id="backup_progress_witness" class="widget-list-value"> - </span></li>
+								<li><span class="widget-list-element">Rel. progress</span><span id="backup_relative_progress_witness" class="widget-list-value"> - </span></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<div class="widget-inner clearfix done-tab" style="display:none;">
+					<h4 class="widget-system-status"><i class="icon ic ic-checkmark"></i>&nbsp;Your system is backed up</h4>
+				</div>
+			</div>
+
+
+			<div id="restore-widget" class="col-xs-12 col-sm-12 col-md-6 col-lg-6 widget" style="display:none;">
 				<div class="widget-inner clearfix progress-tab" style="display:none;">
 					<div class="widget-top-bar">
 						<h4 class="widget-top-bar-title">Restore status</h4>
@@ -69,51 +109,13 @@
 						</div>
 					</div>
 				</div>
-				<div class="widget-inner clearfix done-tab">
+				<div class="widget-inner clearfix done-tab" style="display:none;">
 					<h4 class="widget-system-status"><i class="icon ic ic-checkmark"></i>&nbsp;Your system is restored</h4>
 				</div>
 			</div>
 
-			<div id="backup-widget" class="col-xs-12 col-sm-12 col-md-6 col-lg-6 widget">
-				<div class="widget-inner clearfix progress-tab" style="display:none;">
-					<div class="widget-top-bar">
-						<h4 class="widget-top-bar-title">Backup status</h4>
-						<div class="widget-led-status" data-led="loading"></div>
-					</div>
-					<div class="widget-progress-bar-box">
-						<div class="widget-progress-bar">
-							<div class="fill">
-								<div class="real-fill"></div>
-								<span class="percent-witness"><span class="value">0</span>%</span>
-							</div>
-						</div>
-					</div>
-					<div class="row">
-						<div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
-							<ul class="widget-list-elements">
-								<li><span class="widget-list-element">Timestamp</span><span id="backup_timestamp_witness" class="widget-list-value"> - </span></li>
-								<li><span class="widget-list-element">Status</span><span id="backup_status_witness" class="widget-list-value"> - </span></li>
-								<li><span class="widget-list-element">Metadata</span><span id="backup_metadata_witness" class="widget-list-value"> - </span></li>
-								<li><span class="widget-list-element">Files number</span><span id="backup_files_number_witness" class="widget-list-value"> - </span></li>
-							</ul>
-						</div>
-						<div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
-							<ul class="widget-list-elements">
-								<li><span class="widget-list-element">Size</span><span id="backup_size_witness" class="widget-list-value"> - </span></li>
-								<li><span class="widget-list-element">Rel. size</span><span id="backup_relative_size_witness" class="widget-list-value"> - </span></li>
-								<li><span class="widget-list-element">Progress</span><span id="backup_progress_witness" class="widget-list-value"> - </span></li>
-								<li><span class="widget-list-element">Rel. progress</span><span id="backup_relative_progress_witness" class="widget-list-value"> - </span></li>
-							</ul>
-						</div>
-					</div>
-				</div>
-				<div class="widget-inner clearfix done-tab">
-					<h4 class="widget-system-status"><i class="icon ic ic-checkmark"></i>&nbsp;Your system is backed up</h4>
-				</div>
-			</div>
 
 		</div>
-
 
 	</div>
 

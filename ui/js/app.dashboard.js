@@ -24,6 +24,10 @@ function Dashboard() {
 			siaStatus: {
 				url: config.mug.url + 'sia/status',
 				requester: new Requester()
+			},
+			backupStatus: {
+				url: config.mug.url + 'backup/latest/status',
+				requester: new Requester()
 			}
 		},
 		events: {
@@ -38,6 +42,10 @@ function Dashboard() {
 			siaStatus: {
 				updated: 'siaStatusUpdated',
 				failed: 'siaStatusFailed'
+			},
+			backupStatus: {
+				updated: 'backupStatusUpdated',
+				failed: 'backupStatusFailed'
 			}
 		},
 		LEDColors: {
@@ -48,20 +56,25 @@ function Dashboard() {
 		},
 		loop: {
 			func: null, //setInterval handler
-			time: 5000 //the time for interval
+			time: 10000 //the time for interval
 		},
 		errorHandler: {
 			template: '<div style="display:none;" id="{{id}}" class="{{type}} dashboard-notification"><div class="icon-box"><i class="ic ic-cross"></i><i class="ic ic-checkmark"></i><i class="ic ic-warning"></i></div><div class="notification-content"><h3 class="notification-title" style="display:{{title-visibility}}">{{title}}</h3><p class="notification-text">{{message}}</p></div></div>',
 			fadeSpeed: 300,
-			timeout: 3000
+			timeout: 5000
 		},
 		messages: {
-			mineboxStatusFailed: 'Minebox Status not updated. Re-trying in several seconds.',
-			consensusStatusFailed: 'Consensus Status not updated. Re-trying in several seconds.',
-			siaStatusFailed: 'Sia Status not updated. Re-trying in several seconds.',
+			mineboxStatusFailed: 'Minebox Status not updated or request timedout. Retrying in several seconds.',
+			consensusStatusFailed: 'Consensus Status not updated or request timedout. Retrying in several seconds.',
+			siaStatusFailed: 'Sia Status not updated or request timedout. Retrying in several seconds.',
 			mineBDFailed: 'Looks like Minebox is not running well. Try rebooting your system. If the problem persist, please reach us at minebox.io/support.',
 			consensusNotSynced: 'Minebox is currently syncing with consensus. This operation may take up to several hours depending on your Internet connection.',
-			walletLockedOrNotEncrypted: 'Minebox wallet is not ready now. If this state remains for more than a few hours, please reach us for support at minebox.io/support'
+			walletLockedOrNotEncrypted: 'Minebox wallet is not ready now. If this state remains for more than a few hours, please reach us for support at minebox.io/support',
+			backupStatusFailed: 'Latest backup not updated or request timedout. Retrying in several seconds.',
+			backupPending: 'You backup will start uploading soon. Please be patient.',
+			backupDamaged: 'Last backup seems to be damaged. Proceed ------------------------- ',
+			backupError: 'There\'s an error with your last backup. Proceed--------------------',
+			backupUnknown: 'We\'re getting an unknown status for your backup. Retrying in several seconds.'
 		}
 	};
 
@@ -69,7 +82,8 @@ function Dashboard() {
 	var STATUS = {
 		mineboxStatus: {},
 		consensusStatus: {},
-		siaStatus: {}
+		siaStatus: {},
+		backupStatus: {}
 	};
 
 
@@ -84,13 +98,27 @@ function Dashboard() {
 		$wallet_unlocked_witness = $('#wallet_unlocked_witness'),
 		$wallet_encrypted_witness = $('#wallet_encrypted_witness'),
 		$wallet_balance_witness = $('#wallet_balance_witness'),
-		$wallet_unconfirmed_balance_witness = $('#wallet_unconfirmed_balance_witness');
+		$wallet_unconfirmed_balance_witness = $('#wallet_unconfirmed_balance_witness'),
+		$backup_widget = $('#backup-widget'),
+		$backup_name = $('#backup_name'),
+		$backup_progress_bar = $('#backup-widget .widget-progress-bar .fill'),
+		$backup_progress_bar_value = $('#backup-widget .widget-progress-bar .percent-witness .value'),
+		$backup_timestamp_witness = $('#backup_timestamp_witness'),
+		$backup_status_witness = $('#backup_status_witness'),
+		$backup_metadata_witness = $('#backup_metadata_witness'),
+		$backup_files_number_witness = $('#backup_files_number_witness'),
+		$backup_size_witness = $('#backup_size_witness'),
+		$backup_relative_size_witness = $('#backup_relative_size_witness'),
+		$backup_progress_witness = $('#backup_progress_witness'),
+		$backup_relative_progress_witness = $('#backup_relative_progress_witness');
+
 
 
 	//LED elements
 	var $mineboxStatusLED = $('#status-widget .widget-led-status'),
 		$networkStatusLED = $('#network-widget .widget-led-status'),
-		$walletStatusLED = $('#wallet-widget .widget-led-status');
+		$walletStatusLED = $('#wallet-widget .widget-led-status'),
+		$backupStatusLED = $('#backup-widget .widget-led-status');
 
 
 
@@ -231,6 +259,65 @@ function Dashboard() {
 
 
 
+	function getBackupStatus() {
+		//adding witness to loop.activeRequests
+		loop.addActiveRequest('backup');
+
+		//requesting backup/latest/status/
+		CONFIG.api.backupStatus.requester.setURL( CONFIG.api.backupStatus.url );
+		CONFIG.api.backupStatus.requester.setMethod( 'GET' );
+		CONFIG.api.backupStatus.requester.setCache(false);
+		CONFIG.api.backupStatus.requester.setCredentials(true);
+		CONFIG.api.backupStatus.requester.setTimeoutFunc(function() {
+			//changing led color to loading
+			backupLEDColor( CONFIG.LEDColors.loading );
+			//not printing any error because time expiration executes also FAIL function
+		});
+		CONFIG.api.backupStatus.requester.run(function(response) {
+
+			//update global object
+			STATUS.backupStatus = response;
+			/*
+			//use the following object to test different responses
+			STATUS.backupStatus = {
+			  metadata: "PENDING", 
+			  name: "1503494102", 
+			  numFiles: 200, 
+			  progress: 60.77108501803187, 
+			  relative_progress: 50.0, 
+			  relative_size: 6733983744, 
+			  size: 8264986624, 
+			  status: "PENDING", 
+			  time_snapshot: 1503494102
+			}*/
+			//rise event
+			$('body').trigger(CONFIG.events.backupStatus.updated);
+			//remove witness from loop
+			loop.removeActiveRequest('backup');
+
+		}, function(error) {
+
+			var data = {
+				type: 'error',
+				message: CONFIG.messages.backupStatusFailed
+			};
+
+			//display error
+			dashboardErrorHandler.print(data);
+			//update global object (with empty data)
+			STATUS.backupStatus = {};
+			//rise event
+			$('body').trigger(CONFIG.events.backupStatus.failed);
+			//remove witness from loop
+			loop.removeActiveRequest('backup');
+
+		});
+	}
+
+
+
+
+
 
 
 	//fillers
@@ -261,6 +348,24 @@ function Dashboard() {
 		$wallet_encrypted_witness.html( STATUS.siaStatus.wallet.encrypted );
 		$wallet_balance_witness.html( STATUS.siaStatus.wallet.confirmed_balance_sc + ' SC' );
 		$wallet_unconfirmed_balance_witness.html( STATUS.siaStatus.wallet.unconfirmed_delta_sc + ' SC' );
+	}
+
+
+
+
+	function fillBackupStatus() {
+		//fill in all the fields relative to ajax call: getBackupStatus()
+		$backup_name.html( STATUS.backupStatus.name );
+		$backup_progress_bar.width( STATUS.backupStatus.progress.toFixed(2) + '%');
+		$backup_progress_bar_value.html( STATUS.backupStatus.progress.toFixed(2) );
+		$backup_timestamp_witness.html( STATUS.backupStatus.time_snapshot );
+		$backup_status_witness.html( STATUS.backupStatus.status );
+		$backup_metadata_witness.html( STATUS.backupStatus.metadata );
+		$backup_files_number_witness.html( STATUS.backupStatus.numFiles );
+		$backup_size_witness.html( STATUS.backupStatus.size );
+		$backup_relative_size_witness.html( STATUS.backupStatus.relative_size );
+		$backup_progress_witness.html( STATUS.backupStatus.progress.toFixed(2) + '%' );
+		$backup_relative_progress_witness.html( STATUS.backupStatus.relative_progress.toFixed(2) + '%' );
 	}
 
 
@@ -372,6 +477,75 @@ function Dashboard() {
 
 
 
+	function backupLEDColor( LEDColor ) {
+
+		if ( !$.isEmptyObject( STATUS.backupStatus ) ) {
+			//there is data within backupStatus
+
+			if ( STATUS.backupStatus.status == 'FINISHED' ) {
+				//change to green
+				$backupStatusLED.attr('data-led', CONFIG.LEDColors.good);
+
+
+			} else if ( STATUS.backupStatus.status == 'UPLOADING' ) {
+				//change to good
+				$backupStatusLED.attr('data-led', CONFIG.LEDColors.good);
+
+
+			} else if ( STATUS.backupStatus.status == 'PENDING' ) {
+				//change to yellow
+				$backupStatusLED.attr('data-led', CONFIG.LEDColors.check);
+				//print error
+				var data = {
+					type: 'notification',
+					message: CONFIG.messages.backupPending
+				};
+				dashboardErrorHandler.print(data);
+
+			} else if ( STATUS.backupStatus.status == 'DAMAGED' ) {
+				//change to yellow
+				$backupStatusLED.attr('data-led', CONFIG.LEDColors.check);
+				//print error
+				var data = {
+					type: 'warning',
+					message: CONFIG.messages.backupDamaged
+				};
+				dashboardErrorHandler.print(data);
+
+			} else if ( STATUS.backupStatus.status == 'ERROR' ) {
+				//change to red
+				$backupStatusLED.attr('data-led', CONFIG.LEDColors.bad);
+				//print error
+				var data = {
+					type: 'error',
+					message: CONFIG.messages.backupError
+				};
+				dashboardErrorHandler.print(data);
+
+			} else {
+				//change to loading
+				$backupStatusLED.attr('data-led', CONFIG.LEDColors.loading);
+				//print error
+				var data = {
+					type: 'warning',
+					message: CONFIG.messages.backupUnknown
+				};
+				dashboardErrorHandler.print(data);
+			}
+
+		} else {
+			//change to loading
+			$backupStatusLED.attr('data-led', CONFIG.LEDColors.loading);
+		}
+
+		if ( LEDColor ) {
+			$backupStatusLED.attr('data-led', LEDColor);
+		}
+	}
+
+
+
+
 
 
 
@@ -388,6 +562,11 @@ function Dashboard() {
 		fillSiaStatus();
 		siaLEDColor();
 		networkLEDColor(); //LED color also depends on siaStatus object because of contracts number
+	});
+	$('body').bind( CONFIG.events.backupStatus.updated, function() {
+		handleBackupStatusWidget();
+		fillBackupStatus();
+		backupLEDColor();
 	});
 
 
@@ -471,6 +650,28 @@ function Dashboard() {
 
 
 
+	//handle backup status widget
+	function handleBackupStatusWidget() {
+		//this function will be executed everytime backupStatus is updated (listening to event CONFIG.events.backupStatus.updated)
+
+		//show or hide backup contents
+		if ( STATUS.backupStatus.status != 'FINISHED' ) {
+			//backup is not finished, so showing progress-tab
+			$backup_widget.find('.done-tab').fadeOut(100, function() {
+				$backup_widget.find('.progress-tab').fadeIn(300);
+			});
+		} else {
+			//backup is finished, so showing done-tab
+			$backup_widget.find('.progress-tab').fadeOut(100, function() {
+				$backup_widget.find('.done-tab').fadeIn(300);
+			});
+		}
+	}
+
+
+
+
+
 	//dashboard loop
 	function Loop() {
 
@@ -481,6 +682,7 @@ function Dashboard() {
 			getMineboxStatus();
 			getConsensusStatus();
 			getSiaStatus();
+			getBackupStatus();
 		}
 
 		function addActiveRequest( name ) {
@@ -535,12 +737,5 @@ function Dashboard() {
 	$(document).ready(function() {
 		loop.init();
 	});
-
-	//setting up interval and executing the loop for first time
-	/*CONFIG.loop.func = setInterval(function() {
-		loop();
-	}, CONFIG.loop.time);*/
-	//first time
-	//loop();
 
 }

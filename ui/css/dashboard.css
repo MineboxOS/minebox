@@ -13,6 +13,7 @@
 		}
 			.widget-inner {
 				padding: 20px;
+				min-height: 190px;
 				overflow: hidden;
 				background-color: rgba(0,0,0,.2);
 				color: #fff;
@@ -28,6 +29,11 @@
 						display: block;
 						margin: 0;
 					}
+						.widget-top-bar-title>* {
+							font: inherit;
+							line-height: inherit;
+							vertical-align: inherit;
+						}
 					.widget-top-bar>.widget-led-status {
 						position: absolute;
 						width: 12px;
@@ -41,9 +47,9 @@
 						-moz-transition: all ease 1s;
 						-o-transition: all ease 1s;
 					}
-					.widget-led-status[data-led="good"] { background-color: #20db80; }
-					.widget-led-status[data-led="check"] { background-color: #97a502; }
-					.widget-led-status[data-led="bad"] { background-color: #a50242; }
+					.widget-led-status[data-led="good"] { background-color: #0eb629; }
+					.widget-led-status[data-led="check"] { background-color: #cdb100; }
+					.widget-led-status[data-led="bad"] { background-color: #cb002b; }
 					.widget-led-status[data-led="loading"] {
 						animation: status-led-loading-animation .4s;
 						-webkit-animation: status-led-loading-animation .4s;
@@ -141,8 +147,8 @@
 								top: 100%;
 								right: 0;
 								margin-top: 5px;
-								width: 20px;
-								margin-right: -10px;
+								width: 40px;
+								margin-right: -20px;
 								text-align: center;
 							}
 								.widget-progress-bar .percent-witness>span {
@@ -189,9 +195,9 @@
 		position: relative;
 		padding-left: 60px;
 	}
-	#dashboard-notification-box .dashboard-notification.error { background-color: #a50242; }
-	#dashboard-notification-box .dashboard-notification.warning { background-color: #97a502; }
-	#dashboard-notification-box .dashboard-notification.notification { background-color: #20db80; }
+	#dashboard-notification-box .dashboard-notification.error { background-color: #cb002b; }
+	#dashboard-notification-box .dashboard-notification.warning { background-color: #cdb100; }
+	#dashboard-notification-box .dashboard-notification.notification { background-color: #0eb629; }
 	#dashboard-notification-box .icon-box {
 		display: block;
 		line-height: 30px;
