@@ -8,14 +8,11 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Range;
-import com.google.common.collect.RangeSet;
-import com.google.common.collect.TreeRangeSet;
 import com.google.common.primitives.Ints;
 import com.google.inject.Inject;
 import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.Encryption;
-import io.minebox.nbd.MetadataService;
+import io.minebox.nbd.DownloadService;
 import io.minebox.nbd.SerialNumberService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,16 +23,16 @@ public class BucketFactory {
     private final String parentDir;
     private final long size;
     private final Encryption encryption;
-    private final MetadataService metadataService;
+    private final DownloadService downloadService;
     private File parentFolder;
 
     @Inject
-    public BucketFactory(SerialNumberService serialNumberService, MinebdConfig config, Encryption encryption, MetadataService metadataService) {
+    public BucketFactory(SerialNumberService serialNumberService, MinebdConfig config, Encryption encryption, DownloadService downloadService) {
         this.serialNumberService = serialNumberService;
         this.parentDir = config.parentDir;
         this.size = config.bucketSize.toBytes();
         this.encryption = encryption;
-        this.metadataService = metadataService;
+        this.downloadService = downloadService;
     }
 
     private File createParentFolder(SerialNumberService serialNumberService) {
@@ -84,9 +81,13 @@ public class BucketFactory {
 
         private void ensureFileExists(File file) {
             if (!file.exists()) {
-                boolean wasDownloaded = metadataService.downloadIfPossible(file);
-                if (!wasDownloaded) {
+                DownloadService.RecoveryStatus wasDownloaded = downloadService.downloadIfPossible(file);
+                if (DownloadService.RecoveryStatus.ERROR.equals(wasDownloaded)) {
+                    throw new RuntimeException("i was unable to obtain the expected file");
+                } else if (DownloadService.RecoveryStatus.NO_FILE.equals(wasDownloaded)) {
                     createEmptyFile(file);
+                } else {
+                    LOGGER.info("bucket {} is now happy that we got the file {}", bucketNumber, file.getName());
                 }
             }
         }
@@ -159,7 +160,7 @@ public class BucketFactory {
         }
 
         public void flush() {
-            if (!needsFlush){
+            if (!needsFlush) {
                 return;
             }
             needsFlush = false;

@@ -12,7 +12,7 @@ import javax.ws.rs.core.MediaType;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import io.minebox.nbd.MetadataService;
+import io.minebox.nbd.DownloadService;
 import io.minebox.nbd.encryption.EncyptionKeyProvider;
 import io.swagger.annotations.Api;
 import org.slf4j.Logger;
@@ -27,13 +27,13 @@ public class StatusResource {
     private static final Logger LOGGER = LoggerFactory.getLogger(StatusResource.class);
     final private EncyptionKeyProvider encyptionKeyProvider;
     private final String parentDir;
-    final private MetadataService metadataService;
+    final private DownloadService downloadService;
 
     @Inject
-    public StatusResource(EncyptionKeyProvider encyptionKeyProvider, @Named("parentDir") String parentDir, MetadataService metadataService) {
+    public StatusResource(EncyptionKeyProvider encyptionKeyProvider, @Named("parentDir") String parentDir, DownloadService downloadService) {
         this.encyptionKeyProvider = encyptionKeyProvider;
         this.parentDir = parentDir;
-        this.metadataService = metadataService;
+        this.downloadService = downloadService;
     }
 
     @GET
@@ -46,15 +46,15 @@ public class StatusResource {
         if (!status.hasEncryptionKey) {
             return status;
         }
-        status.connectedMetadata = metadataService.connectedMetadata();
+        status.connectedMetadata = downloadService.connectedMetadata();
         if (!status.connectedMetadata) {
             return status;
         }
-        status.remoteMetadataDetected = metadataService.hasMetadata();
+        status.remoteMetadataDetected = downloadService.hasMetadata();
         if (!status.remoteMetadataDetected) {
             return status;
         }
-        for (String fileName : metadataService.allFilenames()) {
+        for (String fileName : downloadService.allFilenames()) {
             if (!Files.exists(Paths.get(parentDir).resolve(fileName))) {
                 status.restoreRunning = true;
                 return status;

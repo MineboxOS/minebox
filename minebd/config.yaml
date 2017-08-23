@@ -5,6 +5,7 @@ server:
 swagger:
   resourcePackage: io.minebox.resource
 
+
 # Logging settings.
 logging:
   level: INFO
@@ -25,3 +26,6 @@ minebd:
   bucketSize : 40M
   httpMetadata: "https://metadata.minebox.io/v1/"
   ignoreMissingPaths: true
+  siaDataDirectory: "/tmp/sia"
+  siaClientUrl: "http://localhost:9980"
+

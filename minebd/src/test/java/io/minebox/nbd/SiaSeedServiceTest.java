@@ -53,6 +53,15 @@ public class SiaSeedServiceTest {
     public static final int[] TESTVECTOR_UNSIGED_SIA_BYTES = new int[]{145, 22, 237, 123, 122, 60, 52, 32, 120, 204, 197, 45, 153, 25, 15, 183, 169, 246, 78, 38, 35, 38, 68, 69, 38, 176, 7, 235, 234, 172, 124, 101};
 
     @Test
+    public void testServerSeed() throws Exception {
+        ;
+        StaticEncyptionKeyProvider
+                encyptionKeyProvider = new StaticEncyptionKeyProvider("deposit cotton rib long badge flip butter pipe garbage kind energy inherit");
+        String siaSeed = new SiaSeedService(encyptionKeyProvider).getSiaSeed();
+        System.out.println(siaSeed);
+    }
+
+    @Test
     public void getSiaSeed() throws Exception {
         final SiaSeedService siaSeedService = new SiaSeedService(new StaticEncyptionKeyProvider("123"));
 //        final List<String> strings = siaSeedService.buildSiaSeed("123");
