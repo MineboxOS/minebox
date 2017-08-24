@@ -8,7 +8,9 @@ function LoadingWitness() {
 
 
 	function start() {
-		$loading.addClass( CONFIG.activeClass );
+		if ( !$loading.hasClass( CONFIG.activeClass ) ) {
+			$loading.addClass( CONFIG.activeClass );
+		} //otherwise just ignore
 	}
 
 	function stop() {
