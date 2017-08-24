@@ -2,6 +2,8 @@
 viewLoader.add('dashboard', Dashboard);
 
 
+//interval handler
+var dashboardLoopFunction = null;
 // requires
 	//requester.js
 	//loadingManager.js
@@ -61,7 +63,8 @@ function Dashboard() {
 		errorHandler: {
 			template: '<div style="display:none;" id="{{id}}" class="{{type}} dashboard-notification"><div class="icon-box"><i class="ic ic-cross"></i><i class="ic ic-checkmark"></i><i class="ic ic-warning"></i></div><div class="notification-content"><h3 class="notification-title" style="display:{{title-visibility}}">{{title}}</h3><p class="notification-text">{{message}}</p></div></div>',
 			fadeSpeed: 300,
-			timeout: 5000
+			autoExpire: true,
+			autoExpireTimeout: 5000
 		},
 		messages: {
 			mineboxStatusFailed: 'Minebox Status not updated or request timedout. Retrying in several seconds.',
@@ -72,8 +75,9 @@ function Dashboard() {
 			walletLockedOrNotEncrypted: 'Minebox wallet is not ready now. If this state remains for more than a few hours, please reach us for support at minebox.io/support',
 			backupStatusFailed: 'Latest backup not updated or request timedout. Retrying in several seconds.',
 			backupPending: 'You backup will start uploading soon. Please be patient.',
-			backupDamaged: 'Last backup seems to be damaged. Proceed ------------------------- ',
-			backupError: 'There\'s an error with your last backup. Proceed--------------------',
+			backupDamaged: 'Last backup seems to be damaged. This can be a temporal error.',
+			backupError: 'There\'s an error with your latest backup. Please reach us at minebox.io/support',
+			backupMetadataError: 'There\'s an error with your latest backup. Please reach us at minebox.io/support',
 			backupUnknown: 'We\'re getting an unknown status for your backup. Retrying in several seconds.'
 		}
 	};
@@ -149,8 +153,10 @@ function Dashboard() {
 		}, function(error) {
 
 			var data = {
+				id: 'mineboxStatusFailed',
 				type: 'error',
-				message: CONFIG.messages.mineboxStatusFailed
+				message: CONFIG.messages.mineboxStatusFailed,
+				autoExpire: false
 			};
 
 			//display error
@@ -194,8 +200,10 @@ function Dashboard() {
 		}, function(error) {
 
 			var data = {
+				id: 'consensusStatusFailed',
 				type: 'error',
-				message: CONFIG.messages.consensusStatusFailed
+				message: CONFIG.messages.consensusStatusFailed,
+				autoExpire: false
 			};
 
 			//display error
@@ -239,8 +247,10 @@ function Dashboard() {
 		}, function(error) {
 
 			var data = {
+				id: 'siaStatusFailed',
 				type: 'error',
-				message: CONFIG.messages.siaStatusFailed
+				message: CONFIG.messages.siaStatusFailed,
+				autoExpire: false
 			};
 
 			//display error
@@ -298,8 +308,10 @@ function Dashboard() {
 		}, function(error) {
 
 			var data = {
+				id: 'backupStatusFailed',
 				type: 'error',
-				message: CONFIG.messages.backupStatusFailed
+				message: CONFIG.messages.backupStatusFailed,
+				autoExpire: false
 			};
 
 			//display error
@@ -354,10 +366,20 @@ function Dashboard() {
 
 
 	function fillBackupStatus() {
+		//converting values
+		if ( STATUS.backupStatus.numFiles < 0 ) {
+			STATUS.backupStatus.numFiles = 'Loading';
+		}
+		if ( STATUS.backupStatus.size < 0 ) {
+			STATUS.backupStatus.size = 'Loading';
+		}
+		if ( STATUS.backupStatus.relative_size < 0 ) {
+			STATUS.backupStatus.relative_size = 'Loading';
+		}
 		//fill in all the fields relative to ajax call: getBackupStatus()
 		$backup_name.html( STATUS.backupStatus.name );
 		$backup_progress_bar.width( STATUS.backupStatus.progress.toFixed(2) + '%');
-		$backup_progress_bar_value.html( STATUS.backupStatus.progress.toFixed(2) );
+		$backup_progress_bar_value.html( STATUS.backupStatus.progress.toFixed(2) + '%' );
 		$backup_timestamp_witness.html( STATUS.backupStatus.time_snapshot );
 		$backup_status_witness.html( STATUS.backupStatus.status );
 		$backup_metadata_witness.html( STATUS.backupStatus.metadata );
@@ -385,8 +407,10 @@ function Dashboard() {
 				$mineboxStatusLED.attr('data-led', CONFIG.LEDColors.bad);
 				//print error
 				var data = {
+					id: 'mineBDFailed',
 					type: 'error',
-					message: CONFIG.messages.mineBDFailed
+					message: CONFIG.messages.mineBDFailed,
+					autoExpire: false
 				};
 				dashboardErrorHandler.print(data);
 
@@ -417,8 +441,10 @@ function Dashboard() {
 				$networkStatusLED.attr('data-led', CONFIG.LEDColors.check);
 				//print error
 				var data = {
+					id: 'consensusNotSynced',
 					type: 'warning',
-					message: CONFIG.messages.consensusNotSynced
+					message: CONFIG.messages.consensusNotSynced,
+					autoExpire: false
 				};
 				dashboardErrorHandler.print(data);
 			} else {
@@ -450,8 +476,10 @@ function Dashboard() {
 				$walletStatusLED.attr('data-led', CONFIG.LEDColors.check);
 				//print error
 				var data = {
+					id: 'walletLockedOrNotEncrypted',
 					type: 'warning',
-					message: CONFIG.messages.walletLockedOrNotEncrypted
+					message: CONFIG.messages.walletLockedOrNotEncrypted,
+					autoExpire: false
 				};
 				dashboardErrorHandler.print(data);
 
@@ -497,8 +525,10 @@ function Dashboard() {
 				$backupStatusLED.attr('data-led', CONFIG.LEDColors.check);
 				//print error
 				var data = {
+					id: 'backupPending',
 					type: 'notification',
-					message: CONFIG.messages.backupPending
+					message: CONFIG.messages.backupPending,
+					autoExpire: false
 				};
 				dashboardErrorHandler.print(data);
 
@@ -507,8 +537,10 @@ function Dashboard() {
 				$backupStatusLED.attr('data-led', CONFIG.LEDColors.check);
 				//print error
 				var data = {
+					id: 'backupDamaged',
 					type: 'warning',
-					message: CONFIG.messages.backupDamaged
+					message: CONFIG.messages.backupDamaged,
+					autoExpire: false
 				};
 				dashboardErrorHandler.print(data);
 
@@ -517,8 +549,22 @@ function Dashboard() {
 				$backupStatusLED.attr('data-led', CONFIG.LEDColors.bad);
 				//print error
 				var data = {
+					id: 'backupError',
 					type: 'error',
-					message: CONFIG.messages.backupError
+					message: CONFIG.messages.backupError,
+					autoExpire: false
+				};
+				dashboardErrorHandler.print(data);
+
+			} else if ( STATUS.backupStatus.metadata == 'ERROR' ) {
+				//change to red
+				$backupStatusLED.attr('data-led', CONFIG.LEDColors.bad);
+				//print error
+				var data = {
+					id: 'backupMetadataError',
+					type: 'error',
+					message: CONFIG.messages.backupMetadataError,
+					autoExpire: false
 				};
 				dashboardErrorHandler.print(data);
 
@@ -527,8 +573,10 @@ function Dashboard() {
 				$backupStatusLED.attr('data-led', CONFIG.LEDColors.loading);
 				//print error
 				var data = {
+					id: 'backupUnknown',
 					type: 'warning',
-					message: CONFIG.messages.backupUnknown
+					message: CONFIG.messages.backupUnknown,
+					autoExpire: false
 				};
 				dashboardErrorHandler.print(data);
 			}
@@ -576,12 +624,18 @@ function Dashboard() {
 	//error handler
 	function DashboardErrorHandler( cfg ) {
 
-		var $dashboardNotificationBox = $('#dashboard-notification-box');
+		var $dashboardNotificationBox = $('#dashboard-notification-box'),
+			$closeAllNotificationsButton = $('#close-all-notifications-button'),
+			$notifications = null; //empty var to fill in when $closeAllNotificationsButton is pressed
+
 		var CONFIG = {
 			template: '<div style="display:none;" id="{{id}}" class="{{type}} dashboard-notification"><div class="icon-box"><i class="ic ic-cross"></i><i class="ic ic-checkmark"></i><i class="ic ic-warning"></i></div><div class="notification-content"><h3 class="notification-title" style="display:{{title-visibility}}">{{title}}</h3><p class="notification-text">{{message}}</p></div></div>',
 			fadeSpeed: 300,
-			timeout: 3000
+			autoExpire: true,
+			autoExpireTimeout: 3000,
+			filledClass: 'filled'
 		};
+
 		//overriding CONFIG
 		$.extend( CONFIG, cfg, true );
 
@@ -589,20 +643,28 @@ function Dashboard() {
 		function print( data ) {
 			/*
 				data: {
-					type: 'error', //ERROR || NOTIFICATION || WARNING //required
-					title: '', //STRING containing title to display //optional
-					message: '' //STRING containing message to display //required
+					id: 'connectionError',				//STRING containing id 						//required
+					type: 'error',						//ERROR || NOTIFICATION || WARNING 			//required
+					title: 'My title',					//STRING containing title to display 		//optional
+					message: 'My message',				//STRING containing message to display 		//required
+					autoExpire: TRUE || FALSE,			//BOOLEAN									//optional		 //default CONFIG.autoExpire
+					autoExpireTime: 3000				//INT 										//optional		 //default CONFIG.autoExpireTimeout
 				}
 			*/
 
-			if ( !data.type || !data.message ) {
+			if ( !data.id || !data.type || !data.message ) {
 				return false;
 			}
 
-			var randomID = getRandomString(10);
+			//if #data.id element already exists, remove it
+			if ( $('#' + data.id).length ) {
+				$('#' + data.id).remove();
+				notificationsCounter();
+			}
+
 			var print = CONFIG.template;
 			//printing id
-			print = replaceAll( print, '{{id}}', randomID );
+			print = replaceAll( print, '{{id}}', data.id );
 			//printing type
 			print = replaceAll( print, '{{type}}', data.type );
 			//printing message
@@ -614,29 +676,59 @@ function Dashboard() {
 			} else {
 				print = replaceAll( print, '{{title-visibility}}', 'none' );
 			}
+			//handling data.autoExpire property
+			if ( data.autoExpire == undefined ) {
+				data.autoExpire = CONFIG.autoExpire;
+			}
+			//handling data.autoExpireTimeout property
+			if ( data.autoExpireTimeout == undefined ) {
+				data.autoExpireTimeout = CONFIG.autoExpireTimeout;
+			}
 			
 			//appending it to $dashboardNotificationBox
 			$dashboardNotificationBox.append( print );
 
 			//fading it in
-			$('#' + randomID).fadeIn( CONFIG.fadeSpeed );
+			$('#' + data.id).fadeIn( CONFIG.fadeSpeed );
+			notificationsCounter();
 
-			//set Timeout to auto-hide
-			setTimeout(function() {
-				close( $('#' + randomID) );
-			}, CONFIG.timeout);
+			//set Timeout to auto-hide if it says so
+			if ( data.autoExpire ) {
+				setTimeout(function() {
+					close( $('#' + data.id) );
+				}, data.autoExpireTimeout);
+			}
 		}
 
 
 		function close( $element ) {
 			$element.fadeOut( CONFIG.fadeSpeed, function() {
 				$element.remove();
+				notificationsCounter();
 			})
+		}
+
+		function notificationsCounter() {
+			if ( $('.dashboard-notification').length ) {
+				if ( !$dashboardNotificationBox.hasClass( CONFIG.filledClass ) ) {
+					$dashboardNotificationBox.addClass( CONFIG.filledClass );
+				} //otherwise just ignore
+			} else {
+				$dashboardNotificationBox.removeClass( CONFIG.filledClass );
+			}
 		}
 
 
 		$dashboardNotificationBox.on('click', '.dashboard-notification', function() {
 			close( $(this) );
+		});
+
+		$closeAllNotificationsButton.on('click', function() {
+			$notifications = $dashboardNotificationBox.find('.dashboard-notification');
+			for ( var n = 0; n < $notifications.length; n++ ) {
+				//iterate through all notifications and close() them
+				close( $($notifications[n]) );
+			}
 		});
 
 		return {
@@ -689,6 +781,8 @@ function Dashboard() {
 			if ( activeRequests.indexOf(name) < 0 ) {
 				//if no active requests matches this name, add it
 				activeRequests.push(name);
+				//exec loading witness controller
+				loadingWitnessController();
 				return true;
 			} else {
 				//current name already exists into array
@@ -705,6 +799,8 @@ function Dashboard() {
 				var index = activeRequests.indexOf(name);
 				//removing array's matching index
 				activeRequests.splice(index, 1);
+				//exec loading witness controller
+				loadingWitnessController();
 				return true;
 			}
 		}
@@ -713,11 +809,22 @@ function Dashboard() {
 			return activeRequests.length;
 		}
 
+		function loadingWitnessController() {
+			//requires loadingWitness.js
+			if ( getActiveRequests() ) {
+				//there are active requests
+				loadingWitness.start();
+			} else {
+				loadingWitness.stop();
+			}
+		}
+
 		function init() {
 			//exec loop for first time
 			theLoop();
 			//init the loop and asigning it to global CONFIG var
-			CONFIG.loop.func = setInterval(function() {
+			dashboardLoopFunction = setInterval(function() {
+				console.log('interval');
 				//execting theLoop() on each iteration only if activeRequests is empty
 				if ( !getActiveRequests() ) {
 					theLoop();
@@ -739,3 +846,7 @@ function Dashboard() {
 	});
 
 }
+
+$('body').bind('dashboard-close', function() {
+	clearInterval( dashboardLoopFunction );
+});
