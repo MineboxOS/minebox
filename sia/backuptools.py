@@ -198,21 +198,24 @@ def save_metadata(status):
     snapname = status["snapname"]
     backupname = status["backupname"]
     metadir = path.join(METADATA_BASE, backupname)
-    # Copy renter/ folder to metadata directory.
-    # The copytree target needs to be the not-yet-existing target directory.
-    shutil.copytree(path.join(SIA_DIR, "renter"), path.join(metadir, "renter"))
+    # Copy renter, gateway and wallet folders to metadata directory.
+    for siafolder in ["renter", "gateway", "wallet"]:
+        # The copytree target needs to be the not-yet-existing target directory.
+        shutil.copytree(path.join(SIA_DIR, siafolder),
+                        path.join(metadir, siafolder))
     # Create a bundle of all metadata for this backup.
     zipname = join(METADATA_BASE, "%s.zip" % backupname)
     if path.isfile(zipname):
         remove(zipname)
     with ZipFile(zipname, 'w') as backupzip:
-        for rfile in glob(path.join(metadir, "renter", "*")):
+        for sfile in glob(path.join(metadir, "*", "*")):
             # Exclude files we do not require in the zip.
-            if re.match(r'.*\.(json_temp|log)$', rfile):
+            if re.match(r'.*\.(json_temp|log)$', sfile):
                 continue
-            basefilename = path.basename(rfile)
-            inzipfilename = path.join("renter", basefilename)
-            backupzip.write(rfile, inzipfilename)
+            basefilename = path.basename(sfile)
+            basedirname = path.basename(path.dirname(sfile))
+            inzipfilename = path.join(basedirname, basefilename)
+            backupzip.write(sfile, inzipfilename)
         backupzip.write(path.join(metadir, INFO_FILENAME), INFO_FILENAME)
     # Upload metadata bundle.
     current_app.logger.info("Upload metadata.")
