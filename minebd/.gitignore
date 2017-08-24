@@ -1,2 +1,3 @@
-localetc/
-junit/
+/localetc/
+/junit/
+/build/
