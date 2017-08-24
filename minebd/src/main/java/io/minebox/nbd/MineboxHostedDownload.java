@@ -1,6 +1,7 @@
 package io.minebox.nbd;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
@@ -18,6 +19,7 @@ import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+//@Singleton
 public class MineboxHostedDownload extends AbstractDownload {
 
 

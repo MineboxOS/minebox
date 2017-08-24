@@ -34,7 +34,6 @@ import java.util.zip.ZipInputStream;
 /**
  * Created by andreas on 24.04.17.
  */
-@Singleton
 public abstract class AbstractDownload implements DownloadService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractDownload.class);
@@ -122,12 +121,14 @@ public abstract class AbstractDownload implements DownloadService {
             finishedDigest();
             //one of those files must have been fileinfo...
             if (ret == null) {
-                throw new IllegalArgumentException("unable to read siapaths from fileinfo");
+                connectedToMetadata = false;
+                LOGGER.warn("fileinfo not found in metadata");
+                return ImmutableList.of();
+            } else {
+                LOGGER.info("loaded backup from metadata service");
+                connectedToMetadata = true;
+                hasMetadata = !ret.isEmpty();
             }
-            connectedToMetadata = true;
-            LOGGER.info("loaded backup from metadata service");
-
-            hasMetadata = !ret.isEmpty();
             return ret;
         } catch (UnirestException | IOException e) {
             LOGGER.error("unable to load backup from metadata service");

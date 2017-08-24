@@ -15,6 +15,7 @@ import java.util.concurrent.Callable;
 @Ignore //we need a solution for the big pristine file
 public class SiaHostedDownloadTest {
 
+    public static final String JUNIT_SIA = "junit/sia/";
     private static Process siadProcess;
     private static File siadDirectoryFile;
     private static SiaUtil siaUtil;
@@ -47,7 +48,7 @@ public class SiaHostedDownloadTest {
             preloaded.extractAll(extractTo.getCanonicalPath());
             return null;
         });
-        final String siadDir = "junit/sia/Sia-v1.3.0-linux-amd64/";
+        final String siadDir = JUNIT_SIA + "Sia-v1.3.0-linux-amd64/";
         final File siadDirectoryFile = new File(siadDir).getCanonicalFile();
         final boolean result = new File(siadDirectoryFile, "siad").setExecutable(true);
         Assert.assertTrue("unable to set siad executable", result);
@@ -57,8 +58,8 @@ public class SiaHostedDownloadTest {
     @BeforeClass
     public static void setupSiad() throws IOException {
         siaUtil = new SiaUtil("http://localhost:9980");
-//        siadDirectoryFile = recreatePristineSiad();
-        siadDirectoryFile = new File("junit/sia/Sia-v1.3.0-linux-amd64/");
+        siadDirectoryFile = recreatePristineSiad();
+        siadDirectoryFile = new File(JUNIT_SIA + "Sia-v1.3.0-linux-amd64/");
 //        startSiad(siadDirectoryFile);
     }
 
@@ -100,7 +101,7 @@ public class SiaHostedDownloadTest {
         //acutally, we want to make sure, sia is not running here...
         final SiaHostedDownload underTest = new SiaHostedDownload(siaUtil,
                 null,
-                "junit/sia/Sia-v1.3.0-linux-amd64",
+                JUNIT_SIA + "Sia-v1.3.0-linux-amd64",
                 dummyRemoteToken,
                 new StaticEncyptionKeyProvider("123")) {
             @Override
