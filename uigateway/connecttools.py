@@ -17,8 +17,9 @@ SIAD_URL="http://localhost:9980/"
 MINEBD_URL="http://localhost:8080/v1/"
 MINEBD_AUTH_KEY_FILE="/etc/minebox/local-auth.key"
 BACKUPSERVICE_URL="http://localhost:5100/"
-SETTINGS_URL="https://settings.minebox.io/v1/settings/"
-METADATA_URL="https://metadata.minebox.io/v1/"
+SETTINGS_URL="https://settings.api.minebox.io/v1/settings/"
+FAUCET_URL="https://faucet.api.minebox.io/v1/faucet/"
+METADATA_URL="https://metadata.api.minebox.io/v1/"
 LOCALDEMO_URL="http://localhost:8050/v1/"
 DEMOSIAD_URL="http://localhost:9900/"
 
@@ -133,7 +134,7 @@ def get_from_backupservice(api):
             # create a dict generated from the JSON response.
             bsdata = response.json()
             if response.status_code >= 400:
-                # For error-ish codes, tell that they are from Sia.
+                # For error-ish codes, tell that they are from backup service.
                 bsdata["messagesource"] = "backupservice"
             return bsdata, response.status_code
         else:
@@ -233,7 +234,7 @@ def get_from_metadata(api):
             # create a dict generated from the JSON response.
             mdata = response.json()
             if response.status_code >= 400:
-                # For error-ish codes, tell that they are from MineBD.
+                # For error-ish codes, tell that they are from metadata.
                 mdata["messagesource"] = "Metadata"
             return mdata, response.status_code
         else:
@@ -261,7 +262,7 @@ def put_to_metadata(api, formData):
             # create a dict generated from the JSON response.
             mdata = response.json()
             if response.status_code >= 400:
-                # For error-ish codes, tell that they are from MineBD.
+                # For error-ish codes, tell that they are from metadata.
                 mdata["messagesource"] = "Metadata"
             return mdata, response.status_code
         else:
@@ -289,7 +290,7 @@ def delete_from_metadata(api):
             # create a dict generated from the JSON response.
             mdata = response.json()
             if response.status_code >= 400:
-                # For error-ish codes, tell that they are from MineBD.
+                # For error-ish codes, tell that they are from metadata.
                 mdata["messagesource"] = "Metadata"
             return mdata, response.status_code
         else:
@@ -317,7 +318,7 @@ def get_from_mineboxconfig(api):
             # create a dict generated from the JSON response.
             mdata = response.json()
             if response.status_code >= 400:
-                # For error-ish codes, tell that they are from MineBD.
+                # For error-ish codes, tell that they are from settings.
                 mdata["messagesource"] = "Settings"
             return mdata, response.status_code
         else:
@@ -329,8 +330,32 @@ def get_from_mineboxconfig(api):
         return {"message": str(e)}, 500
 
 
-def get_from_faucetservice(api):
-    return {"message": "This service doesn't exist yet."}, 501
+def post_to_faucetservice(api, formData):
+    url = FAUCET_URL + api
+    token = _get_metadata_token()
+    if token is None:
+        return {"message": "Error requesting metadata token."}, 500
+
+    try:
+        headers = requests.utils.default_headers()
+        headers.update({'X-Auth-Token': token})
+        response = requests.post(url, data=formData, headers=headers)
+        if ('Content-Type' in response.headers
+            and re.match(r'^application/json',
+                         response.headers['Content-Type'])):
+            # create a dict generated from the JSON response.
+            mdata = response.json()
+            if response.status_code >= 400:
+                # For error-ish codes, tell that they are from faucet.
+                mdata["messagesource"] = "Faucet"
+            return mdata, response.status_code
+        else:
+            return {"message": response.text,
+                    "messagesource": "Faucet"}, response.status_code
+    except requests.ConnectionError as e:
+        return {"message": str(e)}, 503
+    except requests.RequestException as e:
+        return {"message": str(e)}, 500
 
 
 def check_login():

@@ -11,7 +11,7 @@ import re
 import time
 
 from connecttools import (get_from_sia, post_to_sia, get_from_minebd,
-                          get_from_mineboxconfig, get_from_faucetservice)
+                          get_from_mineboxconfig, post_to_faucetservice)
 
 # Note: no not use float (e.g. 1e24) for numers that need high precision!
 # The ** operator produces int, which is fine, or use decimal.Decimal()
@@ -70,9 +70,16 @@ def unlock_wallet(seed):
     return True
 
 def fetch_siacoins():
-    current_app.logger.info("TODO: Fetching base allotment of coins from Minebox.")
-    # We need the Minebox sia faucet service for this (See MIN-130).
-    fsdata, fs_status_code = get_from_faucetservice('siacoins')
+    current_app.logger.info("Fetching base allotment of coins from Minebox.")
+    # Fetch a wallet address to send the siacoins to.
+    siadata, sia_status_code = get_from_sia("wallet/address")
+    if sia_status_code >= 400:
+        current_app.logger.error("Sia error %s: %s" % (sia_status_code,
+                                                       siadata["message"]))
+        return False
+    # Use the address from above to request siacoins from the faucet.
+    fsdata, fs_status_code = post_to_faucetservice("getCoins",
+                                                   {"address": siadata["address"]})
     if fs_status_code >= 400:
         current_app.logger.error("Faucet error %s: %s" % (fs_status_code,
                                                           fsdata["message"]))
