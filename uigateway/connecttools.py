@@ -10,6 +10,7 @@ from os import environ
 import time
 import re
 import requests
+import warnings
 
 
 SIAD_URL="http://localhost:9980/"
@@ -344,9 +345,12 @@ def check_login():
     cookiejar.set('csrftoken', csrftoken)
     cookiejar.set('sessionid', sessionid)
     try:
-        # Given that we call localhost, the cert will be wrong, so don't verify.
-        response = requests.post(user_api, data=[], headers=headers,
-                                 cookies=cookiejar, verify=False)
+        # Given that we call localhost, the cert will be wrong, so
+        # don't verify and suppress the warning on doing an insecure request.
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
+            response = requests.post(user_api, data=[], headers=headers,
+                                     cookies=cookiejar, verify=False)
         if response.status_code == 200:
           return response.json()
         else:
