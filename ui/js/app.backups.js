@@ -280,7 +280,7 @@ function Backups() {
             
             //iterating through visible again to apply the height and fill the data
             for ( var n = 0; n < $visible.length; n++ ) {
-              $($visible[n]).find('.bar').css('height', ( logScale(minimum, maximum, $($visible[n]).attr('data-size') ) ) + '%' );
+              $($visible[n]).find('.bar').css('height', ( linearScale( maximum, $($visible[n]).attr('data-size') ) ) + '%' );
               printData( $($visible[n]) );
             }
 
@@ -310,12 +310,23 @@ function Backups() {
 
               //iterating through visible again to apply the maximum
               for ( var n = 0; n < $timelineBars.length; n++ ) {
-                $($timelineBars[n]).find('.bar').css('height', ( logScale(minimum, maximum, $($timelineBars[n]).attr('data-size') ) ) + '%' );
+                $($timelineBars[n]).find('.bar').css('height', ( linearScale( maximum, $($timelineBars[n]).attr('data-size') ) ) + '%' );
               }
             }, 600);
           }
 
+          function linearScale(max,size) {
+            return size / max * 100;
+          }
+
           function logScale(min,max,size) {
+            size = parseInt(size);
+            return Math.log10(size)*10;
+/*
+
+
+
+
             //making size a integer
             size = parseInt( size );
             //Position will be between min and max
@@ -323,13 +334,14 @@ function Backups() {
             var maxp = max;
 
             //The result should be between 0 an 100
-            var minv = Math.log(10);
-            var maxv = Math.log(100);
+            var minv = Math.log10(10);
+            var maxv = Math.log10(100);
 
             //Calculate adjustment factor
             var scale = (maxv-minv) / (maxp-minp);
 
-            return Math.exp(minv + scale*(size-minp));
+
+            return Math.pow(minv + scale*(size-minp), 10);*/
           }
 
           function printData($element) {
@@ -345,10 +357,16 @@ function Backups() {
           }
 
           function adjustSizeScaleValues( maximum ) {
-            $sizeScale.find('.fourty').html( formatNumber( ( ( maximum * 40 ) / 100 ) / 1000000 ) + ' MB' );
-            $sizeScale.find('.sixty').html( formatNumber( ( ( maximum * 60 ) / 100 ) / 1000000 ) + ' MB' );
-            $sizeScale.find('.seventy').html( formatNumber( ( ( maximum * 70 ) / 100 ) / 1000000 ) + ' MB' );
-            $sizeScale.find('.seventyfive').html( formatNumber( ( ( maximum * 75 ) / 100 ) / 1000000 ) + ' MB' );
+            //robert's formula
+
+            var mbLine = 2 * Math.pow(10, Math.floor(Math.log10(maximum)));
+            var position = linearScale( maximum, mbLine );
+            var currentPosition = position;
+
+            $sizeScale.find('.fourty').css('top', position + '%').html( formatNumber( mbLine / 1000000 ) + ' MB' );
+            $sizeScale.find('.sixty').css('top', 2*position + '%').html( formatNumber( 2*mbLine / 1000000 ) + ' MB' );
+            $sizeScale.find('.seventy').css('top', 3*position + '%').html( formatNumber( 3*mbLine / 1000000 ) + ' MB' );
+            $sizeScale.find('.seventyfive').css('top', 4*position + '%').html( formatNumber( 4*mbLine / 1000000 ) + ' MB' );
           }
 
           function takeNewSnapshot() {
