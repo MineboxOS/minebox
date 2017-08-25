@@ -72,22 +72,23 @@ function Backups() {
       //CONFIG.mug.requester.setType('JSON');
       CONFIG.mug.requester.setCache(false);
       CONFIG.mug.requester.setCredentials(true);
-      CONFIG.mug.requester.run(function(response) {
+      CONFIG.mug.requester.run(function(snapshotsList) {
 
         //saving snapshotsList array
-        CONFIG.snapshotsList = response;
+        CONFIG.snapshotsList = snapshotsList.sort();
 
         //temporal var
         var loadedSnapshots = 0;
         //iterating through snapshotsList and calling to the server on each iteration to get their info
         for ( var n = 0; n < CONFIG.snapshotsList.length; n++ ) {
-          loadSnapshotInfo( CONFIG.snapshotsList[n], function(response) {
+          //sending current snapshot id, loop index (n) and callback (will get N as INDEX so we can keep the sorting on CONFIG.snapshots)
+          loadSnapshotInfo( CONFIG.snapshotsList[n], n, function(snapshotInfo, index) {
 
             //converting timestamp into miliseconds
-            response.time_snapshot = response.time_snapshot * 1000;
+            snapshotInfo.time_snapshot = snapshotInfo.time_snapshot * 1000;
 
             //store snapshot info
-            CONFIG.snapshots.push( response );
+            CONFIG.snapshots[index] = snapshotInfo;
 
             //increase loadedSnapshots witness
             loadedSnapshots++;
@@ -115,7 +116,7 @@ function Backups() {
     }());
 
 
-    function loadSnapshotInfo(snapshotName, cb) {
+    function loadSnapshotInfo(snapshotName, index, cb) {
 
       //start loading
       loadingManager.add('Snapshot info #' + snapshotName);
@@ -129,7 +130,7 @@ function Backups() {
         //stop loading
         loadingManager.remove('Snapshot info #' + snapshotName);
 
-        cb(response);
+        cb(response, index);
 
       }, function(error) {
 
@@ -180,9 +181,9 @@ function Backups() {
         printingTempHTMLString = replaceAll( printingTempHTMLString, '{{snapshot_relative_progress}}', array[n].relative_progress );
         printingTempHTMLString = replaceAll( printingTempHTMLString, '{{snapshot_time}}', array[n].time_snapshot );
         //printing in graph
-        $cumulativeFiles.append( printingTempHTMLString );
+        $cumulativeFiles.prepend( printingTempHTMLString );
         //printing en timeline
-        $timelineBarsBox.append( printingTempHTMLString );
+        $timelineBarsBox.prepend( printingTempHTMLString );
       }
       //once everything is printed, update selection elements
       updateBarsSelectors();
@@ -279,7 +280,7 @@ function Backups() {
             
             //iterating through visible again to apply the height and fill the data
             for ( var n = 0; n < $visible.length; n++ ) {
-              $($visible[n]).find('.bar').css('height', ( logScale(minimum, maximum, $($visible[n]).attr('data-size') ) ) + '%' );
+              $($visible[n]).find('.bar').css('height', ( linearScale( maximum, $($visible[n]).attr('data-size') ) ) + '%' );
               printData( $($visible[n]) );
             }
 
@@ -309,12 +310,23 @@ function Backups() {
 
               //iterating through visible again to apply the maximum
               for ( var n = 0; n < $timelineBars.length; n++ ) {
-                $($timelineBars[n]).find('.bar').css('height', ( logScale(minimum, maximum, $($timelineBars[n]).attr('data-size') ) ) + '%' );
+                $($timelineBars[n]).find('.bar').css('height', ( linearScale( maximum, $($timelineBars[n]).attr('data-size') ) ) + '%' );
               }
             }, 600);
           }
 
+          function linearScale(max,size) {
+            return size / max * 100;
+          }
+
           function logScale(min,max,size) {
+            size = parseInt(size);
+            return Math.log10(size)*10;
+/*
+
+
+
+
             //making size a integer
             size = parseInt( size );
             //Position will be between min and max
@@ -322,13 +334,14 @@ function Backups() {
             var maxp = max;
 
             //The result should be between 0 an 100
-            var minv = Math.log(10);
-            var maxv = Math.log(100);
+            var minv = Math.log10(10);
+            var maxv = Math.log10(100);
 
             //Calculate adjustment factor
             var scale = (maxv-minv) / (maxp-minp);
 
-            return Math.exp(minv + scale*(size-minp));
+
+            return Math.pow(minv + scale*(size-minp), 10);*/
           }
 
           function printData($element) {
@@ -344,10 +357,16 @@ function Backups() {
           }
 
           function adjustSizeScaleValues( maximum ) {
-            $sizeScale.find('.fourty').html( formatNumber( ( ( maximum * 40 ) / 100 ) / 1000000 ) + ' MB' );
-            $sizeScale.find('.sixty').html( formatNumber( ( ( maximum * 60 ) / 100 ) / 1000000 ) + ' MB' );
-            $sizeScale.find('.seventy').html( formatNumber( ( ( maximum * 70 ) / 100 ) / 1000000 ) + ' MB' );
-            $sizeScale.find('.seventyfive').html( formatNumber( ( ( maximum * 75 ) / 100 ) / 1000000 ) + ' MB' );
+            //robert's formula
+
+            var mbLine = 2 * Math.pow(10, Math.floor(Math.log10(maximum)));
+            var position = linearScale( maximum, mbLine );
+            var currentPosition = position;
+
+            $sizeScale.find('.fourty').css('top', position + '%').html( formatNumber( mbLine / 1000000 ) + ' MB' );
+            $sizeScale.find('.sixty').css('top', 2*position + '%').html( formatNumber( 2*mbLine / 1000000 ) + ' MB' );
+            $sizeScale.find('.seventy').css('top', 3*position + '%').html( formatNumber( 3*mbLine / 1000000 ) + ' MB' );
+            $sizeScale.find('.seventyfive').css('top', 4*position + '%').html( formatNumber( 4*mbLine / 1000000 ) + ' MB' );
           }
 
           function takeNewSnapshot() {
