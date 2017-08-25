@@ -10,6 +10,7 @@ var dashboardLoopFunction = null;
 	//replaceAll();
 	//getRandomString();
 	//getRandomInt();
+	//formatDate();
 function Dashboard() {
   
 
@@ -58,7 +59,7 @@ function Dashboard() {
 		},
 		loop: {
 			func: null, //setInterval handler
-			time: 10000 //the time for interval
+			time: 60000 //the time for interval
 		},
 		errorHandler: {
 			template: '<div style="display:none;" id="{{id}}" class="{{type}} dashboard-notification"><div class="icon-box"><i class="ic ic-cross"></i><i class="ic ic-checkmark"></i><i class="ic ic-warning"></i></div><div class="notification-content"><h3 class="notification-title" style="display:{{title-visibility}}">{{title}}</h3><p class="notification-text">{{message}}</p></div></div>',
@@ -372,15 +373,21 @@ function Dashboard() {
 		}
 		if ( STATUS.backupStatus.size < 0 ) {
 			STATUS.backupStatus.size = 'Loading';
+		} else {
+			STATUS.backupStatus.size = formatNumber( parseInt( STATUS.backupStatus.size ) / 1000000 ) + ' MB';
 		}
 		if ( STATUS.backupStatus.relative_size < 0 ) {
 			STATUS.backupStatus.relative_size = 'Loading';
+		} else {
+			STATUS.backupStatus.relative_size = formatNumber( parseInt( STATUS.backupStatus.relative_size ) / 1000000 ) + ' MB';
 		}
+		var d = new Date( STATUS.backupStatus.time_snapshot * 1000 );
+		d = formatDate( d, 'HH:mm dd/MM/yyyy' );
 		//fill in all the fields relative to ajax call: getBackupStatus()
 		$backup_name.html( STATUS.backupStatus.name );
 		$backup_progress_bar.width( STATUS.backupStatus.progress.toFixed(2) + '%');
 		$backup_progress_bar_value.html( STATUS.backupStatus.progress.toFixed(2) + '%' );
-		$backup_timestamp_witness.html( STATUS.backupStatus.time_snapshot );
+		$backup_timestamp_witness.html( d );
 		$backup_status_witness.html( STATUS.backupStatus.status );
 		$backup_metadata_witness.html( STATUS.backupStatus.metadata );
 		$backup_files_number_witness.html( STATUS.backupStatus.numFiles );
