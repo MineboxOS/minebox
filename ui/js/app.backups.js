@@ -72,22 +72,23 @@ function Backups() {
       //CONFIG.mug.requester.setType('JSON');
       CONFIG.mug.requester.setCache(false);
       CONFIG.mug.requester.setCredentials(true);
-      CONFIG.mug.requester.run(function(response) {
+      CONFIG.mug.requester.run(function(snapshotsList) {
 
         //saving snapshotsList array
-        CONFIG.snapshotsList = response;
+        CONFIG.snapshotsList = snapshotsList.sort();
 
         //temporal var
         var loadedSnapshots = 0;
         //iterating through snapshotsList and calling to the server on each iteration to get their info
         for ( var n = 0; n < CONFIG.snapshotsList.length; n++ ) {
-          loadSnapshotInfo( CONFIG.snapshotsList[n], function(response) {
+          //sending current snapshot id, loop index (n) and callback (will get N as INDEX so we can keep the sorting on CONFIG.snapshots)
+          loadSnapshotInfo( CONFIG.snapshotsList[n], n, function(snapshotInfo, index) {
 
             //converting timestamp into miliseconds
-            response.time_snapshot = response.time_snapshot * 1000;
+            snapshotInfo.time_snapshot = snapshotInfo.time_snapshot * 1000;
 
             //store snapshot info
-            CONFIG.snapshots.push( response );
+            CONFIG.snapshots[index] = snapshotInfo;
 
             //increase loadedSnapshots witness
             loadedSnapshots++;
@@ -115,7 +116,7 @@ function Backups() {
     }());
 
 
-    function loadSnapshotInfo(snapshotName, cb) {
+    function loadSnapshotInfo(snapshotName, index, cb) {
 
       //start loading
       loadingManager.add('Snapshot info #' + snapshotName);
@@ -129,7 +130,7 @@ function Backups() {
         //stop loading
         loadingManager.remove('Snapshot info #' + snapshotName);
 
-        cb(response);
+        cb(response, index);
 
       }, function(error) {
 
@@ -180,9 +181,9 @@ function Backups() {
         printingTempHTMLString = replaceAll( printingTempHTMLString, '{{snapshot_relative_progress}}', array[n].relative_progress );
         printingTempHTMLString = replaceAll( printingTempHTMLString, '{{snapshot_time}}', array[n].time_snapshot );
         //printing in graph
-        $cumulativeFiles.append( printingTempHTMLString );
+        $cumulativeFiles.prepend( printingTempHTMLString );
         //printing en timeline
-        $timelineBarsBox.append( printingTempHTMLString );
+        $timelineBarsBox.prepend( printingTempHTMLString );
       }
       //once everything is printed, update selection elements
       updateBarsSelectors();
