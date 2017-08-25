@@ -206,6 +206,12 @@ public class SiaUtil {
         }
     }
 
+    public String myAddress() {
+        final HttpResponse<String> string = siaCommand(Command.ADDRESS, ImmutableMap.of());
+        final JSONObject jsonObject = new JSONObject(string.getBody());
+        return jsonObject.getString("address");
+    }
+
     public enum Command {
         //        WALLET("/wallet", "GET"), //confirmedsiacoinbalance
         STOP("/daemon/stop", "GET"),
