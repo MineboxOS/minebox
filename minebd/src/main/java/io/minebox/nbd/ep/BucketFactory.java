@@ -10,9 +10,10 @@ import java.nio.channels.FileChannel;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.Ints;
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.Encryption;
-import io.minebox.nbd.DownloadService;
+import io.minebox.nbd.download.DownloadService;
 import io.minebox.nbd.SerialNumberService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,11 +24,11 @@ public class BucketFactory {
     private final String parentDir;
     private final long size;
     private final Encryption encryption;
-    private final DownloadService downloadService;
+    private final Provider<DownloadService> downloadService;
     private File parentFolder;
 
     @Inject
-    public BucketFactory(SerialNumberService serialNumberService, MinebdConfig config, Encryption encryption, DownloadService downloadService) {
+    public BucketFactory(SerialNumberService serialNumberService, MinebdConfig config, Encryption encryption, Provider<DownloadService> downloadService) {
         this.serialNumberService = serialNumberService;
         this.parentDir = config.parentDir;
         this.size = config.bucketSize.toBytes();
@@ -81,7 +82,7 @@ public class BucketFactory {
 
         private void ensureFileExists(File file) {
             if (!file.exists()) {
-                DownloadService.RecoveryStatus wasDownloaded = downloadService.downloadIfPossible(file);
+                DownloadService.RecoveryStatus wasDownloaded = downloadService.get().downloadIfPossible(file);
                 if (DownloadService.RecoveryStatus.ERROR.equals(wasDownloaded)) {
                     throw new RuntimeException("i was unable to obtain the expected file");
                 } else if (DownloadService.RecoveryStatus.NO_FILE.equals(wasDownloaded)) {

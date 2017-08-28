@@ -26,6 +26,6 @@ minebd:
   bucketSize : 40M
   httpMetadata: "https://metadata.minebox.io/v1/"
   ignoreMissingPaths: true
-  siaDataDirectory: "/tmp/sia"
+  siaDataDirectory: /mnt/lower1/sia
   siaClientUrl: "http://localhost:9980"
 
