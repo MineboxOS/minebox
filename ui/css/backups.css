@@ -162,10 +162,10 @@
 }
   #graph-inner {
     position: absolute;
-    top: 0;
+    top: 40px;
     right: 0;
     min-width: 100%;
-    height: 100%;
+    height: calc( 100% - 80px );
     z-index: 20;
   }
     #new-files {
@@ -184,6 +184,8 @@
       left: 0;
       background-color: #24acce;
     }
+      #new-files .bar-box {
+      }
     #cumulative-files {
       position: absolute;
       top: 50%;
@@ -197,9 +199,9 @@
       }
   #size-scale {
     position: absolute;
-    top: 0;
+    top: 40px;
     right: 0;
-    height: 100%;
+    height: calc( 100% - 80px );
     width: 100%;
     z-index: 10;
     opacity: 0;
@@ -224,7 +226,7 @@
       #size-scale .negative {
         top: 50%;
       }
-        #size-scale .size-scale>div {
+        #size-scale .size-scale .line {
           position: absolute;
           width: 100%;
           height: 1px;
@@ -235,14 +237,6 @@
           padding: 4px 0;
           color: rgba(36,172,206,.5);
         }
-        #size-scale>.positive>.fourty      { bottom: 40%; }
-        #size-scale>.positive>.sixty       { bottom: 60%; }
-        #size-scale>.positive>.seventy     { bottom: 70%; }
-        #size-scale>.positive>.seventyfive { bottom: 75%; }
-        #size-scale>.negative>.fourty      { top: 40%; }
-        #size-scale>.negative>.sixty       { top: 60%; }
-        #size-scale>.negative>.seventy     { top: 70%; }
-        #size-scale>.negative>.seventyfive { top: 75%; }
 
 
 
@@ -328,7 +322,7 @@
       -moz-transition: all ease .3s;
       -o-transition: all ease .3s;
     }
-    .bar-box:hover .bar {
+    .bar-box.hover .bar {
       border-color: #0cf;
       background-color: rgba(36,172,206,.2);
     }
@@ -339,12 +333,12 @@
   .bar-box .info {
     position: absolute;
     top: 100%;
-    margin-top: 3px;
-    height: 30px;
+    padding-top: 4px;
+    height: 40px;
   }
     .info>p {
-      font-size: 8px;
-      line-height: 10px;
+      font-size: 9px;
+      line-height: 11px;
       margin: 0;
       color: rgba(36,172,206,.5);
       transition: all ease .3s;
@@ -352,7 +346,7 @@
       -moz-transition: all ease .3s;
       -o-transition: all ease .3s;
     }
-    .bar-box:hover .info>p {
+    .bar-box.hover .info>p {
       color: #24acce;
     }
 /* bars exceptions */
@@ -360,7 +354,7 @@
   width: 90px;
   padding-left: 10px;
   padding-right: 10px;
-  height: calc( 100% - 36px );
+  height: 100%;
 }
   #graph .bar {
     left: 10px;
@@ -390,3 +384,87 @@
 
 
 
+
+#snapshot-data-viewer {
+  /* display: none; */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10000;
+}
+  #snapshot-data-viewer .obfuscation-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    cursor: pointer;
+    background-color: rgba(0,0,0,.9);
+  }
+  #snapshot-data-viewer .card {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    max-width: 600px;
+    height: 340px;
+    max-height: 100%;
+    padding: 40px;
+    transform: translateX(-50%) translateY(-50%);
+    -webkit-transform: translateX(-50%) translateY(-50%);
+    -moz-transform: translateX(-50%) translateY(-50%);
+    -o-transform: translateX(-50%) translateY(-50%);
+    z-index: 2;
+    background: #1a7d96;  /* fallback for old browsers */
+    background: -webkit-linear-gradient(to bottom, #1a7d96, #16677c);  /* Chrome 10-25, Safari 5.1-6 */
+    background: linear-gradient(to bottom, #1a7d96, #16677c); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+  }
+    #snapshot-data-viewer h3 {
+      text-align: center;
+    }
+    #snapshot-data-viewer .logo {
+      width: 260px;
+      display: block;
+      max-width: 80%;
+      margin: 0px auto;
+    }
+    #snapshot-data-viewer .contents {
+
+    }
+      #snapshot-data-viewer .progress-bars {
+        padding: 0 15px;
+      }
+        #snapshot-data-viewer .progress-bars>p {
+          margin-top: 15px;
+        }
+        #snapshot-data-viewer .progress-bar {
+          width: 100%;
+          height: 2px;
+          background-color: rgba(0,0,0,.3);
+          position: relative;
+        }
+          #snapshot-data-viewer .progress-bar>.bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 100%;
+            background-color: #fff;
+            transition: all ease .3s;
+            -webkit-transition: all ease .3s;
+            -moz-transition: all ease .3s;
+            -o-transition: all ease .3s;
+          }
+          #snapshot-data-viewer .elements-list {
+            list-style: none;
+            margin: 10px 0;
+            padding: 0;
+          }
+          #snapshot-data-viewer .value {
+            font-style: italic;
+            color: #24acce;
+            text-transform: uppercase;
+          }
