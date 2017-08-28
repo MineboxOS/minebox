@@ -1,14 +1,14 @@
-package io.minebox.nbd;
+package io.minebox.nbd.download;
 
 import java.io.File;
 import java.util.Collection;
 
-import com.google.inject.ImplementedBy;
+import com.google.inject.ProvidedBy;
 
 /**
  * Created by andreas on 27.04.17.
  */
-@ImplementedBy(SiaHostedDownload.class)
+@ProvidedBy(DownloadFactory.class)
 public interface DownloadService {
 
     enum RecoveryStatus{
@@ -16,8 +16,6 @@ public interface DownloadService {
     }
 
     RecoveryStatus downloadIfPossible(File file);
-
-    boolean wasInitialized();
 
     boolean hasMetadata();
 

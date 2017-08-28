@@ -1,13 +1,8 @@
 package io.minebox.nbd;
 
-import net.lingala.zip4j.core.ZipFile;
-import org.apache.commons.io.FileUtils;
+import io.minebox.nbd.download.AbstractDownload;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.Callable;
 
 /**
  * Created by andreas on 27.04.17.
