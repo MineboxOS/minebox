@@ -22,7 +22,7 @@ install -pD --mode 644 "%{_topdir}sia/systemd/sia.service" "$RPM_BUILD_ROOT/etc/
 # Installation script
 %pre
 /usr/bin/getent group sia || /usr/sbin/groupadd -r sia
-/usr/bin/getent passwd sia || /usr/sbin/useradd -r -d /mnt/lower1/sia -s /sbin/nologin sia
+/usr/bin/getent passwd sia || /usr/sbin/useradd -r -d /mnt/lower1/sia -s /sbin/nologin -g sia sia
 set +e
 systemctl stop sia
 set -e
@@ -44,6 +44,7 @@ fi
 
 %postun
 /usr/sbin/userdel sia
+/usr/sbin/groupdel sia
 systemctl daemon-reload
 
 %files
