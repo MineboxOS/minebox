@@ -46,8 +46,10 @@ set -e
 fi
 
 %postun
+if [ "$1" = 0 ] ; then
 /usr/sbin/userdel mug
 /usr/sbin/groupdel mug
+fi
 systemctl daemon-reload
 
 %files

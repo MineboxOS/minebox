@@ -43,8 +43,10 @@ set -e
 fi
 
 %postun
+if [ "$1" = 0 ] ; then
 /usr/sbin/userdel sia
 /usr/sbin/groupdel sia
+fi
 systemctl daemon-reload
 
 %files
