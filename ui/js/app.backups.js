@@ -687,7 +687,6 @@ function Backups() {
 					CONFIG.api.newSnapshot.requester.setCredentials( true );
 					CONFIG.api.newSnapshot.requester.run(function(response) {
 						//success
-						console.log(response);
 
 						CONFIG.api.loadLatestSnapshot.requester.setURL( CONFIG.api.loadLatestSnapshot.url );
 						CONFIG.api.loadLatestSnapshot.requester.setMethod( 'GET' );
