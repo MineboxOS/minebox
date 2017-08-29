@@ -188,7 +188,7 @@ input[type="checkbox"]:before {
   background-color: #24acce;
 }
 .notify-window button.cancel {
-  background-color: #101010;
+  background-color: rgba(36, 172, 206, 0.45);
 }
 @media ( max-width: 500px ) {
   .notify-window .close-btn:after,
