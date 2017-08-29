@@ -11,6 +11,10 @@ function Backups() {
 				url: config.mug.url + 'backup/all/status',
 				requester: new Requester()
 			},
+			loadLatestSnapshot: {
+				url: config.mug.url + 'backup/latest/status',
+				requester: new Requester()
+			},
 			newSnapshot: {
 				url: config.mug.url + 'backup/start',
 				requester: new Requester()
@@ -30,7 +34,10 @@ function Backups() {
 			loadSnapshots: {
 				fail: 'We couldn\'t get your backup list. Try again in a few minutes.'
 			},
-			loadSpecificSnapshots: {
+			takeNewSnapshot: {
+				fail: 'Something happened and we couldn\'t take this snapshot. Please try again.'
+			},
+			loadNewestSnapshot: {
 				fail: 'We couldn\'t retrieve data from current backups. Try again later.'
 			},
 			newSnapshotAlert: 'Your Minebox takes automatically a new snapshot everyday.<br />Hosting snapshots on Sia network consume funds.<br />Are you sure you want to take a new snapshot?'
@@ -88,7 +95,9 @@ function Backups() {
 		CONFIG.api.loadSnapshots.requester.run(function(snapshots) {
 
 			//saving snapshots arrays
-			CONFIG.snapshots = snapshots;
+			CONFIG.snapshots = snapshots.reverse();
+			//reverse to oldest first.
+			//The method used to print is PREPEND, so new created snapshots are prepended at the beggining of the list
 
 			//iterating through snapshots and setting timestamp to milliseconds
 			for ( var n = 0; n < CONFIG.snapshots.length; n++ ) {
@@ -191,11 +200,11 @@ function Backups() {
 				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{snapshot_time}}', array[n].time_snapshot );
 				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{snapshot_files_number}}', array[n].numFiles );
 				//printing in relative graph
-				$newFilesBox.append( htmlStringForRelativeGraph );
+				$newFilesBox.prepend( htmlStringForRelativeGraph );
 				//printing in absolute graph
-				$cumulativeFilesBox.append( htmlStringForAbsoluteGraph );
+				$cumulativeFilesBox.prepend( htmlStringForAbsoluteGraph );
 				//printing in timeline
-				$timelineBarsBox.append( htmlStringForTimelineGraph );
+				$timelineBarsBox.prepend( htmlStringForTimelineGraph );
 			}
 			//once everything is printed, update selection elements
 			updateBarsSelectors();
@@ -666,22 +675,68 @@ function Backups() {
 			var takeNewSnapshotAlert = new Notify({
 				message: CONFIG.messages.newSnapshotAlert,
 				onAccept: function() {
-					CONFIG.api.newSnapshot.setURL( CONFIG.api.newSnapshot.url );
-					CONFIG.api.newSnapshot.setMethod( 'POST' );
-					CONFIG.api.newSnapshot.setCache( false );
-					CONFIG.api.newSnapshot.setCredentials( true );
-					CONFIG.api.newSnapshot.run(function(response) {
+					//disable new snapshot button
+					$newSnapshotButton.attr('disabled', 'disabled');
+
+					//start loading
+					loadingManager.add('Take snapshot');
+
+					CONFIG.api.newSnapshot.requester.setURL( CONFIG.api.newSnapshot.url );
+					CONFIG.api.newSnapshot.requester.setMethod( 'POST' );
+					CONFIG.api.newSnapshot.requester.setCache( false );
+					CONFIG.api.newSnapshot.requester.setCredentials( true );
+					CONFIG.api.newSnapshot.requester.run(function(response) {
 						//success
+						console.log(response);
+
+						CONFIG.api.loadLatestSnapshot.requester.setURL( CONFIG.api.loadLatestSnapshot.url );
+						CONFIG.api.loadLatestSnapshot.requester.setMethod( 'GET' );
+						CONFIG.api.loadLatestSnapshot.requester.setCache( false );
+						CONFIG.api.loadLatestSnapshot.requester.setCredentials( true );
+						CONFIG.api.loadLatestSnapshot.requester.run(function(response) {
+
+							//enabling back new snapshot button
+							$newSnapshotButton.removeAttr('disabled');
+
+							//stop loading
+							loadingManager.remove('Take snapshot');
+
+							//converting timestamp to milliseconds
+							response.time_snapshot = parseInt(response.time_snapshot) * 1000;
+
+							//print and build latest snapshot
+							printBars([response]); //sending it as an array
+							build();
+
+						}, function(error) {
+
+							//enabling back new snapshot button
+							$newSnapshotButton.removeAttr('disabled');
+
+							//stop loading
+							loadingManager.remove('Take snapshot');
+
+							//print error
+							var loadNewestSnapshotError = new Notify({message: CONFIG.messages.loadNewestSnapshot.fail});
+							loadNewestSnapshotError.print();
+
+						});
 					}, function(error) {
-						//fail
+
+						//enabling back new snapshot button
+						$newSnapshotButton.removeAttr('disabled');
+
+						//stop loading
+						loadingManager.remove('Take snapshot');
+
+						//print error
+						var takeNewSnapshotError = new Notify({message: CONFIG.messages.takeSnapshot.fail});
+						takeNewSnapshotError.print();
 					});
 				}
 			});
 			takeNewSnapshotAlert.print();
 
-			function accept() {
-				alert('new snapshot');
-			}
 			//ask to the server
 			//on return..
 			/*var d = new Date();
