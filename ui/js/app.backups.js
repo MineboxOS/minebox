@@ -1,21 +1,29 @@
 viewLoader.add('backups', Backups);
 
+//requires requester.js
 //requires display();
+//requires formatDate();
 function Backups() {
 
 	var CONFIG = {
-		mug: {
-			url: config.mug.url,
-			requester: new Requester()
+		api: {
+			loadSnapshots: {
+				url: config.mug.url + 'backup/all/status',
+				requester: new Requester()
+			},
+			newSnapshot: {
+				url: config.mug.url + 'backup/start',
+				requester: new Requester()
+			}
 		},
 		templates: {
-			bars: '<div id="snapshot-{{snapshot_name}}-{{place}}" class="bar-box snapshot-status-{{snapshot_status}} snapshot-metadata-{{snapshot_metadata}} {{snapshot_name}}" data-name="{{snapshot_name}}" data-timestamp="{{snapshot_time}}" data-size="{{snapshot_size}}" data-relative-size="{{snapshot_relative_size}}" data-progress="{{snapshot_progress}}" data-relative-progress="{{snapshot_relative_progress}}"><div class="bar"></div><div class="info"><p class="date"></p><p class="size"></p><p class="relative-size"></p></div></div>'
+			bars: '<div id="snapshot-{{snapshot_name}}-{{place}}" class="bar-box snapshot-status-{{snapshot_status}} snapshot-metadata-{{snapshot_metadata}} snapshot-{{snapshot_name}}" data-name="{{snapshot_name}}" data-timestamp="{{snapshot_time}}" data-size="{{snapshot_size}}" data-relative-size="{{snapshot_relative_size}}" data-progress="{{snapshot_progress}}" data-relative-progress="{{snapshot_relative_progress}}" data-files="{{snapshot_files_number}}" data-status="{{snapshot_status}}" data-metadata="{{snapshot_metadata}}"><div class="bar"></div><div class="info"><p class="date"></p><p class="size"></p></div></div>'
 		},
 		bars: {
 			desktop: 16,
-			laptop: 12,
-			tablet: 8,
-			phone: 4
+			laptop: 10,
+			tablet: 6,
+			phone: 3
 		},
 		snapshots: [],
 		messages: {
@@ -24,7 +32,8 @@ function Backups() {
 			},
 			loadSpecificSnapshots: {
 				fail: 'We couldn\'t retrieve data from current backups. Try again later.'
-			}
+			},
+			newSnapshotAlert: 'Your Minebox takes automatically a new snapshot everyday.<br />Hosting snapshots on Sia network consume funds.<br />Are you sure you want to take a new snapshot?'
 		}
 	};
 
@@ -72,11 +81,11 @@ function Backups() {
 		loadingManager.add('Snapshots');
 
 		//loading all backup names
-		CONFIG.mug.requester.setURL( CONFIG.mug.url + 'backup/all/status');
-		CONFIG.mug.requester.setMethod('GET');
-		CONFIG.mug.requester.setCache(false);
-		CONFIG.mug.requester.setCredentials(true);
-		CONFIG.mug.requester.run(function(snapshots) {
+		CONFIG.api.loadSnapshots.requester.setURL( CONFIG.api.loadSnapshots.url );
+		CONFIG.api.loadSnapshots.requester.setMethod('GET');
+		CONFIG.api.loadSnapshots.requester.setCache(false);
+		CONFIG.api.loadSnapshots.requester.setCredentials(true);
+		CONFIG.api.loadSnapshots.requester.run(function(snapshots) {
 
 			//saving snapshots arrays
 			CONFIG.snapshots = snapshots;
@@ -156,6 +165,7 @@ function Backups() {
 				htmlStringForAbsoluteGraph = replaceAll( htmlStringForAbsoluteGraph, '{{snapshot_progress}}', array[n].progress );
 				htmlStringForAbsoluteGraph = replaceAll( htmlStringForAbsoluteGraph, '{{snapshot_relative_progress}}', array[n].relative_progress );
 				htmlStringForAbsoluteGraph = replaceAll( htmlStringForAbsoluteGraph, '{{snapshot_time}}', array[n].time_snapshot );
+				htmlStringForAbsoluteGraph = replaceAll( htmlStringForAbsoluteGraph, '{{snapshot_files_number}}', array[n].numFiles );
 				//preparing HTML string
 				htmlStringForRelativeGraph = cfg.templates.bars;
 				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{place}}', 'relative' );
@@ -167,6 +177,7 @@ function Backups() {
 				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{snapshot_progress}}', array[n].progress );
 				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{snapshot_relative_progress}}', array[n].relative_progress );
 				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{snapshot_time}}', array[n].time_snapshot );
+				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{snapshot_files_number}}', array[n].numFiles );
 				//preparing HTML string
 				htmlStringForTimelineGraph = cfg.templates.bars;
 				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{place}}', 'timeline' );
@@ -178,6 +189,7 @@ function Backups() {
 				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{snapshot_progress}}', array[n].progress );
 				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{snapshot_relative_progress}}', array[n].relative_progress );
 				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{snapshot_time}}', array[n].time_snapshot );
+				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{snapshot_files_number}}', array[n].numFiles );
 				//printing in relative graph
 				$newFilesBox.append( htmlStringForRelativeGraph );
 				//printing in absolute graph
@@ -651,9 +663,28 @@ function Backups() {
 
 
 		function takeNewSnapshot() {
+			var takeNewSnapshotAlert = new Notify({
+				message: CONFIG.messages.newSnapshotAlert,
+				onAccept: function() {
+					CONFIG.api.newSnapshot.setURL( CONFIG.api.newSnapshot.url );
+					CONFIG.api.newSnapshot.setMethod( 'POST' );
+					CONFIG.api.newSnapshot.setCache( false );
+					CONFIG.api.newSnapshot.setCredentials( true );
+					CONFIG.api.newSnapshot.run(function(response) {
+						//success
+					}, function(error) {
+						//fail
+					});
+				}
+			});
+			takeNewSnapshotAlert.print();
+
+			function accept() {
+				alert('new snapshot');
+			}
 			//ask to the server
 			//on return..
-			var d = new Date();
+			/*var d = new Date();
 			var array = [{
 				name: getRandomString(10),
 				status: 'uploading',
@@ -666,7 +697,7 @@ function Backups() {
 			}];
 
 			printBars(array);
-			build();
+			build();*/
 		}
 
 
@@ -922,9 +953,24 @@ function Backups() {
 			if ( !$(this).hasClass('active') ) {
 				//removing class on all bars
 				$('#graph .bar-box').removeClass('active');
+				//getting current element
+				var current = $(this).attr('data-name');
 				//add class to clicked
-				$(this).addClass('active');
+				$('#graph .bar-box.snapshot-' + current).addClass('active');
 			}
+			//loading contents
+			snapshotDataViewer.show();
+			var data = {
+				name: $(this).attr('data-name'),
+				relative_progress: $(this).attr('data-relative-progress'),
+				total_progress: $(this).attr('data-progress'),
+				date: $(this).attr('data-timestamp'),
+				status: $(this).attr('data-status'),
+				metadata: $(this).attr('data-metadata'),
+				files_number: $(this).attr('data-files'),
+				size: $(this).find('.info .size').html()
+			};
+			snapshotDataViewer.fill(data);
 		});
 
 
@@ -955,7 +1001,7 @@ function Backups() {
 
 
 		function mouseOverBox( snapshotName ) {
-			$('#graph .' + snapshotName).addClass('hover');
+			$('#graph .snapshot-' + snapshotName).addClass('hover');
 		}
 
 
@@ -983,6 +1029,75 @@ function Backups() {
 		}
 
 	}
+
+
+
+
+
+
+	function SnapshotDataViewer() {
+
+		var $snapshotDataViewer = $('#snapshot-data-viewer'),
+			$obfuscationLayer = $snapshotDataViewer.find('.obfuscation-layer');
+
+
+		function show() {
+			$snapshotDataViewer.fadeIn(300);
+		}
+		function hide() {
+			$snapshotDataViewer.fadeOut(300, empty);
+		}
+
+
+		function empty() {
+			var data = {
+				name: '',
+				relative_progress: 0,
+				total_progress: 0,
+				date: '',
+				status: '',
+				metadata: '',
+				files_number: '',
+				size: ''
+			};
+			fill(data);
+		}
+		function fill(data) {
+			//formatting date
+			var d = new Date( parseInt(data.date) );
+			d = formatDate( d, 'HH:mm dd/MM/yyyy' );
+			data.date = d;
+			$snapshotDataViewer.find('.snapshot-name .value').html( data.name );
+			$snapshotDataViewer.find('.relative-progress-value').html( formatNumber(data.relative_progress) );
+			$snapshotDataViewer.find('.relative-progress .bar').width( data.relative_progress + '%' );
+			$snapshotDataViewer.find('.total-progress-value').html( formatNumber(data.total_progress) );
+			$snapshotDataViewer.find('.total-progress .bar').width( data.total_progress + '%' );
+			$snapshotDataViewer.find('.date .value').html( data.date );
+			$snapshotDataViewer.find('.status .value').html( data.status );
+			$snapshotDataViewer.find('.metadata .value').html( data.metadata );
+			$snapshotDataViewer.find('.files .value').html( data.files_number );
+			$snapshotDataViewer.find('.size .value').html( data.size );
+			$snapshotDataViewer.find('.progress .value').html( formatNumber(data.total_progress) + '%' );
+		}
+
+
+		$obfuscationLayer.on('click', hide);
+
+
+		return {
+			show: show,
+			hide: hide,
+			fill: fill
+		}
+
+
+	}
+	var snapshotDataViewer = SnapshotDataViewer();
+
+
+
+
+
 
 	$(document).ready(function() {
 		init();

@@ -2,9 +2,9 @@
   <div id="snapshots-app">
 
     <div id="panel">
-      <button id="new-snapshot-button" class="panel-button">&nbsp;</button>
       <button id="display-size-scale-button" class="panel-button active">&nbsp;</button>
       <button id="navigator-button" class="panel-button active">&nbsp;</button>
+      <button id="new-snapshot-button" class="button"><i class="ic ic-camera"></i>&nbsp;Take new snapshot</button>
     </div>
 
 
@@ -58,11 +58,11 @@
         <div class="contents">
           <h3 class="snapshot-name">#<span class="value"></span></h3>
           <div class="progress-bars">
-            <p>Relative progress <span class="relative-progress-value"></span>:</p>
+            <p>Relative progress <span class="relative-progress-value"></span>%</p>
             <div class="progress-bar relative-progress">
               <div class="bar"></div>
             </div>
-            <p>Total progress <span class="total-progress-value"></span>:</p>
+            <p>Total progress <span class="total-progress-value"></span>%</p>
             <div class="progress-bar total-progress">
               <div class="bar"></div>
             </div>
@@ -70,21 +70,22 @@
           <div class="row">
             <div class="col-xs-12 col-sm-6">
               <ul class="elements-list">
-                <li class="date">Date: <span class="value"></span></li>
-                <li class="status">Status: <span class="value"></span></li>
-                <li class="metadata">Metadata: <span class="value"></span></li>
+                <li class="date"><span>Date </span><span class="value"></span></li>
+                <li class="status"><span>Status </span><span class="value"></span></li>
+                <li class="metadata"><span>Metadata </span><span class="value"></span></li>
               </ul>
             </div>
             <div class="col-xs-12 col-sm-6">
               <ul class="elements-list">
-                <li class="files">Files number: <span class="value"></span></li>
-                <li class="size">Size: <span class="value"></span>Bytes</li>
-                <li class="progress">Progress: <span class="value"></span>%</li>
+                <li class="files"><span>Files number </span><span class="value"></span></li>
+                <li class="size"><span>Size </span><span class="value"></span></li>
+                <li class="progress"><span>Progress </span><span class="value"></span></li>
               </ul>
             </div>
           </div>
         </div>
       </div>
+      <div class="generic-close-button"></div>
       
     </div>
 
