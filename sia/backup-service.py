@@ -45,7 +45,8 @@ def api_trigger():
     if not success:
         return jsonify(message=errmsg), 503
     bthread = start_backup_thread()
-    return jsonify(message="Backup started: %s." % bthread.name), 200
+    return jsonify(message="Backup started: %s." % bthread.name,
+                   name=threadstatus[bthread.name]["snapname"]), 200
 
 
 @app.route("/status")
