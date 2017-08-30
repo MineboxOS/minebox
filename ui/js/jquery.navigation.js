@@ -42,7 +42,11 @@ function Nav() {
 
   function go( target ) {
     var obj = urlInfo.get();
+    //rising closing event for #obj.h
+    $('body').trigger(obj.h + '-close');
     obj.h = target;
+    //rising opening event for #obj.h
+    $('body').trigger(obj.h + '-open');
     urlInfo.update( obj );
   }
 

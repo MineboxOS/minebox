@@ -188,7 +188,7 @@ input[type="checkbox"]:before {
   background-color: #24acce;
 }
 .notify-window button.cancel {
-  background-color: #101010;
+  background-color: rgba(36, 172, 206, 0.45);
 }
 @media ( max-width: 500px ) {
   .notify-window .close-btn:after,
@@ -209,3 +209,250 @@ input[type="checkbox"]:before {
 
 
 
+
+
+/* BACKUPS VIEW */
+#panel .panel-button {
+    background-color: #1c7f97;
+    border-color: #051a1f;
+}
+#panel .panel-button.active {
+  background-color: #21839b;
+  border-color: #24acce;
+}
+#panel .panel-button:hover {
+  background-color: #24acce;
+  border-color: #00ccff;
+}
+#panel .panel-button:focus {
+  background-color: #00ccff;
+  border-color: #00ccff;
+}
+#display-size-scale-button:before {
+  border-left-color: rgba(0,0,0,.5) !important;
+}
+#display-size-scale-button:after {
+  border-top-color: rgba(0,0,0,.5) !important;
+}
+#navigator-button:before {
+  border-color: rgba(0,0,0,.5) !important;
+}
+#navigator-button:after {
+  border-color: rgba(0,0,0,.5) !important;
+}
+#graph {
+  background-color: rgba(0,0,0, 0.15);
+}
+#new-files:before {
+  background-color: #24ACCE;
+}
+#size-scale .size-scale .line {
+  border-top-color: rgba(36,172,206,.6) !important;
+  color: rgba(36,172,206,.5);
+}
+#timeline {
+  background-color: rgba(0,0,0,0.5);
+}
+#timeline .window:before {
+  border-color: rgba(36,172,206,.8);
+  background-color: rgba(36, 172, 206, 0.1);
+}
+#graph .bar-box .bar {
+  border-color: #24ACCE !important;
+}
+#graph .bar-box.hover .bar {
+  border-color: #0cf;
+  background-color: rgba(36,172,206,.2);
+}
+#graph .bar-box.active .bar {
+  border-color: #0cf;
+  background-color: #24acce;
+}
+#timeline .bar {
+  background-color: #24acce;
+}
+#backup-data-viewer .obfuscation-layer {
+  background-color: rgba(0,0,0,.9);
+}
+#backup-data-viewer .obfuscation-layer:hover {
+  background-color: rgba(0,0,0,.6);
+}
+#backup-data-viewer .card {
+  background: #1a7d96;  /* fallback for old browsers */
+  background: -webkit-linear-gradient(to bottom, #1a7d96, #16677c);  /* Chrome 10-25, Safari 5.1-6 */
+  background: linear-gradient(to bottom, #1a7d96, #16677c); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+}
+#backup-data-viewer .progress-bar {
+  background-color: rgba(0,0,0,.1);
+}
+#backup-data-viewer .progress-bar>.bar {
+  background-color: #fff;
+}
+.backup-status-finished .info>p,
+.backup-status-archived .info>p,
+.backup-metadata-finished .info>p,
+.backup-status-pending .info>p,
+.backup-metadata-pending .info>p,
+.backup-status-uploading .info>p,
+.backup-metadata-uploading .info>p {
+  color: #00ff29;
+}
+/* .yellow {
+  color: #cdb100;
+}*/
+.backup-status-damaged .info>p,
+.backup-status-error .info>p,
+.backup-metadata-error .info>p {
+  color: #ff5c84;
+}
+
+
+
+
+
+
+
+
+
+/* CONTRACTS VIEW */
+#contracts .contract {
+  border-color: #fff !important;
+}
+#contracts .contract-inner:hover {
+  background-color: rgba(255,255,255,.1);
+}
+#contract-viewer {
+  background-color: rgba(0,0,0,.9);
+}
+#contract-viewer-contents {
+  background: #1a7d96;  /* fallback for old browsers */
+  background: -webkit-linear-gradient(to bottom, #1a7d96, #16677c);  /* Chrome 10-25, Safari 5.1-6 */
+  background: linear-gradient(to bottom, #1a7d96, #16677c); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+}
+#contract-viewer-contents .header {
+  border-bottom: 1px solid rgba(255,255,255,.2);
+}
+
+
+
+
+
+
+
+
+
+/* DASHBOARD VIEW */
+.widget-inner {
+  background-color: rgba(0,0,0,.2);
+  color: #fff;
+}
+.widget-top-bar {
+  border-bottom-color: rgba(255,255,255,.1) !important;
+}
+.widget-top-bar>.widget-led-status {
+  border-color: rgba(255,255,255,.4);
+  box-shadow: 0 0 10px rgba(0,0,0,.2);
+}
+.widget-led-status[data-led="good"] { background-color: #0eb629; }
+.widget-led-status[data-led="check"] { background-color: #cdb100; }
+.widget-led-status[data-led="bad"] { background-color: #cb002b; }
+@keyframes status-led-loading-animation {
+  0%   { background-color: rgba(255,255,255,.1); }
+  50%  { background-color: rgba(255,255,255,.5); }
+  100% { background-color: rgba(255,255,255,.1); }
+}
+@-webkit-keyframes status-led-loading-animation {
+  0%   { background-color: rgba(255,255,255,.1); }
+  50%  { background-color: rgba(255,255,255,.5); }
+  100% { background-color: rgba(255,255,255,.1); }
+}
+@-moz-keyframes status-led-loading-animation {
+  0%   { background-color: rgba(255,255,255,.1); }
+  50%  { background-color: rgba(255,255,255,.5); }
+  100% { background-color: rgba(255,255,255,.1); }
+}
+@-o-keyframes status-led-loading-animation {
+  0%   { background-color: rgba(255,255,255,.1); }
+  50%  { background-color: rgba(255,255,255,.5); }
+  100% { background-color: rgba(255,255,255,.1); }
+}
+.widget-list-element {
+  color: rgba(255,255,255,0.8);
+}
+.widget-list-value {
+  color: #24acce;
+}
+.widget-progress-bar {
+  border-color: rgba(255,255,255,.1) !important;
+}
+.widget-progress-bar>.fill>.real-fill {
+  background-color: #24acce;
+}
+.widget-progress-bar .percent-witness {
+  color: rgba(255,255,255,.5);
+}
+.widget-system-status>.icon {
+  border-color: #fff !important;
+}
+#dashboard-notification-box {
+  background: -moz-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.1) 100%);
+  background: -webkit-linear-gradient(top, rgba(0,0,0,0) 0%,rgba(0,0,0,0.1) 100%);
+  background: linear-gradient(to bottom, rgba(0,0,0,0) 0%,rgba(0,0,0,0.1) 100%);
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00000000', endColorstr='#1a000000',GradientType=0 );
+}
+#close-all-notifications-button:hover {
+  background-color: rgba(255,255,255,.2);
+}
+#close-all-notifications-button .bar {
+  background-color: #fff;
+}
+#dashboard-notification-box .dashboard-notification.error { background-color: #cb002b; }
+#dashboard-notification-box .dashboard-notification.warning { background-color: #cdb100; }
+#dashboard-notification-box .dashboard-notification.notification { background-color: #0eb629; }
+#dashboard-notification-box .icon-box {
+  border-color: #fff !important;
+}
+
+
+
+
+
+
+
+
+
+/* WALLET VIEW */
+#wallet-balance-box {
+  background-color: rgba(36,172,206,0.2);
+}
+#wallet-sia {
+  color: #fff;
+}
+#wallet-tabs {
+  background-color: rgba(0,0,0,0.6);
+}
+.wallet-tab {
+  background: #1a7d96;  /* fallback for old browsers */
+  background: -webkit-linear-gradient(to bottom, #1a7d96, #16677c);  /* Chrome 10-25, Safari 5.1-6 */
+  background: linear-gradient(to bottom, #1a7d96, #16677c); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+}
+#amount-feedback {
+  color: #ff4a86;
+}
+#send-tab .available-amount-line>span {
+  border-bottom-color: rgba(255,255,255,.5) !important;
+}
+#amount-to-send,
+#amount-to-receive {
+  color: #fff;
+}
+#receive-funds-qr-code {
+  background-color: rgba(0,0,0,0.9);
+}
+#qr-code {
+  background-color: #fff;
+}
+#hide-qr-code-button:before,
+#hide-qr-code-button:after {
+  background-color: #fff;
+}

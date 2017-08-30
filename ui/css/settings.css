@@ -42,6 +42,9 @@
 	#settings .settings-box .disable-this {
 		opacity: 1;
 		transition: all ease .3s;
+		-webkit-transition: all ease .3s;
+		-moz-transition: all ease .3s;
+		-o-transition: all ease .3s;
 	}
 	#settings .settings-box.disabled .disable-this {
 		opacity: .4;

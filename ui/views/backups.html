@@ -1,10 +1,10 @@
-<div id="snapshots">
-  <div id="snapshots-app">
+<div id="backup">
+  <div id="backup-app">
 
     <div id="panel">
-      <button id="new-snapshot-button" class="panel-button">&nbsp;</button>
       <button id="display-size-scale-button" class="panel-button active">&nbsp;</button>
       <button id="navigator-button" class="panel-button active">&nbsp;</button>
+      <button id="new-backup-button" class="button"><i class="ic ic-camera"></i>&nbsp;Take new backup</button>
     </div>
 
 
@@ -14,16 +14,16 @@
 
       <div id="size-scale" class="active">
         <div class="positive size-scale">
-          <div class="fourty"></div>
-          <div class="sixty"></div>
-          <div class="seventy"></div>
-          <div class="seventyfive"></div>
+          <div class="first-line line"></div>
+          <div class="second-line line"></div>
+          <div class="third-line line"></div>
+          <div class="fourth-line line"></div>
         </div>
         <div class="negative size-scale">
-          <div class="fourty"></div>
-          <div class="sixty"></div>
-          <div class="seventy"></div>
-          <div class="seventyfive"></div>
+          <div class="first-line line"></div>
+          <div class="second-line line"></div>
+          <div class="third-line line"></div>
+          <div class="fourth-line line"></div>
         </div>
       </div>
 
@@ -49,5 +49,45 @@
       </div>
 
     </div>
+
+
+    <div id="backup-data-viewer">
+      <div class="obfuscation-layer"></div>
+      <div class="card">
+        <img src="assets/images/logo/minebox-logo-white.png" class="logo" />
+        <div class="contents">
+          <h3 class="backup-name">#<span class="value"></span></h3>
+          <div class="progress-bars">
+            <p>Relative progress <span class="relative-progress-value"></span>%</p>
+            <div class="progress-bar relative-progress">
+              <div class="bar"></div>
+            </div>
+            <p>Total progress <span class="total-progress-value"></span>%</p>
+            <div class="progress-bar total-progress">
+              <div class="bar"></div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-xs-12 col-sm-6">
+              <ul class="elements-list">
+                <li class="date"><span>Date </span><span class="value"></span></li>
+                <li class="status"><span>Status </span><span class="value"></span></li>
+                <li class="metadata"><span>Metadata </span><span class="value"></span></li>
+              </ul>
+            </div>
+            <div class="col-xs-12 col-sm-6">
+              <ul class="elements-list">
+                <li class="files"><span>Files number </span><span class="value"></span></li>
+                <li class="size"><span>Size </span><span class="value"></span></li>
+                <li class="progress"><span>Progress </span><span class="value"></span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="generic-close-button"></div>
+      
+    </div>
+
   </div>
 </div>

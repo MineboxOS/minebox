@@ -12,7 +12,7 @@ import javax.ws.rs.core.MediaType;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import io.minebox.nbd.DownloadService;
+import io.minebox.nbd.download.DownloadService;
 import io.minebox.nbd.encryption.EncyptionKeyProvider;
 import io.swagger.annotations.Api;
 import org.slf4j.Logger;

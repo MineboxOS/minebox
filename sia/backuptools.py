@@ -19,6 +19,8 @@ from connecttools import (get_demo_url, get_from_sia, post_to_sia,
 from backupinfo import *
 from siatools import check_sia_sync, SIA_DIR
 
+REDUNDANCY_LIMIT = 2.0
+
 def check_backup_prerequisites():
     # Check if prerequisites are met to make backups.
     success, errmsg = check_sia_sync()
@@ -121,21 +123,32 @@ def initiate_uploads(status):
             (froot, fext) = path.splitext(filename)
             sia_fname = '%s.%s%s' % (froot, int(fileinfo.st_mtime), fext)
             status["backupfiles"].append(sia_fname)
-            if siafiles and any(sf['siapath'] == sia_fname and sf['available'] for sf in siafiles):
-                current_app.logger.info("%s is part of the set and already uploaded." % sia_fname)
-            elif siafiles and any(sf['siapath'] == sia_fname for sf in siafiles):
+            if (siafiles
+                and any(sf["siapath"] == sia_fname
+                        and sf["available"]
+                        and sf["redundancy"] > REDUNDANCY_LIMIT
+                        for sf in siafiles)):
+                current_app.logger.info("%s is part of the set and already uploaded."
+                                        % sia_fname)
+            elif (siafiles
+                  and any(sf["siapath"] == sia_fname
+                          for sf in siafiles)):
                 status["uploadsize"] += fileinfo.st_size
                 status["uploadfiles"].append(sia_fname)
-                current_app.logger.info("%s is part of the set and the upload is already in progress." % sia_fname)
+                current_app.logger.info("%s is part of the set and the upload is already in progress."
+                                        % sia_fname)
             else:
                 status["uploadsize"] += fileinfo.st_size
                 status["uploadfiles"].append(sia_fname)
-                current_app.logger.info('%s has to be uploaded, starting that.' % sia_fname)
+                current_app.logger.info("%s has to be uploaded, starting that."
+                                        % sia_fname)
                 siadata, sia_status_code = post_to_sia('renter/upload/%s' % sia_fname,
                                                        {'source': filepath})
                 if sia_status_code != 204:
-                    return False, "ERROR: sia upload error %s: %s" % (sia_status_code, siadata['message'])
-            status["backupfileinfo"].append({"siapath": sia_fname, "size": fileinfo.st_size})
+                    return False, ("ERROR: sia upload error %s: %s"
+                                   % (sia_status_code, siadata["message"]))
+            status["backupfileinfo"].append({"siapath": sia_fname,
+                                             "size": fileinfo.st_size})
 
     with open(bfinfo_path, 'w') as outfile:
         json.dump(status["backupfileinfo"], outfile)
@@ -177,7 +190,7 @@ def wait_for_uploads(status):
             min_redundancy = min(redundancy) if redundancy else 0
             # Break if the backup is fully available on sia and has enough
             # minimum redundancy.
-            if fully_available and min_redundancy >= 2.0:
+            if fully_available and min_redundancy >= REDUNDANCY_LIMIT:
                 status["available"] = True
                 current_app.logger.info("Backup is fully available and minimum file redundancy is %.1f, we can finish things up."
                                         % min_redundancy)
@@ -198,21 +211,24 @@ def save_metadata(status):
     snapname = status["snapname"]
     backupname = status["backupname"]
     metadir = path.join(METADATA_BASE, backupname)
-    # Copy renter/ folder to metadata directory.
-    # The copytree target needs to be the not-yet-existing target directory.
-    shutil.copytree(path.join(SIA_DIR, "renter"), path.join(metadir, "renter"))
+    # Copy renter, gateway and wallet folders to metadata directory.
+    for siafolder in ["renter", "gateway", "wallet"]:
+        # The copytree target needs to be the not-yet-existing target directory.
+        shutil.copytree(path.join(SIA_DIR, siafolder),
+                        path.join(metadir, siafolder))
     # Create a bundle of all metadata for this backup.
     zipname = join(METADATA_BASE, "%s.zip" % backupname)
     if path.isfile(zipname):
         remove(zipname)
     with ZipFile(zipname, 'w') as backupzip:
-        for rfile in glob(path.join(metadir, "renter", "*")):
+        for sfile in glob(path.join(metadir, "*", "*")):
             # Exclude files we do not require in the zip.
-            if re.match(r'.*\.(json_temp|log)$', rfile):
+            if re.match(r'.*\.(json_temp|log)$', sfile):
                 continue
-            basefilename = path.basename(rfile)
-            inzipfilename = path.join("renter", basefilename)
-            backupzip.write(rfile, inzipfilename)
+            basefilename = path.basename(sfile)
+            basedirname = path.basename(path.dirname(sfile))
+            inzipfilename = path.join(basedirname, basefilename)
+            backupzip.write(sfile, inzipfilename)
         backupzip.write(path.join(metadir, INFO_FILENAME), INFO_FILENAME)
     # Upload metadata bundle.
     current_app.logger.info("Upload metadata.")

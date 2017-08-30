@@ -1,15 +1,10 @@
-package io.minebox.nbd.ep;
+package io.minebox.nbd.download;
 
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 
-import io.minebox.nbd.download.DownloadService;
-
-/**
- * Created by andreas on 27.04.17.
- */
-public class NullDownloadService implements DownloadService {
+public class NothingTodoDownloadService implements DownloadService {
     @Override
     public RecoveryStatus downloadIfPossible(File file) {
         return RecoveryStatus.NO_FILE;
@@ -22,7 +17,7 @@ public class NullDownloadService implements DownloadService {
 
     @Override
     public boolean connectedMetadata() {
-        return false;
+        return true;
     }
 
     @Override
