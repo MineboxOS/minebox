@@ -688,11 +688,11 @@ function Backups() {
 					CONFIG.api.newSnapshot.requester.run(function(response) {
 						//success
 
-						CONFIG.api.loadLatestSnapshot.requester.setURL( CONFIG.api.loadLatestSnapshot.url );
+						CONFIG.api.loadLatestSnapshot.requester.setURL( config.mug.url + 'backup/' + response.name + '/status' );
 						CONFIG.api.loadLatestSnapshot.requester.setMethod( 'GET' );
 						CONFIG.api.loadLatestSnapshot.requester.setCache( false );
 						CONFIG.api.loadLatestSnapshot.requester.setCredentials( true );
-						CONFIG.api.loadLatestSnapshot.requester.run(function(response) {
+						CONFIG.api.loadLatestSnapshot.requester.run(function(latestBackup) {
 
 							//enabling back new snapshot button
 							$newSnapshotButton.removeAttr('disabled');
@@ -701,10 +701,10 @@ function Backups() {
 							loadingManager.remove('Take snapshot');
 
 							//converting timestamp to milliseconds
-							response.time_snapshot = parseInt(response.time_snapshot) * 1000;
+							latestBackup.time_snapshot = parseInt(latestBackup.time_snapshot) * 1000;
 
 							//print and build latest snapshot
-							printBars([response]); //sending it as an array
+							printBars([latestBackup]); //sending it as an array
 							build();
 
 						}, function(error) {
@@ -735,23 +735,6 @@ function Backups() {
 				}
 			});
 			takeNewSnapshotAlert.print();
-
-			//ask to the server
-			//on return..
-			/*var d = new Date();
-			var array = [{
-				name: getRandomString(10),
-				status: 'uploading',
-				metadata: 'uploading',
-				size: 4000000000,
-				relative_size: 40000000,
-				progress: 95,
-				relative_progress: 0,
-				time_snapshot: d.getTime()
-			}];
-
-			printBars(array);
-			build();*/
 		}
 
 
@@ -1092,7 +1075,8 @@ function Backups() {
 	function SnapshotDataViewer() {
 
 		var $snapshotDataViewer = $('#snapshot-data-viewer'),
-			$obfuscationLayer = $snapshotDataViewer.find('.obfuscation-layer');
+			$obfuscationLayer = $snapshotDataViewer.find('.obfuscation-layer'),
+			$closeButton = $snapshotDataViewer.find('.generic-close-button');
 
 
 		function show() {
@@ -1136,6 +1120,7 @@ function Backups() {
 
 
 		$obfuscationLayer.on('click', hide);
+		$closeButton.on('click', hide);
 
 
 		return {
