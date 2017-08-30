@@ -527,9 +527,14 @@ function Dashboard() {
 				$backupStatusLED.attr('data-led', CONFIG.LEDColors.good);
 
 
+			}  else if ( STATUS.backupStatus.status == 'ARCHIVED' ) {
+				//change to good
+				$backupStatusLED.attr('data-led', CONFIG.LEDColors.good);
+
+
 			} else if ( STATUS.backupStatus.status == 'PENDING' ) {
 				//change to yellow
-				$backupStatusLED.attr('data-led', CONFIG.LEDColors.check);
+				$backupStatusLED.attr('data-led', CONFIG.LEDColors.good);
 				//print error
 				var data = {
 					id: 'backupPending',
@@ -541,11 +546,11 @@ function Dashboard() {
 
 			} else if ( STATUS.backupStatus.status == 'DAMAGED' ) {
 				//change to yellow
-				$backupStatusLED.attr('data-led', CONFIG.LEDColors.check);
+				$backupStatusLED.attr('data-led', CONFIG.LEDColors.bad);
 				//print error
 				var data = {
 					id: 'backupDamaged',
-					type: 'warning',
+					type: 'error',
 					message: CONFIG.messages.backupDamaged,
 					autoExpire: false
 				};
