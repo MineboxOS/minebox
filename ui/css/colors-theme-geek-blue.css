@@ -295,7 +295,7 @@ input[type="checkbox"]:before {
 .snapshot-metadata-pending .info>p,
 .snapshot-status-uploading .info>p,
 .snapshot-metadata-uploading .info>p {
-  color: #0eb629;
+  color: #00ff29;
 }
 /* .yellow {
   color: #cdb100;
@@ -303,7 +303,7 @@ input[type="checkbox"]:before {
 .snapshot-status-damaged .info>p,
 .snapshot-status-error .info>p,
 .snapshot-metadata-error .info>p {
-  color: #ff446b;
+  color: #ff5c84;
 }
 
 
