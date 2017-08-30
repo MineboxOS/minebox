@@ -68,13 +68,13 @@ function Dashboard() {
 			autoExpireTimeout: 5000
 		},
 		messages: {
-			mineboxStatusFailed: 'Minebox Status not updated or request timedout. Retrying in several seconds.',
-			consensusStatusFailed: 'Consensus Status not updated or request timedout. Retrying in several seconds.',
-			siaStatusFailed: 'Sia Status not updated or request timedout. Retrying in several seconds.',
+			mineboxStatusFailed: 'Minebox Status not updated or request timed out. Retrying in several seconds.',
+			consensusStatusFailed: 'Consensus Status not updated or request timed out. Retrying in several seconds.',
+			siaStatusFailed: 'Sia Status not updated or request timed out. Retrying in several seconds.',
 			mineBDFailed: 'Looks like Minebox is not running well. Try rebooting your system. If the problem persist, please reach us at minebox.io/support.',
 			consensusNotSynced: 'Minebox is currently syncing with consensus. This operation may take up to several hours depending on your Internet connection.',
 			walletLockedOrNotEncrypted: 'Minebox wallet is not ready now. If this state remains for more than a few hours, please reach us for support at minebox.io/support',
-			backupStatusFailed: 'Latest backup not updated or request timedout. Retrying in several seconds.',
+			backupStatusFailed: 'Latest backup not updated or request timed out. Retrying in several seconds.',
 			backupPending: 'You backup will start uploading soon. Please be patient.',
 			backupDamaged: 'Last backup seems to be damaged. This can be a temporal error.',
 			backupError: 'There\'s an error with your latest backup. Please reach us at minebox.io/support',
