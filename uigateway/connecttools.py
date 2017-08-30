@@ -359,16 +359,19 @@ def post_to_faucetservice(api, formData):
         return {"message": str(e)}, 500
 
 
-def post_to_adminservice(api, formData):
+def post_to_adminservice(api, usetoken, jsonData):
     url = ADMIN_URL + api
-    token = _get_metadata_token()
-    if token is None:
-        return {"message": "Error requesting metadata token."}, 500
+    if usetoken:
+        token = _get_metadata_token()
+        if token is None:
+            return {"message": "Error requesting metadata token."}, 500
 
     try:
         headers = requests.utils.default_headers()
-        headers.update({'X-Auth-Token': token})
-        response = requests.post(url, data=formData, headers=headers)
+        if usetoken:
+            headers.update({'X-Auth-Token': token})
+        headers.update({'Accept': 'application/json'})
+        response = requests.post(url, json=jsonData, headers=headers)
         if ('Content-Type' in response.headers
             and re.match(r'^application/json',
                          response.headers['Content-Type'])):

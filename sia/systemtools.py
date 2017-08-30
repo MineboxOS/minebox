@@ -12,10 +12,23 @@ from connecttools import (post_to_adminservice)
 MACHINE_AUTH_FILE = "/etc/minebox/machine_auth.json"
 DMIDECODE = "/usr/sbin/dmidecode"
 
+def register_machine():
+    machine_info = get_machine_info()
+
+    # Second parameter is False because we do not want/need to use a token here.
+    admindata, admin_status_code = post_to_adminservice("registerMachine", False,
+        {"uuid": machine_info["system_uuid"],
+         "serialNumber": machine_info["chassis_serial"],
+         "model": machine_info["system_sku"]})
+    if admin_status_code >= 400:
+        return False, "ERROR: admin error %s: %s" % (admin_status_code, admindata["message"])
+    return True, ""
+
 def submit_machine_auth():
     machine_info = get_machine_info()
 
-    admindata, admin_status_code = post_to_adminservice("authMachine",
+    # Second parameter is True because token is required with this one.
+    admindata, admin_status_code = post_to_adminservice("authMachine", True,
         {"uuid": machine_info["system_uuid"],
          "serialNumber": machine_info["chassis_serial"],
          "model": machine_info["system_sku"]})
