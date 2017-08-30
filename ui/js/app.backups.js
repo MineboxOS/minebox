@@ -21,7 +21,7 @@ function Backups() {
 			}
 		},
 		templates: {
-			bars: '<div id="snapshot-{{snapshot_name}}-{{place}}" class="bar-box snapshot-status-{{snapshot_status}} snapshot-metadata-{{snapshot_metadata}} snapshot-{{snapshot_name}}" data-name="{{snapshot_name}}" data-timestamp="{{snapshot_time}}" data-size="{{snapshot_size}}" data-relative-size="{{snapshot_relative_size}}" data-progress="{{snapshot_progress}}" data-relative-progress="{{snapshot_relative_progress}}" data-files="{{snapshot_files_number}}" data-status="{{snapshot_status}}" data-metadata="{{snapshot_metadata}}"><div class="bar"></div><div class="info"><p class="date"></p><p class="size"></p></div></div>'
+			bars: '<div id="snapshot-{{snapshot_name}}-{{place}}" class="bar-box snapshot-status-{{snapshot_status}} snapshot-metadata-{{snapshot_metadata}} snapshot-{{snapshot_name}}" data-name="{{snapshot_name}}" data-timestamp="{{snapshot_time}}" data-size="{{snapshot_size}}" data-relative-size="{{snapshot_relative_size}}" data-progress="{{snapshot_progress}}" data-relative-progress="{{snapshot_relative_progress}}" data-files="{{snapshot_files_number}}" data-status="{{snapshot_status}}" data-metadata="{{snapshot_metadata}}"><div class="bar"></div><div class="info"><p class="date"></p><p class="size"></p><p class="progress"></p></div></div>'
 		},
 		bars: {
 			desktop: 16,
@@ -589,14 +589,16 @@ function Backups() {
 			var d = new Date( parseInt($element.attr('data-timestamp')) );
 			var info = {
 				date: make2Digits( d.getDate() ) + '/' + make2Digits( d.getMonth() + 1 ) + '/' + d.getFullYear(),
-				name: '#' + $element.attr('data-name'),
+				//name: '#' + $element.attr('data-name'),
 				size: formatNumber( parseInt( $element.attr('data-size') ) / 1000000 ) + ' MB',
-				relative_size: formatNumber( parseInt( $element.attr('data-relative-size') ) / 1000000 ) + ' MB'
+				//relative_size: formatNumber( parseInt( $element.attr('data-relative-size') ) / 1000000 ) + ' MB'
+				progress: formatNumber( $element.attr('data-progress') ) + '%'
 			};
 			$element.find('.date').html( info.date );
 			//$element.find('.name').html( info.name );
 			$element.find('.size').html( info.size );
-			$element.find('.relative-size').html( info.relative_size );
+			//$element.find('.relative-size').html( info.relative_size );
+			$element.find('.progress').html( info.progress );
 		}
 
 

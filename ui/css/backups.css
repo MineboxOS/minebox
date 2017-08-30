@@ -32,7 +32,6 @@
     display: block;
     position: absolute;
     cursor: pointer;
-    background-color: #1c7f97;
     width: 30px;
     min-width: 0;
     height: 30px;
@@ -42,23 +41,18 @@
     -webkit-transition: all ease .3s;
     -moz-transition: all ease .3s;
     -o-transition: all ease .3s;
-    border: 1px solid #051a1f;
+    border-width: 1px !important;
+    border-style: solid;
   }
   .panel-button.active {
-    background-color: #21839b;
-    border-color: #24acce;
     border-width: 2px;
     outline: 0;
   }
   .panel-button:hover {
-    background-color: #24acce;
-    border-color: #00ccff;
     border-width: 2px;
     outline: 0;
   }
   .panel-button:focus {
-    background-color: #00ccff;
-    border-color: #00ccff;
     border-width: 2px;
     outline: 0;
   }
@@ -72,28 +66,7 @@
     height: 30px;
     line-height: 30px;
     font-weight: 400;
-  }/*
-    #new-snapshot-button .icon:before {
-      content: '';
-      position: absolute;
-      width: 60%;
-      height: 60%;
-      left: 20%;
-      top: 20%;
-      border: 1px solid rgba(0,0,0,.5);
-      border-radius: 30%;
-    }
-    #new-snapshot-button .icon:after {
-      content: '';
-      position: absolute;
-      width: 20%;
-      height: 20%;
-      top: 40%;
-      left: 40%;
-      border: 1px solid rgba(0,0,0,.5);
-      background-color: rgba(0,0,0,.5);
-      border-radius: 50%;
-    }*/
+  }
   #display-size-scale-button {
     left: 0;
     top: 0;
@@ -106,7 +79,7 @@
       width: 0;
       height: 80%;
       margin-left: -1px;
-      border-left: 2px dotted rgba(0,0,0,.5);
+      border-left: 2px dotted transparent;
     }
     #display-size-scale-button:after {
       content: '';
@@ -116,7 +89,7 @@
       height: 0;
       width: 80%;
       margin-top: -1px;
-      border-top: 2px dotted rgba(0,0,0,.5);
+      border-top: 2px dotted transparent;
     }
   #navigator-button {
     left: 30px;
@@ -127,7 +100,7 @@
       position: absolute;
       width: 20%;
       height: 60%;
-      border: 2px solid rgba(0,0,0,.5);
+      border: 2px solid transparent;
       border-left: 0;
       top: 20%;
       left: 28%;
@@ -137,7 +110,7 @@
       position: absolute;
       width: 20%;
       height: 60%;
-      border: 2px solid rgba(0,0,0,.5);
+      border: 2px solid transparent;
       border-right: 0;
       top: 20%;
       left: 52%;
@@ -156,7 +129,6 @@
   left: 0;
   width: 100%;
   height: calc( 100% - 80px ); /* #timeline's height */
-  background-color: rgba(0,0,0, 0.15);
   overflow: hidden;
   transition: height ease .6s;
   -webkit-transition: height ease .6s;
@@ -189,7 +161,6 @@
       position: absolute;
       top: 100%;
       left: 0;
-      background-color: #24acce;
     }
       #new-files .bar-box {
       }
@@ -237,12 +208,11 @@
           position: absolute;
           width: 100%;
           height: 1px;
-          border-top: 1px dashed rgba(36, 172, 206, .6);
+          border-top: 1px dashed transparent;
           left: 0;
           font-size: 9px;
           line-height: 10px;
           padding: 4px;
-          color: rgba(36,172,206,.5);
         }
 
 
@@ -260,7 +230,6 @@
   width: 100%;
   height: 80px;
   margin-bottom: -80px;
-  background-color: rgba(0,0,0,0.5);
   transition: margin-bottom ease .6s;
   -webkit-transition: margin-bottom ease .6s;
   -moz-transition: margin-bottom ease .6s;
@@ -285,8 +254,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    border: 3px solid rgba(36, 172, 206, 0.8);
-    background-color: rgba(36, 172, 206, 0.1);
+    border: 3px solid transparent;
   }
   #timeline-bars {
     position: absolute;
@@ -322,21 +290,15 @@
     .bar-box .bar {
       position: absolute;
       bottom: 0;
-      border: 1px solid #24acce;
-      background-color: transparent;;
+      border: 1px solid transparent;
+      background-color: transparent;
       transition: all ease .3s;
       -webkit-transition: all ease .3s;
       -moz-transition: all ease .3s;
       -o-transition: all ease .3s;
     }
-    .bar-box.hover .bar {
-      border-color: #0cf;
-      background-color: rgba(36,172,206,.2);
-    }
-    .bar-box.active .bar {
-      border-color: #0cf;
-      background-color: #24acce;
-    }
+    .bar-box.hover .bar {}
+    .bar-box.active .bar {}
   .bar-box .info {
     position: absolute;
     top: 100%;
@@ -349,7 +311,7 @@
       font-size: 9px;
       line-height: 11px;
       margin: 0;
-      color: rgba(36,172,206,.5);
+      opacity: .5;
       transition: all ease .3s;
       -webkit-transition: all ease .3s;
       -moz-transition: all ease .3s;
@@ -357,7 +319,7 @@
       text-align: right;
     }
     .bar-box.hover .info>p {
-      color: #24acce;
+      opacity: 1;
     }
 /* bars exceptions */
 #graph .bar-box {
@@ -379,7 +341,6 @@
     left: 1px;
     width: calc( 100% - 2px );
     border: 0 none transparent;
-    background-color: #24acce;
   }
 
 
@@ -412,15 +373,12 @@
     height: 100%;
     z-index: 1;
     cursor: pointer;
-    background-color: rgba(0,0,0,.9);
     transition: all ease 1s;
     -webkit-transition: all ease 1s;
     -moz-transition: all ease 1s;
     -o-transition: all ease 1s;
   }
-  #snapshot-data-viewer .obfuscation-layer:hover {
-    background-color: rgba(0,0,0,.6);
-  }
+  #snapshot-data-viewer .obfuscation-layer:hover {}
   #snapshot-data-viewer .card {
     position: absolute;
     top: 40%;
@@ -435,9 +393,6 @@
     -moz-transform: translateX(-50%) translateY(-50%);
     -o-transform: translateX(-50%) translateY(-50%);
     z-index: 2;
-    background: #1a7d96;  /* fallback for old browsers */
-    background: -webkit-linear-gradient(to bottom, #1a7d96, #16677c);  /* Chrome 10-25, Safari 5.1-6 */
-    background: linear-gradient(to bottom, #1a7d96, #16677c); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
   }
     #snapshot-data-viewer span {
       font: inherit;
@@ -464,7 +419,6 @@
         #snapshot-data-viewer .progress-bar {
           width: 100%;
           height: 2px;
-          background-color: rgba(0,0,0,.1);
           position: relative;
         }
           #snapshot-data-viewer .progress-bar>.bar {
@@ -473,7 +427,6 @@
             left: 0;
             width: 0;
             height: 100%;
-            background-color: #fff;
             transition: all ease .3s;
             -webkit-transition: all ease .3s;
             -moz-transition: all ease .3s;
