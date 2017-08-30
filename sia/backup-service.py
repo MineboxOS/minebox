@@ -7,12 +7,14 @@ from __future__ import division
 from __future__ import print_function
 from flask import Flask, request, jsonify, json
 from os import environ
+import os
 import time
 import logging
 import threading
 from backuptools import *
 from siatools import *
 from backupinfo import get_backups_to_restart, get_latest, get_list, is_finished
+from systemtools import MACHINE_AUTH_FILE, submit_machine_auth
 from connecttools import get_from_sia
 
 # Define various constants.
@@ -81,7 +83,13 @@ def api_ping():
     # For example, we need to do this early after booting to restart backups
     # if needed (via @app.before_first_request).
 
-    # Check for synced sia consensus as a prerequisite.
+    if not os.path.isfile(MACHINE_AUTH_FILE):
+        app.logger.info("Submit machine authentication to Minebox admin service.")
+        success, errmsg = submit_machine_auth()
+        if not success:
+            app.logger.error(errmsg)
+
+    # Check for synced sia consensus as a prerequisite toe verything else.
     success, errmsg = check_sia_sync()
     if not success:
         # Return early, we need a synced consensus to do anything.

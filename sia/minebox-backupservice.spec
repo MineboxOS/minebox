@@ -23,6 +23,7 @@ install -pD --mode 644 "%{_topdir}sia/cron.d/backup-service" "$RPM_BUILD_ROOT/et
 install -pD --mode 755 "%{_topdir}sia/backup-service.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/backup-service.py"
 install -pD --mode 644 "%{_topdir}sia/backuptools.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/backuptools.py"
 install -pD --mode 644 "%{_topdir}sia/siatools.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/siatools.py"
+install -pD --mode 644 "%{_topdir}sia/systemtools.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/systemtools.py"
 
 # Installation script
 %pre
@@ -61,3 +62,6 @@ systemctl daemon-reload
 /usr/lib/minebox/mbvenv/siatools.py
 /usr/lib/minebox/mbvenv/siatools.pyc
 /usr/lib/minebox/mbvenv/siatools.pyo
+/usr/lib/minebox/mbvenv/systemtools.py
+/usr/lib/minebox/mbvenv/systemtools.pyc
+/usr/lib/minebox/mbvenv/systemtools.pyo
