@@ -7,21 +7,21 @@ function Backups() {
 
 	var CONFIG = {
 		api: {
-			loadSnapshots: {
+			loadBackups: {
 				url: config.mug.url + 'backup/all/status',
 				requester: new Requester()
 			},
-			loadLatestSnapshot: {
+			loadLatestBackup: {
 				url: config.mug.url + 'backup/latest/status',
 				requester: new Requester()
 			},
-			newSnapshot: {
+			newBackup: {
 				url: config.mug.url + 'backup/start',
 				requester: new Requester()
 			}
 		},
 		templates: {
-			bars: '<div id="snapshot-{{snapshot_name}}-{{place}}" class="bar-box snapshot-status-{{snapshot_status}} snapshot-metadata-{{snapshot_metadata}} snapshot-{{snapshot_name}}" data-name="{{snapshot_name}}" data-timestamp="{{snapshot_time}}" data-size="{{snapshot_size}}" data-relative-size="{{snapshot_relative_size}}" data-progress="{{snapshot_progress}}" data-relative-progress="{{snapshot_relative_progress}}" data-files="{{snapshot_files_number}}" data-status="{{snapshot_status}}" data-metadata="{{snapshot_metadata}}"><div class="bar"></div><div class="info"><p class="date"></p><p class="size"></p><p class="progress"></p></div></div>'
+			bars: '<div id="backup-{{backup_name}}-{{place}}" class="bar-box backup-status-{{backup_status}} backup-metadata-{{backup_metadata}} backup-{{backup_name}}" data-name="{{backup_name}}" data-timestamp="{{backup_time}}" data-size="{{backup_size}}" data-relative-size="{{backup_relative_size}}" data-progress="{{backup_progress}}" data-relative-progress="{{backup_relative_progress}}" data-files="{{backup_files_number}}" data-status="{{backup_status}}" data-metadata="{{backup_metadata}}"><div class="bar"></div><div class="info"><p class="date"></p><p class="size"></p><p class="progress"></p></div></div>'
 		},
 		bars: {
 			desktop: 16,
@@ -29,18 +29,18 @@ function Backups() {
 			tablet: 6,
 			phone: 3
 		},
-		snapshots: [],
+		backups: [],
 		messages: {
-			loadSnapshots: {
+			loadBackups: {
 				fail: 'We couldn\'t get your backup list. Try again in a few minutes.'
 			},
-			takeNewSnapshot: {
-				fail: 'Something happened and we couldn\'t take this snapshot. Please try again.'
+			takeNewBackup: {
+				fail: 'Something happened and we couldn\'t take this backup. Please try again.'
 			},
-			loadNewestSnapshot: {
+			loadNewestBackup: {
 				fail: 'We couldn\'t retrieve data from current backups. Try again later.'
 			},
-			newSnapshotAlert: 'Your Minebox takes automatically a new snapshot everyday.<br />Hosting snapshots on Sia network consume funds.<br />Are you sure you want to take a new snapshot?'
+			newBackupAlert: 'Your Minebox takes automatically a new backup everyday.<br />Hosting backups on Sia network consume funds.<br />Are you sure you want to take a new backup?'
 		}
 	};
 
@@ -52,13 +52,13 @@ function Backups() {
 		$graphContainer = $('#graph-inner'),
 		$scrollWindow = $('#timeline .window'),
 		$panelButtons = $('.panel-button'),
-		$newSnapshotButton = $('#new-snapshot-button'),
+		$newBackupButton = $('#new-backup-button'),
 		$sizeScale = $('#size-scale'),
 		$relativeSizeGraphBars,
 		$absoluteSizeGraphBars,
 		$timelineBars,
 		numberOfBars,
-		snapshotInterface = snapshotInterface(CONFIG);
+		backupInterface = backupInterface(CONFIG);
 
 
 
@@ -66,13 +66,13 @@ function Backups() {
 
 
 	function init() {
-		//load snapshots
-		loadsnapshots();
+		//load backups
+		loadBackupsFunc();
 		//making .window draggable
 		$scrollWindow.draggable({
 			axis: 'x',
 			containment: '#timeline'
-		}).bind('drag', snapshotInterface.handleScroll);
+		}).bind('drag', backupInterface.handleScroll);
 	}
 
 
@@ -82,43 +82,44 @@ function Backups() {
 
 
 
-	function loadsnapshots() {
+	function loadBackupsFunc() {
 
 		//start loading
-		loadingManager.add('Snapshots');
+		loadingManager.add('Backups');
 
 		//loading all backup names
-		CONFIG.api.loadSnapshots.requester.setURL( CONFIG.api.loadSnapshots.url );
-		CONFIG.api.loadSnapshots.requester.setMethod('GET');
-		CONFIG.api.loadSnapshots.requester.setCache(false);
-		CONFIG.api.loadSnapshots.requester.setCredentials(true);
-		CONFIG.api.loadSnapshots.requester.run(function(snapshots) {
+		CONFIG.api.loadBackups.requester.setURL( CONFIG.api.loadBackups.url );
+		CONFIG.api.loadBackups.requester.setMethod('GET');
+		CONFIG.api.loadBackups.requester.setCache(false);
+		CONFIG.api.loadBackups.requester.setCredentials(true);
+		CONFIG.api.loadBackups.requester.setTimeoutTime(60000);
+		CONFIG.api.loadBackups.requester.run(function(backups) {
 
-			//saving snapshots arrays
-			CONFIG.snapshots = snapshots.reverse();
+			//saving backups arrays
+			CONFIG.backups = backups.reverse();
 			//reverse to oldest first.
-			//The method used to print is PREPEND, so new created snapshots are prepended at the beggining of the list
+			//The method used to print is PREPEND, so new created backups are prepended at the beggining of the list
 
-			//iterating through snapshots and setting timestamp to milliseconds
-			for ( var n = 0; n < CONFIG.snapshots.length; n++ ) {
+			//iterating through backups and setting timestamp to milliseconds
+			for ( var n = 0; n < CONFIG.backups.length; n++ ) {
 				//converting timestamp into milliseconds
-				CONFIG.snapshots[n].time_snapshot = CONFIG.snapshots[n].time_snapshot * 1000;
+				CONFIG.backups[n].time_snapshot = CONFIG.backups[n].time_snapshot * 1000;
 			}
 
-			//once snapshots array is filled with info, print them and build the interface
-			snapshotInterface.print(CONFIG.snapshots);
-			snapshotInterface.build();
+			//once backups array is filled with info, print them and build the interface
+			backupInterface.print(CONFIG.backups);
+			backupInterface.build();
 
 			//stop loading
-			loadingManager.remove('Snapshots');
+			loadingManager.remove('Backups');
 
 		}, function(error) {
 
 			//stop loading
-			loadingManager.remove('Snapshots');
+			loadingManager.remove('Backups');
 
 			//printing message
-			var notify = new Notify({ message: CONFIG.messages.loadSnapshots.fail });
+			var notify = new Notify({ message: CONFIG.messages.loadBackups.fail });
 			notify.print();
 
 		});
@@ -138,7 +139,7 @@ function Backups() {
 
 
 
-	function snapshotInterface(cfg) {
+	function backupInterface(cfg) {
 
 		//vars
 		var htmlStringForAbsoluteGraph,
@@ -166,39 +167,39 @@ function Backups() {
 				//preparing HTML string
 				htmlStringForAbsoluteGraph = cfg.templates.bars;
 				htmlStringForAbsoluteGraph = replaceAll( htmlStringForAbsoluteGraph, '{{place}}', 'absolute' );
-				htmlStringForAbsoluteGraph = replaceAll( htmlStringForAbsoluteGraph, '{{snapshot_name}}', array[n].name );
-				htmlStringForAbsoluteGraph = replaceAll( htmlStringForAbsoluteGraph, '{{snapshot_status}}', array[n].status.toLowerCase() );
-				htmlStringForAbsoluteGraph = replaceAll( htmlStringForAbsoluteGraph, '{{snapshot_metadata}}', array[n].metadata.toLowerCase() );
-				htmlStringForAbsoluteGraph = replaceAll( htmlStringForAbsoluteGraph, '{{snapshot_size}}', array[n].size );
-				htmlStringForAbsoluteGraph = replaceAll( htmlStringForAbsoluteGraph, '{{snapshot_relative_size}}', array[n].relative_size );
-				htmlStringForAbsoluteGraph = replaceAll( htmlStringForAbsoluteGraph, '{{snapshot_progress}}', array[n].progress );
-				htmlStringForAbsoluteGraph = replaceAll( htmlStringForAbsoluteGraph, '{{snapshot_relative_progress}}', array[n].relative_progress );
-				htmlStringForAbsoluteGraph = replaceAll( htmlStringForAbsoluteGraph, '{{snapshot_time}}', array[n].time_snapshot );
-				htmlStringForAbsoluteGraph = replaceAll( htmlStringForAbsoluteGraph, '{{snapshot_files_number}}', array[n].numFiles );
+				htmlStringForAbsoluteGraph = replaceAll( htmlStringForAbsoluteGraph, '{{backup_name}}', array[n].name );
+				htmlStringForAbsoluteGraph = replaceAll( htmlStringForAbsoluteGraph, '{{backup_status}}', array[n].status.toLowerCase() );
+				htmlStringForAbsoluteGraph = replaceAll( htmlStringForAbsoluteGraph, '{{backup_metadata}}', array[n].metadata.toLowerCase() );
+				htmlStringForAbsoluteGraph = replaceAll( htmlStringForAbsoluteGraph, '{{backup_size}}', array[n].size );
+				htmlStringForAbsoluteGraph = replaceAll( htmlStringForAbsoluteGraph, '{{backup_relative_size}}', array[n].relative_size );
+				htmlStringForAbsoluteGraph = replaceAll( htmlStringForAbsoluteGraph, '{{backup_progress}}', array[n].progress );
+				htmlStringForAbsoluteGraph = replaceAll( htmlStringForAbsoluteGraph, '{{backup_relative_progress}}', array[n].relative_progress );
+				htmlStringForAbsoluteGraph = replaceAll( htmlStringForAbsoluteGraph, '{{backup_time}}', array[n].time_snapshot );
+				htmlStringForAbsoluteGraph = replaceAll( htmlStringForAbsoluteGraph, '{{backup_files_number}}', array[n].numFiles );
 				//preparing HTML string
 				htmlStringForRelativeGraph = cfg.templates.bars;
 				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{place}}', 'relative' );
-				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{snapshot_name}}', array[n].name );
-				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{snapshot_status}}', array[n].status.toLowerCase() );
-				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{snapshot_metadata}}', array[n].metadata.toLowerCase() );
-				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{snapshot_size}}', array[n].size );
-				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{snapshot_relative_size}}', array[n].relative_size );
-				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{snapshot_progress}}', array[n].progress );
-				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{snapshot_relative_progress}}', array[n].relative_progress );
-				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{snapshot_time}}', array[n].time_snapshot );
-				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{snapshot_files_number}}', array[n].numFiles );
+				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{backup_name}}', array[n].name );
+				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{backup_status}}', array[n].status.toLowerCase() );
+				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{backup_metadata}}', array[n].metadata.toLowerCase() );
+				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{backup_size}}', array[n].size );
+				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{backup_relative_size}}', array[n].relative_size );
+				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{backup_progress}}', array[n].progress );
+				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{backup_relative_progress}}', array[n].relative_progress );
+				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{backup_time}}', array[n].time_snapshot );
+				htmlStringForRelativeGraph = replaceAll( htmlStringForRelativeGraph, '{{backup_files_number}}', array[n].numFiles );
 				//preparing HTML string
 				htmlStringForTimelineGraph = cfg.templates.bars;
 				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{place}}', 'timeline' );
-				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{snapshot_name}}', array[n].name );
-				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{snapshot_status}}', array[n].status.toLowerCase() );
-				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{snapshot_metadata}}', array[n].metadata.toLowerCase() );
-				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{snapshot_size}}', array[n].size );
-				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{snapshot_relative_size}}', array[n].relative_size );
-				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{snapshot_progress}}', array[n].progress );
-				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{snapshot_relative_progress}}', array[n].relative_progress );
-				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{snapshot_time}}', array[n].time_snapshot );
-				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{snapshot_files_number}}', array[n].numFiles );
+				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{backup_name}}', array[n].name );
+				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{backup_status}}', array[n].status.toLowerCase() );
+				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{backup_metadata}}', array[n].metadata.toLowerCase() );
+				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{backup_size}}', array[n].size );
+				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{backup_relative_size}}', array[n].relative_size );
+				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{backup_progress}}', array[n].progress );
+				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{backup_relative_progress}}', array[n].relative_progress );
+				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{backup_time}}', array[n].time_snapshot );
+				htmlStringForTimelineGraph = replaceAll( htmlStringForTimelineGraph, '{{backup_files_number}}', array[n].numFiles );
 				//printing in relative graph
 				$newFilesBox.prepend( htmlStringForRelativeGraph );
 				//printing in absolute graph
@@ -673,70 +674,71 @@ function Backups() {
 
 
 
-		function takeNewSnapshot() {
-			var takeNewSnapshotAlert = new Notify({
-				message: CONFIG.messages.newSnapshotAlert,
+		function takeNewBackup() {
+			var takeNewBackupAlert = new Notify({
+				message: CONFIG.messages.newBackupAlert,
+				cancelText: 'Cancel',
 				onAccept: function() {
-					//disable new snapshot button
-					$newSnapshotButton.attr('disabled', 'disabled');
+					//disable new backup button
+					$newBackupButton.attr('disabled', 'disabled');
 
 					//start loading
-					loadingManager.add('Take snapshot');
+					loadingManager.add('Take backup');
 
-					CONFIG.api.newSnapshot.requester.setURL( CONFIG.api.newSnapshot.url );
-					CONFIG.api.newSnapshot.requester.setMethod( 'POST' );
-					CONFIG.api.newSnapshot.requester.setCache( false );
-					CONFIG.api.newSnapshot.requester.setCredentials( true );
-					CONFIG.api.newSnapshot.requester.run(function(response) {
+					CONFIG.api.newBackup.requester.setURL( CONFIG.api.newBackup.url );
+					CONFIG.api.newBackup.requester.setMethod( 'POST' );
+					CONFIG.api.newBackup.requester.setCache( false );
+					CONFIG.api.newBackup.requester.setCredentials( true );
+					CONFIG.api.newBackup.requester.run(function(response) {
 						//success
 
-						CONFIG.api.loadLatestSnapshot.requester.setURL( config.mug.url + 'backup/' + response.name + '/status' );
-						CONFIG.api.loadLatestSnapshot.requester.setMethod( 'GET' );
-						CONFIG.api.loadLatestSnapshot.requester.setCache( false );
-						CONFIG.api.loadLatestSnapshot.requester.setCredentials( true );
-						CONFIG.api.loadLatestSnapshot.requester.run(function(latestBackup) {
+						CONFIG.api.loadLatestBackup.requester.setURL( config.mug.url + 'backup/' + response.name + '/status' );
+						CONFIG.api.loadLatestBackup.requester.setMethod( 'GET' );
+						CONFIG.api.loadLatestBackup.requester.setCache( false );
+						CONFIG.api.loadLatestBackup.requester.setCredentials( true );
+						CONFIG.api.loadLatestBackup.requester.run(function(latestBackup) {
 
-							//enabling back new snapshot button
-							$newSnapshotButton.removeAttr('disabled');
+							//enabling back new backup button
+							$newBackupButton.removeAttr('disabled');
 
 							//stop loading
-							loadingManager.remove('Take snapshot');
+							loadingManager.remove('Take backup');
 
 							//converting timestamp to milliseconds
 							latestBackup.time_snapshot = parseInt(latestBackup.time_snapshot) * 1000;
 
-							//print and build latest snapshot
+							//print and build latest backup
 							printBars([latestBackup]); //sending it as an array
 							build();
 
 						}, function(error) {
 
-							//enabling back new snapshot button
-							$newSnapshotButton.removeAttr('disabled');
+							//enabling back new backup button
+							$newBackupButton.removeAttr('disabled');
 
 							//stop loading
-							loadingManager.remove('Take snapshot');
+							loadingManager.remove('Take backup');
 
 							//print error
-							var loadNewestSnapshotError = new Notify({message: CONFIG.messages.loadNewestSnapshot.fail});
-							loadNewestSnapshotError.print();
+							var loadNewestBackupError = new Notify({message: CONFIG.messages.loadNewestBackup.fail});
+							loadNewestBackupError.print();
 
 						});
 					}, function(error) {
 
-						//enabling back new snapshot button
-						$newSnapshotButton.removeAttr('disabled');
+						//enabling back new backup button
+						$newBackupButton.removeAttr('disabled');
 
 						//stop loading
-						loadingManager.remove('Take snapshot');
+						loadingManager.remove('Take backup');
 
 						//print error
-						var takeNewSnapshotError = new Notify({message: CONFIG.messages.takeSnapshot.fail});
-						takeNewSnapshotError.print();
+						var takeNewBackupError = new Notify({message: CONFIG.messages.takeBackup.fail});
+						takeNewBackupError.print();
 					});
 				}
 			});
-			takeNewSnapshotAlert.print();
+			takeNewBackupAlert.print();
 		}
 
 
@@ -884,7 +886,7 @@ function Backups() {
 	 */
 		//handle button .activity
 		$panelButtons.on('click', function() {
-			if ( $(this).attr('id') != 'new-snapshot-button' ) {
+			if ( $(this).attr('id') != 'new-backup-button' ) {
 				if ( $(this).hasClass('active') ) {
 					$(this).removeClass('active');
 				} else {
@@ -895,8 +897,8 @@ function Backups() {
 			$(this).blur();
 		});
 
-		$newSnapshotButton.on('click', function() {
-			takeNewSnapshot();
+		$newBackupButton.on('click', function() {
+			takeNewBackup();
 		});
 
 
@@ -995,10 +997,10 @@ function Backups() {
 				//getting current element
 				var current = $(this).attr('data-name');
 				//add class to clicked
-				$('#graph .bar-box.snapshot-' + current).addClass('active');
+				$('#graph .bar-box.backup-' + current).addClass('active');
 			}
 			//loading contents
-			snapshotDataViewer.show();
+			backupDataViewer.show();
 			var data = {
 				name: $(this).attr('data-name'),
 				relative_progress: $(this).attr('data-relative-progress'),
@@ -1009,7 +1011,7 @@ function Backups() {
 				files_number: $(this).attr('data-files'),
 				size: $(this).find('.info .size').html()
 			};
-			snapshotDataViewer.fill(data);
+			backupDataViewer.fill(data);
 		});
 
 
@@ -1039,8 +1041,8 @@ function Backups() {
 
 
 
-		function mouseOverBox( snapshotName ) {
-			$('#graph .snapshot-' + snapshotName).addClass('hover');
+		function mouseOverBox( backupName ) {
+			$('#graph .backup-' + backupName).addClass('hover');
 		}
 
 
@@ -1074,18 +1076,18 @@ function Backups() {
 
 
 
-	function SnapshotDataViewer() {
+	function BackupDataViewer() {
 
-		var $snapshotDataViewer = $('#snapshot-data-viewer'),
-			$obfuscationLayer = $snapshotDataViewer.find('.obfuscation-layer'),
-			$closeButton = $snapshotDataViewer.find('.generic-close-button');
+		var $backupDataViewer = $('#backup-data-viewer'),
+			$obfuscationLayer = $backupDataViewer.find('.obfuscation-layer'),
+			$closeButton = $backupDataViewer.find('.generic-close-button');
 
 
 		function show() {
-			$snapshotDataViewer.fadeIn(300);
+			$backupDataViewer.fadeIn(300);
 		}
 		function hide() {
-			$snapshotDataViewer.fadeOut(300, empty);
+			$backupDataViewer.fadeOut(300, empty);
 		}
 
 
@@ -1107,17 +1109,17 @@ function Backups() {
 			var d = new Date( parseInt(data.date) );
 			d = formatDate( d, 'HH:mm dd/MM/yyyy' );
 			data.date = d;
-			$snapshotDataViewer.find('.snapshot-name .value').html( data.name );
-			$snapshotDataViewer.find('.relative-progress-value').html( formatNumber(data.relative_progress) );
-			$snapshotDataViewer.find('.relative-progress .bar').width( data.relative_progress + '%' );
-			$snapshotDataViewer.find('.total-progress-value').html( formatNumber(data.total_progress) );
-			$snapshotDataViewer.find('.total-progress .bar').width( data.total_progress + '%' );
-			$snapshotDataViewer.find('.date .value').html( data.date );
-			$snapshotDataViewer.find('.status .value').html( data.status );
-			$snapshotDataViewer.find('.metadata .value').html( data.metadata );
-			$snapshotDataViewer.find('.files .value').html( data.files_number );
-			$snapshotDataViewer.find('.size .value').html( data.size );
-			$snapshotDataViewer.find('.progress .value').html( formatNumber(data.total_progress) + '%' );
+			$backupDataViewer.find('.backup-name .value').html( data.name );
+			$backupDataViewer.find('.relative-progress-value').html( formatNumber(data.relative_progress) );
+			$backupDataViewer.find('.relative-progress .bar').width( data.relative_progress + '%' );
+			$backupDataViewer.find('.total-progress-value').html( formatNumber(data.total_progress) );
+			$backupDataViewer.find('.total-progress .bar').width( data.total_progress + '%' );
+			$backupDataViewer.find('.date .value').html( data.date );
+			$backupDataViewer.find('.status .value').html( data.status );
+			$backupDataViewer.find('.metadata .value').html( data.metadata );
+			$backupDataViewer.find('.files .value').html( data.files_number );
+			$backupDataViewer.find('.size .value').html( data.size );
+			$backupDataViewer.find('.progress .value').html( formatNumber(data.total_progress) + '%' );
 		}
 
 
@@ -1133,7 +1135,7 @@ function Backups() {
 
 
 	}
-	var snapshotDataViewer = SnapshotDataViewer();
+	var backupDataViewer = BackupDataViewer();
 
 
 
@@ -1145,8 +1147,8 @@ function Backups() {
 	});
 
 	$(window).resize(function() {
-		snapshotInterface.build();
-		snapshotInterface.handleScroll();
+		backupInterface.build();
+		backupInterface.handleScroll();
 	});
 
 }

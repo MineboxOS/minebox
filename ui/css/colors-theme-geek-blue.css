@@ -271,38 +271,38 @@ input[type="checkbox"]:before {
 #timeline .bar {
   background-color: #24acce;
 }
-#snapshot-data-viewer .obfuscation-layer {
+#backup-data-viewer .obfuscation-layer {
   background-color: rgba(0,0,0,.9);
 }
-#snapshot-data-viewer .obfuscation-layer:hover {
+#backup-data-viewer .obfuscation-layer:hover {
   background-color: rgba(0,0,0,.6);
 }
-#snapshot-data-viewer .card {
+#backup-data-viewer .card {
   background: #1a7d96;  /* fallback for old browsers */
   background: -webkit-linear-gradient(to bottom, #1a7d96, #16677c);  /* Chrome 10-25, Safari 5.1-6 */
   background: linear-gradient(to bottom, #1a7d96, #16677c); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
 }
-#snapshot-data-viewer .progress-bar {
+#backup-data-viewer .progress-bar {
   background-color: rgba(0,0,0,.1);
 }
-#snapshot-data-viewer .progress-bar>.bar {
+#backup-data-viewer .progress-bar>.bar {
   background-color: #fff;
 }
-.snapshot-status-finished .info>p,
-.snapshot-status-archived .info>p,
-.snapshot-metadata-finished .info>p,
-.snapshot-status-pending .info>p,
-.snapshot-metadata-pending .info>p,
-.snapshot-status-uploading .info>p,
-.snapshot-metadata-uploading .info>p {
+.backup-status-finished .info>p,
+.backup-status-archived .info>p,
+.backup-metadata-finished .info>p,
+.backup-status-pending .info>p,
+.backup-metadata-pending .info>p,
+.backup-status-uploading .info>p,
+.backup-metadata-uploading .info>p {
   color: #00ff29;
 }
 /* .yellow {
   color: #cdb100;
 }*/
-.snapshot-status-damaged .info>p,
-.snapshot-status-error .info>p,
-.snapshot-metadata-error .info>p {
+.backup-status-damaged .info>p,
+.backup-status-error .info>p,
+.backup-metadata-error .info>p {
   color: #ff5c84;
 }
 

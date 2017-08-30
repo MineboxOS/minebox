@@ -1,8 +1,8 @@
-#snapshots {
+#backup {
 
 }
 
-#snapshots-app {
+#backup-app {
   position: fixed;
   top: 36px; /* header's height */
   left: 0;
@@ -56,7 +56,7 @@
     border-width: 2px;
     outline: 0;
   }
-  #new-snapshot-button {
+  #new-backup-button {
     position: absolute;
     top: 0;
     left: 60px;
@@ -356,7 +356,7 @@
 
 
 
-#snapshot-data-viewer {
+#backup-data-viewer {
   display: none;
   position: fixed;
   top: 0;
@@ -365,7 +365,7 @@
   height: 100%;
   z-index: 10000;
 }
-  #snapshot-data-viewer .obfuscation-layer {
+  #backup-data-viewer .obfuscation-layer {
     position: absolute;
     top: 0;
     left: 0;
@@ -378,8 +378,8 @@
     -moz-transition: all ease 1s;
     -o-transition: all ease 1s;
   }
-  #snapshot-data-viewer .obfuscation-layer:hover {}
-  #snapshot-data-viewer .card {
+  #backup-data-viewer .obfuscation-layer:hover {}
+  #backup-data-viewer .card {
     position: absolute;
     top: 40%;
     left: 50%;
@@ -394,34 +394,34 @@
     -o-transform: translateX(-50%) translateY(-50%);
     z-index: 2;
   }
-    #snapshot-data-viewer span {
+    #backup-data-viewer span {
       font: inherit;
     }
-    #snapshot-data-viewer h3 {
+    #backup-data-viewer h3 {
       text-align: center;
       margin: 0;
     }
-    #snapshot-data-viewer .logo {
+    #backup-data-viewer .logo {
       width: 260px;
       display: block;
       max-width: 80%;
       margin: 0px auto;
     }
-    #snapshot-data-viewer .contents {
+    #backup-data-viewer .contents {
 
     }
-      #snapshot-data-viewer .progress-bars {
+      #backup-data-viewer .progress-bars {
         margin-bottom: 15px;
       }
-        #snapshot-data-viewer .progress-bars>p {
+        #backup-data-viewer .progress-bars>p {
           margin-top: 15px;
         }
-        #snapshot-data-viewer .progress-bar {
+        #backup-data-viewer .progress-bar {
           width: 100%;
           height: 2px;
           position: relative;
         }
-          #snapshot-data-viewer .progress-bar>.bar {
+          #backup-data-viewer .progress-bar>.bar {
             position: absolute;
             top: 0;
             left: 0;
@@ -432,21 +432,21 @@
             -moz-transition: all ease .3s;
             -o-transition: all ease .3s;
           }
-          #snapshot-data-viewer .elements-list {
+          #backup-data-viewer .elements-list {
             list-style: none;
             margin: 10px 0;
             padding: 0;
             text-transform: uppercase;
           }
-            #snapshot-data-viewer .elements-list span {
+            #backup-data-viewer .elements-list span {
               display: inline-block;
               vertical-align: middle;
               width: 50%;
             }
-            #snapshot-data-viewer .elements-list span.value {
+            #backup-data-viewer .elements-list span.value {
               text-align: right;
             }
-          #snapshot-data-viewer .value {
+          #backup-data-viewer .value {
             opacity: .8;
             text-transform: uppercase;
           }
