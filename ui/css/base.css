@@ -1,5 +1,6 @@
 html, body {
 	color: #fff;
+	min-height: 100%;
 }
 
 @keyframes loadSpinner {
