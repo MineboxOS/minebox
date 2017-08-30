@@ -169,9 +169,11 @@
 		height: 40px;
 		border-radius: 50%;
 		transition: all ease .3s;
+		-webkit-transition: all ease .3s;
+		-moz-transition: all ease .3s;
+		-o-transition: all ease .3s;
 		cursor: pointer;
 		opacity: 0;
-		transition: all ease .3s;
 	}
 	#dashboard-notification-box.filled #close-all-notifications-button {
 		opacity: 1;

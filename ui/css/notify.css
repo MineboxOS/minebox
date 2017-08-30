@@ -67,9 +67,15 @@
 }
 .notify-window .close-btn:before {
   transform: rotate(-45deg);
+  -webkit-transform: rotate(-45deg);
+  -moz-transform: rotate(-45deg);
+  -o-transform: rotate(-45deg);
 }
 .notify-window .close-btn:after {
   transform: rotate(45deg);
+  -webkit-transform: rotate(45deg);
+  -moz-transform: rotate(45deg);
+  -o-transform: rotate(45deg);
 }
 .notify-window .text {
   color: #fff;
