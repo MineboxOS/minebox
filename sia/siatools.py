@@ -199,7 +199,11 @@ def update_sia_config():
 def _absdiff(comparevalue, basevalue):
     # Calculate a fractional absolut difference / deviation of a compare value
     # to a base value.
-    return abs(float(comparevalue - basevalue) / basevalue)
+    if basevalue:
+        return abs(float(comparevalue - basevalue) / basevalue)
+    if comparevalue != basevalue:
+        return float('inf')
+    return 0
 
 def rebalance_diskspace():
     # MineBD reports a large block device size but the filesystem is formatted
