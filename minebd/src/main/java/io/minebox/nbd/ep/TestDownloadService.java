@@ -9,7 +9,7 @@ import io.minebox.nbd.download.DownloadService;
 /**
  * Created by andreas on 27.04.17.
  */
-public class NullDownloadService implements DownloadService {
+public class TestDownloadService implements DownloadService {
     @Override
     public RecoveryStatus downloadIfPossible(File file) {
         return RecoveryStatus.NO_FILE;

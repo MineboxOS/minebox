@@ -13,6 +13,7 @@ import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import io.minebox.SiaUtil;
 import io.minebox.nbd.RemoteTokenService;
+import io.minebox.nbd.encryption.EncyptionKeyProvider;
 import org.apache.commons.lang3.tuple.Pair;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -39,6 +40,7 @@ public class DownloadFactory implements Provider<DownloadService> {
 
 
     static final private Logger LOGGER = LoggerFactory.getLogger(DownloadFactory.class);
+    private volatile DownloadService initializedDownloadService;
 
     @Inject
     public DownloadFactory(MetaDataStatus.MetaDataStatusProvider metaDataStatusProvider,
@@ -51,70 +53,99 @@ public class DownloadFactory implements Provider<DownloadService> {
         this.remoteTokenService = remoteTokenService;
         this.metadataUrl = metadataUrl;
         siaDir = Paths.get(siaDataDirectory).toAbsolutePath();
-
         this.siaUtilProvider = siaUtilProvider;
+    }
+
+    @Inject
+    public void initMetaData(EncyptionKeyProvider encyptionKeyProvider) {
+        LOGGER.info("registering init callback when key is loaded..");
+        encyptionKeyProvider.onLoadKey(this::init);
+    }
+
+    private void init() {
+        LOGGER.info("assuming key exists, now we can load metadata");
+               /*
+       cases:
+       fresh key, try to reach metadata
+       case FreshUnreachable: fresh key, metadata unreachable -> crash, invalid status.
+       case FreshEmpty: fresh key, metadata reachable but empty -> NothingTodoDownloadService
+       case FreshNonempty: fresh key, metadata reachable -> save MetaDataStatus, SiaHostedDownload
+
+       old key: dont try to reach metadata.
+       case OldNonempty old key, metadata was loaded -> save MetaDataStatus, continue restore with SiaHostedDownload
+       case OldEmpty old key, metadata was empty -> save MetaDataStatus, NothingTodoDownloadService
+        */
+        if (!metaDataStatusProvider.fileExists()) {
+            LOGGER.info("no local metadata found, trying to load it...");
+            initFreshKey();
+        } else {
+            LOGGER.info("local metadata located, using this.");
+            initOldKey();
+        }
+    }
+
+    private void initOldKey() {
+        final MetaDataStatus metaDataStatus = metaDataStatusProvider.get();
+        if (!metaDataStatus.lookup.isEmpty()) {
+//            case OldNonempty
+            LOGGER.info("metadata was old and nonempty, we have work to do to restore up to {} files", metaDataStatus.lookup);
+            //todo count those missing files, maybe we're good already..
+            initializedDownloadService = new SiaHostedDownload(siaUtilProvider.get(), metaDataStatus.lookup);
+        } else {
+            //we were fresh, nothing to download...
+//            case OldEmpty
+            LOGGER.info("metadata was old but empty, assuming a fresh file system");
+            initializedDownloadService = new NothingTodoDownloadService();
+        }
+    }
+
+    private void initFreshKey() {
+        //no local metadata found, fresh key
+        final ImmutableList<String> siaPaths = loadMetaData();
+        final Map<String, String> filenameLookup;
+        if (siaPaths == null) {
+            //case FreshUnreachable
+            LOGGER.error("metadata was fresh but unreachable, erroring out");
+            throw new IllegalStateException("fresh key, unable to locate metadata ");
+        } else if (siaPaths.isEmpty()) {
+            //case FreshEmpty
+            LOGGER.info("metadata was fresh but empty, assuming a fresh file system");
+            initializedDownloadService = new NothingTodoDownloadService();
+            filenameLookup = Maps.newHashMap();
+        } else {
+            LOGGER.info("metadata was fresh and nonempty, we have work to do to restore up to {} files", siaPaths.size());
+            filenameLookup = extractSiaLookupMap(siaPaths);
+            initializedDownloadService = new SiaHostedDownload(siaUtilProvider.get(), filenameLookup);
+        }
+        LOGGER.info("writing out info about metadata so we can later start up even if offline");
+        final MetaDataStatus toWrite = new MetaDataStatus();
+        toWrite.lookup = filenameLookup;
+        metaDataStatusProvider.write(toWrite);
+    }
+
+    private static Map<String, String> extractSiaLookupMap(ImmutableList<String> siaPaths) {
+        Map<String, String> filenameLookup = Maps.newHashMap();
+        for (String loadedSiaPath : siaPaths) {
+            final Pair<String, Long> file_created = parseTimestamp(loadedSiaPath);
+            final String siaPath = filenameLookup.get(file_created.getLeft());
+            if (siaPath != null) {
+                final Pair<String, Long> existing = parseTimestamp(siaPath);
+                if (existing.getRight() < file_created.getRight()) {
+                    filenameLookup.put(file_created.getLeft(), loadedSiaPath);
+                }
+            } else {
+                filenameLookup.put(file_created.getLeft(), loadedSiaPath);
+            }
+        }
+        return filenameLookup;
     }
 
     @Override
     public DownloadService get() {
-       /*
-       cases:
-       fresh key, try to reach metadata
-       fresh key, metadata reachable but empty -> NothingTodoDownloadService
-       fresh key, metadata unreachable -> crash, invalid status.
-       fresh key, metadata reachable -> save MetaDataStatus, SiaHostedDownload
-
-
-
-
-
-       old key: dont try to reach metadata.
-       old key, metadata was loaded -> save MetaDataStatus, continue restore with SiaHostedDownload
-       old key, metadata was empty -> save MetaDataStatus, NothingTodoDownloadService
-
-
-
-        */
-        if (!metaDataStatusProvider.fileExists()) {
-            //fresh key
-            final ImmutableList<String> siaPaths = loadMetaData();
-            if (siaPaths == null) {
-                throw new IllegalStateException("fresh key, unable to locate metadata ");
-            }
-            if (siaPaths.isEmpty()) {
-                return new NothingTodoDownloadService();
-            }
-
-            Map<String, String> filenameLookup = Maps.newHashMap();
-            for (String loadedSiaPath : siaPaths) {
-                final Pair<String, Long> file_created = parseTimestamp(loadedSiaPath);
-                final String siaPath = filenameLookup.get(file_created.getLeft());
-                if (siaPath != null) {
-                    final Pair<String, Long> existing = parseTimestamp(siaPath);
-                    if (existing.getRight() < file_created.getRight()) {
-                        filenameLookup.put(file_created.getLeft(), loadedSiaPath);
-                    }
-                } else {
-                    filenameLookup.put(file_created.getLeft(), loadedSiaPath);
-                }
-            }
-            final MetaDataStatus toWrite = new MetaDataStatus();
-            toWrite.foundMetaData = true;
-            toWrite.lookup = filenameLookup;
-            metaDataStatusProvider.write(toWrite);
-
-            return new SiaHostedDownload(siaUtilProvider.get(), filenameLookup);
-
-        } else {
-            final MetaDataStatus metaDataStatus = metaDataStatusProvider.get();
-
-            if (metaDataStatus.foundMetaData) {
-                return new SiaHostedDownload(siaUtilProvider.get(), metaDataStatus.lookup);
-            }
-            //we were fresh, nothing to download...
-            return new NothingTodoDownloadService();
+        if (initializedDownloadService == null) {
+            throw new IllegalStateException("no download service was determined yet, please wait for the key to be initialized");
         }
-
+        return initializedDownloadService;
     }
 
     private static Pair<String, Long> parseTimestamp(String input) {
@@ -203,4 +234,7 @@ public class DownloadFactory implements Provider<DownloadService> {
     }
 
 
+    public boolean hasDownloadService() {
+        return initializedDownloadService != null;
+    }
 }
