@@ -68,10 +68,10 @@ public class DownloadFactory implements Provider<DownloadService> {
        cases:
        fresh key, try to reach metadata
        case FreshUnreachable: fresh key, metadata unreachable -> crash, invalid status.
-       case FreshEmpty: fresh key, metadata reachable but empty -> NothingTodoDownloadService
-       case FreshNonempty: fresh key, metadata reachable -> save MetaDataStatus, SiaHostedDownload
+       case FreshEmpty: fresh key, metadata reachable but empty -> ,init sia, NothingTodoDownloadService
+       case FreshNonempty: fresh key, metadata reachable -> , init sia, save MetaDataStatus, SiaHostedDownload
 
-       old key: dont try to reach metadata.
+       old key: dont try to reach metadata. (apparently no need to init sia, since not the first startup)
        case OldNonempty old key, metadata was loaded -> save MetaDataStatus, continue restore with SiaHostedDownload
        case OldEmpty old key, metadata was empty -> save MetaDataStatus, NothingTodoDownloadService
         */
@@ -114,7 +114,9 @@ public class DownloadFactory implements Provider<DownloadService> {
             filenameLookup = Maps.newHashMap();
         } else {
             LOGGER.info("metadata was fresh and nonempty, we have work to do to restore up to {} files", siaPaths.size());
+            //todo stop siad here. extractSiaLookupMap will add new files. then restart / init the seed
             filenameLookup = extractSiaLookupMap(siaPaths);
+            //todo init the seed. this will take a while. nevertheless we don't want to assign initializedDownloadService just yet, because it would not be ready.
             initializedDownloadService = new SiaHostedDownload(siaUtilProvider.get(), filenameLookup);
         }
         LOGGER.info("writing out info about metadata so we can later start up even if offline");
