@@ -12,19 +12,22 @@ import java.util.Map;
 
 public class MetaDataStatus {
 
-    public boolean foundMetaData;
     public Map<String, String> lookup;
 
 
     public static class MetaDataStatusProvider implements Provider<MetaDataStatus> {
 
-        private final File file;
+        private File file;
+        private final String parentDir;
+        private final SerialNumberService serialNumberService;
 
         @Inject
         public MetaDataStatusProvider(
                 @Named("parentDir") String parentDir,
                 SerialNumberService serialNumberService) {
-            file = getStatusFile(parentDir, serialNumberService);
+
+            this.parentDir = parentDir;
+            this.serialNumberService = serialNumberService;
         }
 
         private File getStatusFile(String parentDir, SerialNumberService serialNumberService) {
@@ -33,21 +36,30 @@ public class MetaDataStatus {
         }
 
         public boolean fileExists() {
+            initFile();
             return file.exists();
         }
 
         @Override
         public MetaDataStatus get() {
+            initFile();
             try {
-                final MetaDataStatus metaDataStatus = new ObjectMapper().readValue(file, MetaDataStatus.class);
-                return metaDataStatus;
+                return new ObjectMapper().readValue(file, MetaDataStatus.class);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
 
+        private void initFile() {
+            if (file == null) {
+                file = getStatusFile(parentDir, serialNumberService);
+            }
+        }
+
         public void write(MetaDataStatus toWrite) {
+            initFile();
             try {
+                file.getParentFile().mkdirs();
                 new ObjectMapper().writeValue(file, toWrite);
             } catch (IOException e) {
                 throw new RuntimeException(e);

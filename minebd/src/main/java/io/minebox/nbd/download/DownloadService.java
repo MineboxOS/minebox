@@ -1,9 +1,9 @@
 package io.minebox.nbd.download;
 
+import com.google.inject.ProvidedBy;
+
 import java.io.File;
 import java.util.Collection;
-
-import com.google.inject.ProvidedBy;
 
 /**
  * Created by andreas on 27.04.17.
@@ -11,7 +11,7 @@ import com.google.inject.ProvidedBy;
 @ProvidedBy(DownloadFactory.class)
 public interface DownloadService {
 
-    enum RecoveryStatus{
+    enum RecoveryStatus {
         NO_FILE, RECOVERED, ERROR
     }
 

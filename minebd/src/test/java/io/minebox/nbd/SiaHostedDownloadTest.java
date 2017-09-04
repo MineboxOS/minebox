@@ -92,6 +92,7 @@ public class SiaHostedDownloadTest {
     }
 
 
+/*
     @Test
     public void testInit() throws Exception {
         final RemoteTokenService dummyRemoteToken = new RemoteTokenService(null, null) {
@@ -128,6 +129,7 @@ public class SiaHostedDownloadTest {
             System.out.println(dest.getAbsolutePath() + " recovery: " + recoveryStatus);
         }
     }
+*/
 
     private void restartSiad() {
         stopSiad();

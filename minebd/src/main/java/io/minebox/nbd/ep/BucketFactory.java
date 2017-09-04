@@ -87,8 +87,10 @@ public class BucketFactory {
                     throw new RuntimeException("i was unable to obtain the expected file");
                 } else if (DownloadService.RecoveryStatus.NO_FILE.equals(wasDownloaded)) {
                     createEmptyFile(file);
-                } else {
+                } else if (DownloadService.RecoveryStatus.RECOVERED.equals(wasDownloaded)) {
                     LOGGER.info("bucket {} is now happy that we got the file {}", bucketNumber, file.getName());
+                } else {
+                    throw new IllegalStateException("unexpected recovery state:" + wasDownloaded);
                 }
             }
         }
