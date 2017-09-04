@@ -8,7 +8,7 @@ Version: %(git describe --tags --match 'mug*'|grep -oP "(?<=mug_v).")
 Release: %(git describe --tags --match 'mug*'|grep -oP "(?<=mug_v..).*" | tr '-' '_')%{?dist}
 Summary: Minebox UI Gateway (MUG)
 License: Proprietary
-Requires: minebox-virtualenv rockstor
+Requires: minebox-virtualenv minebox-rockstor
 
 %description
 The Minebox UI Gateway (MUG) is a python service that allows the UI to access Minebox system functionality.
