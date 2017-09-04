@@ -47,7 +47,7 @@ def get_machine_info():
     }
     outlines = subprocess.check_output([DMIDECODE, "-t", "system"]).splitlines()
     for line in outlines:
-        matches = re.match(r"^\s+SKU Number:\s+(\S+)\s*$", line)
+        matches = re.match(r"^\s+SKU Number:\s+(.+)$", line)
         if matches:
-            machine_info["system_sku"] = matches.group(1)  # 1st parenthesis expression
+            machine_info["system_sku"] = matches.group(1).strip()  # 1st parenthesis expression
     return machine_info

@@ -20,7 +20,7 @@ BACKUPSERVICE_URL="http://localhost:5100/"
 SETTINGS_URL="https://settings.api.minebox.io/v1/settings/"
 FAUCET_URL="https://faucet.api.minebox.io/v1/faucet/"
 ADMIN_URL="https://faucet.api.minebox.io/v1/faucet/admin/"
-METADATA_URL="https://metadata.api.minebox.io/v1/"
+METADATA_URL="https://metadata.api.minebox.io/v1/metadata/"
 LOCALDEMO_URL="http://localhost:8050/v1/"
 DEMOSIAD_URL="http://localhost:9900/"
 
