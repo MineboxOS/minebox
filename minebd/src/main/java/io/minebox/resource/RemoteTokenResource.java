@@ -7,6 +7,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -34,7 +35,13 @@ public class RemoteTokenResource {
     @Path("/getMetadataToken")
     @Produces("text/plain")
     @PermitAll
-    public Optional<String> getMetadataToken() {
-        return remoteTokenService.getToken();
+    public Response getMetadataToken() {
+
+        final Optional<String> token = remoteTokenService.getToken();
+        if (token.isPresent()) {
+            return Response.ok(token).build();
+        } else {
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE).build();
+        }
     }
 }
