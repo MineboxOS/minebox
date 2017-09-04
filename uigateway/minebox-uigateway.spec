@@ -8,7 +8,7 @@ Version: %(git describe --tags --match 'mug*'|grep -oP "(?<=mug_v).")
 Release: %(git describe --tags --match 'mug*'|grep -oP "(?<=mug_v..).*" | tr '-' '_')%{?dist}
 Summary: Minebox UI Gateway (MUG)
 License: Proprietary
-Requires: minebox-virtualenv
+Requires: minebox-virtualenv rockstor
 
 %description
 The Minebox UI Gateway (MUG) is a python service that allows the UI to access Minebox system functionality.
@@ -17,14 +17,16 @@ The Minebox UI Gateway (MUG) is a python service that allows the UI to access Mi
 
 # Packaging
 %install
-install -D --mode 755 "%{_topdir}uigateway/mug.sh" "$RPM_BUILD_ROOT/usr/lib/minebox/mug.sh"
-install -D "%{_topdir}uigateway/systemd/mug.service" "$RPM_BUILD_ROOT/etc/systemd/system/mug.service"
-install -D --mode 755 "%{_topdir}uigateway/mug.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/mug.py"
-install -D "%{_topdir}uigateway/backupinfo.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/backupinfo.py"
-install -D "%{_topdir}uigateway/connecttools.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/connecttools.py"
+install -pD --mode 755 "%{_topdir}uigateway/mug.sh" "$RPM_BUILD_ROOT/usr/lib/minebox/mug.sh"
+install -pD --mode 644 "%{_topdir}uigateway/systemd/mug.service" "$RPM_BUILD_ROOT/etc/systemd/system/mug.service"
+install -pD --mode 755 "%{_topdir}uigateway/mug.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/mug.py"
+install -pD --mode 644 "%{_topdir}uigateway/backupinfo.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/backupinfo.py"
+install -pD --mode 644 "%{_topdir}uigateway/connecttools.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/connecttools.py"
 
 # Installation script
 %pre
+/usr/bin/getent group mug || /usr/sbin/groupadd -r mug
+/usr/bin/getent passwd mug || /usr/sbin/useradd -r -d /usr/lib/minebox/mbvenv -s /sbin/nologin -g mug -G rockstorWEB mug
 set +e
 systemctl stop mug
 set -e
@@ -44,6 +46,10 @@ set -e
 fi
 
 %postun
+if [ "$1" = 0 ] ; then
+/usr/sbin/userdel mug
+/usr/sbin/groupdel mug
+fi
 systemctl daemon-reload
 
 %files

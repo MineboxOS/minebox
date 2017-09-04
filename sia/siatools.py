@@ -11,9 +11,12 @@ import re
 import time
 
 from connecttools import (get_from_sia, post_to_sia, get_from_minebd,
-                          get_from_mineboxconfig, get_from_faucetservice)
+                          get_from_mineboxconfig, post_to_faucetservice)
 
-H_PER_SC=1e24 # hastings per siacoin ("siacoinprecision" in /daemon/constants)
+# Note: no not use float (e.g. 1e24) for numers that need high precision!
+# The ** operator produces int, which is fine, or use decimal.Decimal()
+# if you want to do decimal math with such high precision.
+H_PER_SC=10**24 # hastings per siacoin ("siacoinprecision" in /daemon/constants)
 SEC_PER_BLOCK=600 # seconds per block ("blockfrequency" in /daemon/constants)
 SIA_CONFIG_JSON="/etc/minebox/sia_config.json"
 SIA_DIR="/mnt/lower1/sia"
@@ -67,9 +70,17 @@ def unlock_wallet(seed):
     return True
 
 def fetch_siacoins():
-    current_app.logger.info("TODO: Fetching base allotment of coins from Minebox.")
-    # We need the Minebox sia faucet service for this (See MIN-130).
-    fsdata, fs_status_code = get_from_faucetservice('siacoins')
+    current_app.logger.info("Fetching base allotment of coins from Minebox.")
+    # Fetch a wallet address to send the siacoins to.
+    siadata, sia_status_code = get_from_sia("wallet/address")
+    if sia_status_code >= 400:
+        current_app.logger.error("Sia error %s: %s" % (sia_status_code,
+                                                       siadata["message"]))
+        return False
+    # Use the address from above to request siacoins from the faucet.
+    fsdata, fs_status_code = post_to_faucetservice("getCoins",
+                                                   {"address": siadata["address"]})
+    if fs_status_code >= 400:
         current_app.logger.error("Faucet error %s: %s" % (fs_status_code,
                                                           fsdata["message"]))
         return False
@@ -78,9 +89,10 @@ def fetch_siacoins():
 def set_allowance():
     current_app.logger.info("Setting an allowance for renting out files.")
     settings = get_sia_config()
-    siadata, sia_status_code = post_to_sia('renter',
-                                           {"funds": settings["renter"]["allowance_funds"],
-                                            "period": settings["renter"]["allowance_period"]})
+    siadata, sia_status_code = post_to_sia('renter', {
+      "funds": str(settings["renter"]["allowance_funds"]),
+      "period": str(settings["renter"]["allowance_period"]),
+    })
     if sia_status_code >= 400:
         current_app.logger.error("Sia error %s: %s" % (sia_status_code,
                                                        siadata["message"]))
@@ -96,7 +108,16 @@ def set_up_hosting():
         return
     current_app.logger.info("Setting up sia hosting.")
     # Set min*price, collateral, collateralbudget, maxcollateral, maxduration
-    siadata, sia_status_code = post_to_sia("host", settings["host"])
+    siadata, sia_status_code = post_to_sia("host", {
+      "mincontractprice": str(settings["host"]["mincontractprice"]),
+      "mindownloadbandwidthprice": str(settings["host"]["mindownloadbandwidthprice"]),
+      "minstorageprice": str(settings["host"]["minstorageprice"]),
+      "minuploadbandwidthprice": str(settings["host"]["minuploadbandwidthprice"]),
+      "collateral": str(settings["host"]["collateral"]),
+      "collateralbudget": str(settings["host"]["collateralbudget"]),
+      "maxcollateral": str(settings["host"]["maxcollateral"]),
+      "maxduration": str(settings["host"]["maxduration"]),
+    })
     if sia_status_code >= 400:
         current_app.logger.error("Sia error %s: %s" % (sia_status_code,
                                                        siadata["message"]))
@@ -124,6 +145,65 @@ def restart_sia():
         return False
     # If the return code is 0, we get here and return True (success).
     return True
+
+def update_sia_config():
+    settings = get_sia_config()
+    # Renting settings
+    siadata, sia_status_code = get_from_sia("renter")
+    if sia_status_code >= 400:
+        # If we can't get the current settings, no use in comparing to new ones.
+        return False
+    renter_params = {}
+    # If new settings values differ by at least 10% from currently set values,
+    # only then update Sia with the new settings.
+    if _absdiff(settings["renter"]["allowance_funds"],
+                int(siadata["settings"]["allowance"]["funds"])) > 0.1:
+        renter_params["funds"] = str(settings["renter"]["allowance_funds"])
+    if _absdiff(settings["renter"]["allowance_period"],
+                int(siadata["settings"]["allowance"]["period"])) > 0.1:
+        renter_params["period"] = str(settings["renter"]["allowance_period"])
+    if renter_params:
+        current_app.logger.info("Updating Sia renter/allowance settings.")
+        siadata, sia_status_code = post_to_sia("renter", renter_params)
+        if sia_status_code >= 400:
+            current_app.logger.error("Sia error %s: %s" % (sia_status_code,
+                                                          siadata["message"]))
+            return False
+    # Hosting settings
+    siadata, sia_status_code = get_from_sia('host')
+    if sia_status_code >= 400:
+        # If we can't get the current settings, no use in comparing to new ones.
+        return False
+    if not siadata["internalsettings"]["acceptingcontracts"]:
+        # If hosting is deactivated, pings will call setup_sia_system()
+        # This will care about settings so we don't do anything here.
+        return True
+    host_params = {}
+    if settings["minebox_sharing"]["enabled"] != siadata["internalsettings"]["acceptingcontracts"]:
+        host_params["acceptingcontracts"] = settings["minebox_sharing"]["enabled"]
+    for var in ["mincontractprice", "mindownloadbandwidthprice",
+                "minstorageprice", "minuploadbandwidthprice", "collateral",
+                "collateralbudget", "maxcollateral", "maxduration"]:
+        if _absdiff(settings["host"][var], int(siadata["internalsettings"][var])) > 0.1:
+            host_params[var] = str(settings["host"][var])
+    if host_params:
+        current_app.logger.info("Updating Sia host settings.")
+        siadata, sia_status_code = post_to_sia("host", host_params)
+        if sia_status_code >= 400:
+            current_app.logger.error("Sia error %s: %s" % (sia_status_code,
+                                                          siadata["message"]))
+            return False
+    # We're done here :)
+    return True
+
+def _absdiff(comparevalue, basevalue):
+    # Calculate a fractional absolut difference / deviation of a compare value
+    # to a base value.
+    if basevalue:
+        return abs(float(comparevalue - basevalue) / basevalue)
+    if comparevalue != basevalue:
+        return float('inf')
+    return 0
 
 def rebalance_diskspace():
     # MineBD reports a large block device size but the filesystem is formatted
@@ -206,6 +286,7 @@ def _rebalance_hosting_to_ratio():
 def get_sia_config():
     if (not hasattr(get_sia_config, "settings") or get_sia_config.settings is None
         or get_sia_config.timestamp < time.time() - 24 * 3600):
+        sia_settings = {}
         # Always set the timestamp so we do not have to test above if it's set,
         #  as it's only unset when token is also unset
         get_sia_config.timestamp = time.time()
@@ -220,45 +301,83 @@ def get_sia_config():
             # Get config from remote service and write to file.
             cfdata, cf_status_code = get_from_mineboxconfig('sia')
             if cf_status_code == 200:
-                get_sia_config.settings = cfdata
+                sia_settings = cfdata
                 with open(SIA_CONFIG_JSON, 'w') as outfile:
-                    json.dump(get_sia_config.settings, outfile)
+                    json.dump(sia_settings, outfile)
             else:
                 current_app.logger.error(
-                  'Error %s getting Sia config from Minebox config service: %s'
+                  'Error %s getting Sia config from Minebox settings service: %s'
                   % (cf_status_code,  cfdata["message"]))
-                get_sia_config.settings = None
-        if not get_sia_config.settings and os.path.isfile(SIA_CONFIG_JSON):
+        if not sia_settings and os.path.isfile(SIA_CONFIG_JSON):
             # If we did not get settings remotely, read them from the file.
-            with open(CONFIG_JSON_PATH) as json_file:
-                get_sia_config.settings = json.load(json_file)
-        elif not get_sia_config.settings:
-            # We only get here if no config file exists and the remote service
-            # also doesn't work. Set useful defaults.
-            bytes_per_tb = 2 ** 40
-            blocks_per_month = 30 * 24 * 3600 / SEC_PER_BLOCK
-            sctb_per_hb = H_PER_SC / bytes_per_tb # SC / TB -> hastings / byte
-            sctbmon_per_hbblk = sctb_per_hb * blocks_per_month # SC / TB / month -> hastings / byte / block
-            get_sia_config.settings = {
-              "renter": {
-                "allowance_funds": 0 * H_PER_SC,
-                "allowance_period": 6 * blocks_per_month,
-              },
-              "host": {
-                "mincontractprice": 0 * H_PER_SC,
-                "mindownloadbandwidthprice": 0 * sctb_per_hb,
-                "minstorageprice": 0 * sctbmon_per_hbblk,
-                "minuploadbandwidthprice": 0 * sctb_per_hb,
-                "collateral": 0 * sctbmon_per_hbblk,
-                "collateralbudget": 0 * H_PER_SC,
-                "maxcollateral": 0 * H_PER_SC,
-                "maxduration": 6 * blocks_per_month,
-              },
-              "minebox_sharing": {
-                "enabled": False,
-                "shared_space_ratio": 0.5,
-              },
-            }
+            with open(SIA_CONFIG_JSON) as json_file:
+                sia_settings = json.load(json_file)
+        # Convert values to units that siad is using.
+        # Set useful defaults in case either a value is missing or both the
+        # Minebox settings service doesn't work and we have no stored config.
+        for topic in ["renter", "host", "minebox_sharing"]:
+            if not topic in sia_settings:
+                sia_settings[topic] = {}
+        bytes_per_tb = 1e12 # not 2 ** 40 as Sia uses SI TB, see https://github.com/NebulousLabs/Sia/blob/v1.2.2/modules/host.go#L14
+        blocks_per_month = 30 * 24 * 3600 / SEC_PER_BLOCK
+        sctb_per_hb = H_PER_SC / bytes_per_tb # SC / TB -> hastings / byte
+        sctbmon_per_hbblk = sctb_per_hb / blocks_per_month # SC / TB / month -> hastings / byte / block
+        get_sia_config.settings = {
+          "renter": {
+            "allowance_funds": int((
+              sia_settings["renter"]["allowance_funds"]
+              if "allowance_funds" in sia_settings["renter"]
+              else 1000) * H_PER_SC),
+            "allowance_period": int((
+              sia_settings["renter"]["allowance_period"]
+              if "allowance_period" in sia_settings["renter"]
+              else 6) * blocks_per_month),
+          },
+          "host": {
+            "mincontractprice": int((
+              sia_settings["host"]["mincontractprice"]
+              if "mincontractprice" in sia_settings["host"]
+              else 3) * H_PER_SC),
+            "mindownloadbandwidthprice": int((
+              sia_settings["host"]["mindownloadbandwidthprice"]
+              if "mindownloadbandwidthprice" in sia_settings["host"]
+              else 41) * sctb_per_hb),
+            "minstorageprice": int((
+              sia_settings["host"]["minstorageprice"]
+              if "minstorageprice" in sia_settings["host"]
+              else 120) * sctbmon_per_hbblk),
+            "minuploadbandwidthprice": int((
+              sia_settings["host"]["minuploadbandwidthprice"]
+              if "minuploadbandwidthprice" in sia_settings["host"]
+              else 8.2) * sctb_per_hb),
+            "collateral": int((
+              sia_settings["host"]["collateral"]
+              if "collateral" in sia_settings["host"]
+              else 80) * sctbmon_per_hbblk),
+            "collateralbudget": int((
+              sia_settings["host"]["collateralbudget"]
+              if "collateralbudget" in sia_settings["host"]
+              else 2000) * H_PER_SC),
+            "maxcollateral": int((
+              sia_settings["host"]["maxcollateral"]
+              if "maxcollateral" in sia_settings["host"]
+              else 100) * H_PER_SC),
+            "maxduration": int((
+              sia_settings["host"]["maxduration"]
+              if "maxduration" in sia_settings["host"]
+              else 6) * blocks_per_month),
+          },
+          "minebox_sharing": {
+            "enabled": (
+              sia_settings["minebox_sharing"]["enabled"]
+              if "enabled" in sia_settings["minebox_sharing"]
+              else False),
+            "shared_space_ratio": (
+              sia_settings["minebox_sharing"]["shared_space_ratio"]
+              if "shared_space_ratio" in sia_settings["minebox_sharing"]
+              else 0.5),
+          },
+        }
     return get_sia_config.settings
 
 def _get_btrfs_space(diskpath):

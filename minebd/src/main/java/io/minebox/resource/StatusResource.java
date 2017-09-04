@@ -12,7 +12,8 @@ import javax.ws.rs.core.MediaType;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import io.minebox.nbd.MetadataService;
+import io.minebox.nbd.download.DownloadFactory;
+import io.minebox.nbd.download.DownloadService;
 import io.minebox.nbd.encryption.EncyptionKeyProvider;
 import io.swagger.annotations.Api;
 import org.slf4j.Logger;
@@ -27,13 +28,13 @@ public class StatusResource {
     private static final Logger LOGGER = LoggerFactory.getLogger(StatusResource.class);
     final private EncyptionKeyProvider encyptionKeyProvider;
     private final String parentDir;
-    final private MetadataService metadataService;
+    final private DownloadFactory downloadFactory;
 
     @Inject
-    public StatusResource(EncyptionKeyProvider encyptionKeyProvider, @Named("parentDir") String parentDir, MetadataService metadataService) {
+    public StatusResource(EncyptionKeyProvider encyptionKeyProvider, @Named("parentDir") String parentDir, DownloadFactory downloadFactory) {
         this.encyptionKeyProvider = encyptionKeyProvider;
         this.parentDir = parentDir;
-        this.metadataService = metadataService;
+        this.downloadFactory = downloadFactory;
     }
 
     @GET
@@ -46,21 +47,29 @@ public class StatusResource {
         if (!status.hasEncryptionKey) {
             return status;
         }
-        status.connectedMetadata = metadataService.connectedMetadata();
-        if (!status.connectedMetadata) {
-            return status;
-        }
-        status.remoteMetadataDetected = metadataService.hasMetadata();
-        if (!status.remoteMetadataDetected) {
-            return status;
-        }
-        for (String fileName : metadataService.allFilenames()) {
-            if (!Files.exists(Paths.get(parentDir).resolve(fileName))) {
-                status.restoreRunning = true;
+        if (downloadFactory.hasDownloadService()) {
+            final DownloadService downloadService = downloadFactory.get();
+            status.connectedMetadata = downloadService.connectedMetadata();
+            if (!status.connectedMetadata) {
                 return status;
             }
+            status.remoteMetadataDetected = downloadService.hasMetadata();
+            if (!status.remoteMetadataDetected) {
+                return status;
+            }
+            for (String fileName : downloadService.allFilenames()) {
+                if (!Files.exists(Paths.get(parentDir).resolve(fileName))) {
+                    status.restoreRunning = true;
+                    return status;
+                }
+            }
+            status.restoreRunning = false;
+        } else {
+            status.connectedMetadata = false;
+            status.hasEncryptionKey = false;
+            status.remoteMetadataDetected = false;
+            status.restoreRunning = false;
         }
-        status.restoreRunning = false;
         return status;
     }
 

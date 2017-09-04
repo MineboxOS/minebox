@@ -1,6 +1,6 @@
 Name: minebox-sia
 
-Version: 1.2.2
+Version: 1.3.0
 Release: %(git describe --tags --match 'minebox*'|grep -oP "(?<=minebox_v).*" | tr '-' '_')%{?dist}
 Summary: Sia - decentralized cloud storage platform
 License: MIT License
@@ -15,14 +15,14 @@ Sia is a new decentralized cloud storage platform that radically alters the land
 
 # Packaging
 %install
-install -D --mode 755 "%{_topdir}BUILD/siad" "$RPM_BUILD_ROOT/usr/local/siad"
-install -D --mode 755 "%{_topdir}BUILD/siac" "$RPM_BUILD_ROOT/usr/local/siac"
-install -D "%{_topdir}sia/systemd/sia.service" "$RPM_BUILD_ROOT/etc/systemd/system/sia.service"
+install -pD --mode 755 "%{_topdir}BUILD/siad" "$RPM_BUILD_ROOT/usr/local/siad"
+install -pD --mode 755 "%{_topdir}BUILD/siac" "$RPM_BUILD_ROOT/usr/local/siac"
+install -pD --mode 644 "%{_topdir}sia/systemd/sia.service" "$RPM_BUILD_ROOT/etc/systemd/system/sia.service"
 
 # Installation script
 %pre
 /usr/bin/getent group sia || /usr/sbin/groupadd -r sia
-/usr/bin/getent passwd sia || /usr/sbin/useradd -r -d /mnt/lower1/sia -s /sbin/nologin sia
+/usr/bin/getent passwd sia || /usr/sbin/useradd -r -d /mnt/lower1/sia -s /sbin/nologin -g sia sia
 set +e
 systemctl stop sia
 set -e
@@ -43,7 +43,10 @@ set -e
 fi
 
 %postun
+if [ "$1" = 0 ] ; then
 /usr/sbin/userdel sia
+/usr/sbin/groupdel sia
+fi
 systemctl daemon-reload
 
 %files

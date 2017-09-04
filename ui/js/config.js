@@ -9,7 +9,8 @@ var config = {
 		map: {
 			'dashboard': 'dashboard.html',
 			'wallet': 'wallet.html',
-			'snapshots': 'snapshots.html',
+			'contracts': 'contracts.html',
+			'backups': 'backups.html',
 			'settings': 'settings.html'
 		},
 		buttons: {

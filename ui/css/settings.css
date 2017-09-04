@@ -1,0 +1,61 @@
+#settings {
+	padding: 60px 0;
+}
+	#settings input {
+		display: inline-block;
+		margin: 0 5px;
+		max-width: 100px;
+	}
+	#settings label {
+		display: inline-block;
+	}
+	#settings input[type="checkbox"] {
+
+	}
+	#settings input[type="text"],
+	#settings input[type="number"] {
+
+	}
+	#user-email {
+		display: block !important;
+		max-width: 100% !important;
+		margin: 0 !important;
+	}
+	#settings .limit-text {
+		display: inline-block;
+		width: 90px;
+	}
+	#settings .bandwidth-box input {
+		text-align: right;
+	}
+	#settings .settings-title-box {
+		margin-bottom: 20px;
+	}
+	#settings .settings-title-box>h4 {
+		margin-bottom: 0;
+	}
+	#settings .bandwidth-box .note {
+		font-style: italic;
+		font-size: 0.8em;
+		opacity: .8;
+	}
+	#settings .settings-box .disable-this {
+		opacity: 1;
+		transition: all ease .3s;
+		-webkit-transition: all ease .3s;
+		-moz-transition: all ease .3s;
+		-o-transition: all ease .3s;
+	}
+	#settings .settings-box.disabled .disable-this {
+		opacity: .4;
+		cursor: not-allowed;
+	}
+
+
+#save-settings-box {
+	text-align: right;
+}
+
+#feedback {
+	position: fixed;
+}

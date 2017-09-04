@@ -11,6 +11,9 @@
     <link type="text/css" rel="stylesheet" href="css/heebo.css" />
     <link type="text/css" rel="stylesheet" href="css/type.css" />
     <link type="text/css" rel="stylesheet" href="css/genericCloseButton.css" />
+    <link type="text/css" rel="stylesheet" href="css/loadingManager.css" />
+    <link type="text/css" rel="stylesheet" href="css/loadingWitness.css" />
+    <link type="text/css" rel="stylesheet" href="css/notify.css" />
     <link type="text/css" rel="stylesheet" href="css/menu.css" />
     <link type="text/css" rel="stylesheet" href="css/form.css" />
     <link type="text/css" rel="stylesheet" href="css/tables.css" />
@@ -19,7 +22,9 @@
 
     <link type="text/css" rel="stylesheet" href="css/dashboard.css" />
     <link type="text/css" rel="stylesheet" href="css/wallet.css" />
-    <link type="text/css" rel="stylesheet" href="css/snapshots.css" />
+    <link type="text/css" rel="stylesheet" href="css/contracts.css" />
+    <link type="text/css" rel="stylesheet" href="css/backups.css" />
+    <link type="text/css" rel="stylesheet" href="css/settings.css" />
 
     <title>Minebox OS BETA</title>
   </head>
@@ -27,16 +32,6 @@
   <body>
 
     <header id="header">
-      <div id="topbar" class="container-fluid">
-        <div class="clearfix">
-          <div class="pull-left">
-            <p>Hostname: <span id="hostname">Minebox</span>&nbsp;&nbsp;Mgmt IP: <span id="mgmt-ip">127.0.0.1</span></p>
-          </div>
-          <div class="pull-right">
-            <p><span id="so-version">Linux 4.6.0-el7.el_repo.x86_64</span>&nbsp;&nbsp;Uptime: <span id="uptime">20:14</span></p>
-          </div>
-        </div>
-      </div>
       <div id="header-content" class="container-fluid">
         <div class="row">
           <div id="logo-box" class="col-xs-8 col-sm-8 col-md-2 col-lg-2">
@@ -45,8 +40,10 @@
           <div id="menu-box" class="hidden-xs hidden-sm col-md-10 col-lg-10">
             <ul id="menu">
               <li data-go="dashboard">Dashboard</li>
+              <li data-go="backups">Backups</li>
               <li data-go="wallet">Wallet</li>
-              <li data-go="snapshots">Snapshots</li>
+              <li data-go="contracts">Contracts</li>
+              <li><a href="/">Rockstor</a></li>
               <li data-go="settings">Settings</li>
             </ul>
           </div>
@@ -63,10 +60,21 @@
 
     <div id="wrapper">
       <!-- do something (dummy message) -->
-      <div id="dummy-message" class="container-fluid">
-        <p>Select one of the options above to start tunning your device :)</p>
-      </div>
+      <div id="dummy-message" class="container-fluid"></div>
     </div>
+
+
+
+    <div id="loading-screen">
+      <div id="loading-contents">
+        <img src="assets/images/logo/minebox-logo-white.png" class="logo" />
+        <h4>Loading</h4>
+        <p>[&nbsp;<span class="loading-contents"></span>&nbsp;]</p>
+      </div>
+      <div class="generic-close-button"></div>
+    </div>
+    <div id="loading-witness"></div>
+
 
 
     <div id="displays" style="width:0;height:0;opacity:0;overflow:hidden;">
@@ -87,6 +95,8 @@
     <script type="text/javascript" src="js/instascan.js"></script>
     <script type="text/javascript" src="js/qrcode.min.js"></script>
     <script type="text/javascript" src="js/jquery.copyToClipboard.js"></script>
+    <script type="text/javascript" src="js/loadingWitness.js"></script>
+    <script type="text/javascript" src="js/jquery.loadingManager.js"></script>
     <script type="text/javascript" src="js/jquery.requester.js"></script>
     <script type="text/javascript" src="js/jquery.display.js"></script>
     <script type="text/javascript" src="js/jquery.menuManager.js"></script>
@@ -94,10 +104,13 @@
     <script type="text/javascript" src="js/jquery.navigation.js"></script>
     <script type="text/javascript" src="js/jquery.urlInfo.js"></script>
     <script type="text/javascript" src="js/jquery.viewLoader.js"></script>
+    <script type="text/javascript" src="js/jquery.notify.js"></script>
 
     <script type="text/javascript" src="js/app.js"></script>
     <script type="text/javascript" src="js/app.dashboard.js"></script>
     <script type="text/javascript" src="js/app.wallet.js"></script>
-    <script type="text/javascript" src="js/app.snapshots.js"></script>
+    <script type="text/javascript" src="js/app.contracts.js"></script>
+    <script type="text/javascript" src="js/app.backups.js"></script>
+    <script type="text/javascript" src="js/app.settings.js"></script>
   </body>
 </html>

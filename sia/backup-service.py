@@ -7,12 +7,14 @@ from __future__ import division
 from __future__ import print_function
 from flask import Flask, request, jsonify, json
 from os import environ
+import os
 import time
 import logging
 import threading
 from backuptools import *
 from siatools import *
-from backupinfo import get_backups_to_restart, get_latest, is_finished
+from backupinfo import get_backups_to_restart, get_latest, get_list, is_finished
+from systemtools import MACHINE_AUTH_FILE, submit_machine_auth
 from connecttools import get_from_sia
 
 # Define various constants.
@@ -45,7 +47,8 @@ def api_trigger():
     if not success:
         return jsonify(message=errmsg), 503
     bthread = start_backup_thread()
-    return jsonify(message="Backup started: %s." % bthread.name), 200
+    return jsonify(message="Backup started: %s." % bthread.name,
+                   name=threadstatus[bthread.name]["snapname"]), 200
 
 
 @app.route("/status")
@@ -64,8 +67,12 @@ def api_start():
           "finished": threadstatus[tname]["finished"],
           "failed": threadstatus[tname]["failed"],
           "size": threadstatus[tname]["backupsize"],
+          "filecount": len(threadstatus[tname]["backupfiles"]),
           "upload_size": threadstatus[tname]["uploadsize"],
           "upload_progress": threadstatus[tname]["uploadprogress"],
+          "total_progress": threadstatus[tname]["totalprogress"],
+          "fully_available": threadstatus[tname]["available"],
+          "metadata_uploaded": threadstatus[tname]["metadata_uploaded"],
         })
     return jsonify(statusdata), 200
 
@@ -76,7 +83,13 @@ def api_ping():
     # For example, we need to do this early after booting to restart backups
     # if needed (via @app.before_first_request).
 
-    # Check for synced sia consensus as a prerequisite.
+    if not os.path.isfile(MACHINE_AUTH_FILE):
+        app.logger.info("Submit machine authentication to Minebox admin service.")
+        success, errmsg = submit_machine_auth()
+        if not success:
+            app.logger.error(errmsg)
+
+    # Check for synced sia consensus as a prerequisite toe verything else.
     success, errmsg = check_sia_sync()
     if not success:
         # Return early, we need a synced consensus to do anything.
@@ -124,6 +137,18 @@ def api_ping():
                 and threadstatus[tname]["starttime_step"] < time.time() - 30 * 60):
                 # This would return True for success but already logs errors.
                 restart_sia()
+        # If the list of unfinished backups is significantly larger than active
+        # backups, we very probably have quite a few backups hanging around
+        # that we need to cleanup but don't get to routine cleanup (which
+        # happens only when a backup finishes).
+        unfinished_backups = get_list()
+        if len(unfinished_backups) > len(active_backups) + 3:
+            app.logger.info("We have %s unfinished backups but only %s active ones, let's clean up."
+                            % (len(unfinished_backups), len(active_backups)))
+            start_cleanup_thread()
+
+    # Update Sia config if more than 10% off.
+    update_sia_config()
 
     # See if we need to rebalance the disk space.
     rebalance_diskspace()
@@ -158,11 +183,15 @@ def run_backup(startevent, snapname=None):
           "ident": threading.current_thread().ident,
           "backupfileinfo": [],
           "backupsize": None,
+          "backupfiles": [],
           "uploadsize": None,
           "uploadfiles": [],
           "uploadprogress": 0,
+          "totalprogress": 0,
           "starttime_thread": time.time(),
           "starttime_step": time.time(),
+          "available": False,
+          "metadata_uploaded": False,
           "finished": False,
           "failed": False,
           "restarted": restarted,
@@ -221,6 +250,26 @@ def run_backup(startevent, snapname=None):
         threadstatus[threading.current_thread().name]["starttime_step"] = time.time()
 
 
+def start_cleanup_thread():
+    cevent = threading.Event()
+    cthread = threading.Thread(target=run_cleanup, args=(cevent,))
+    cthread.daemon = True
+    cthread.start()
+    cevent.wait() # Wait for thread being set up.
+    return cthread
+
+
+def run_cleanup(startevent):
+    # The routes have implicit Flask application context, but the thread needs an explicit one.
+    # See http://flask.pocoo.org/docs/appcontext/#creating-an-application-context
+    with app.app_context():
+        threading.current_thread().name = 'cleanup.backups'
+        # Tell main thread we are set up.
+        startevent.set()
+        # Clean up old backups (locally and on the network).
+        remove_old_backups({}, get_running_backups())
+
+
 def get_running_backups():
     return [threadstatus[thread.name]["snapname"]
             for thread in threading.enumerate()
@@ -230,7 +279,8 @@ def get_running_backups():
 def get_running_helpers():
     return [thread.name
             for thread in threading.enumerate()
-              if thread.name.startswith("sia.") ]
+              if (thread.name.startswith("sia.")
+                  or thread.name.startswith("cleanup.")) ]
 
 
 def restart_backups():

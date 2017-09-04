@@ -13,7 +13,7 @@ import io.minebox.nbd.SerialNumberService;
 import io.minebox.nbd.StaticEncyptionKeyProvider;
 import io.minebox.nbd.ep.BucketFactory;
 import io.minebox.nbd.ep.MineboxExport;
-import io.minebox.nbd.ep.NullMetadataService;
+import io.minebox.nbd.ep.TestDownloadService;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -45,7 +45,7 @@ public class MineboxExportTest {
     }
 
     public static MineboxExport buildMineboxExport(MinebdConfig cfg) {
-        final BucketFactory bucketFactory = new BucketFactory(SERIAL_NUMBER_SERVICE, cfg, new NullEncryption(), new NullMetadataService());
+        final BucketFactory bucketFactory = new BucketFactory(SERIAL_NUMBER_SERVICE, cfg, new NullEncryption(), TestDownloadService::new);
         return new MineboxExport(cfg, new MetricRegistry(), bucketFactory);
     }
 

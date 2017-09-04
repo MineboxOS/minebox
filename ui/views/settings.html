@@ -1,7 +1,64 @@
 <div id="settings">
   <div id="content" class="content">
-    <div class="container-fluid">
+    <div class="container">
       
+      	<div class="row">
+	    	<div class="col-xs-12 col-sm-6 bandwidth-box settings-box">
+	    		
+	    		<div class="settings-title-box">
+		    		<h4>Limit Minebox Bandwidth</h4>
+		    		<p>Specify a limit for your Minebox to send and receive data.</p>
+	    		</div>
+
+	    		<form>
+	    			<fieldset>
+	    				<input type="checkbox" id="bandwidth-limit" name="bandwidth-limit" />
+	    				<label for="bandwidth-limit">Limit bandwidth</label>
+	    			</fieldset>
+
+	    			<fieldset class="disable-this">
+	    				<p><span class="limit-text">* Upload limit</span> <input type="number" id="upload-limit" name="upload-limit" />KB/s</p>
+	    				<p><span class="limit-text">* Download limit</span> <input type="number" id="download-limit" name="download-limit" />KB/s</p>
+	    				<p class="note">* Leave it blank or set it to 0 for unlimited</p>
+	    			</fieldset>
+	    		</form>
+
+	    	</div>
+	    	<div class="col-xs-12 col-sm-6 notifications-box settings-box">
+	    		
+	    		<div class="settings-title-box">
+		    		<h4>Receive Minebox notifications</h4>
+		    		<p>Set an e-mail to get notifications from your Minebox device.</p>
+	    		</div>
+
+	    		<form>
+	    			<fieldset>
+	    				<input type="checkbox" id="receive-notifications" name="receive-notifications" />
+	    				<label for="receive-notifications">Enable notifications</label>
+	    			</fieldset>
+
+	    			<fieldset class="disable-this">
+	    				<label>Receive notifications in my e-mail</label>
+	    				<input type="text" id="user-email" name="user-email" placeholder="Type in your e-mail address" />
+	    			</fieldset>
+	    		</form>
+
+	    	</div>
+    	</div>
+
+    	<div id="save-settings-box" class="row">
+    		<div class="col-xs-12">
+    			<button id="save-settings" class="button">Save settings</button>
+    		</div>
+    	</div>
+
     </div>
   </div>
+
+
+	<div id="feedback">
+		<div class="container-fluid">
+			
+		</div>
+	</div>
 </div>

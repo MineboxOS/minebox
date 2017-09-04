@@ -19,11 +19,18 @@ from connecttools import (get_demo_url, get_from_sia, post_to_sia,
 from backupinfo import *
 from siatools import check_sia_sync, SIA_DIR
 
+REDUNDANCY_LIMIT = 2.0
+
 def check_backup_prerequisites():
     # Check if prerequisites are met to make backups.
     success, errmsg = check_sia_sync()
     if not success:
         return False, errmsg
+    siadata, sia_status_code = get_from_sia("renter/contracts")
+    if sia_status_code >= 400:
+        return False, siadata["message"]
+    if not siadata["contracts"]:
+        return False, "No Sia renter contracts, so uploading is not possible."
     # Potentially check things other than sia.
     return True, ""
 
@@ -103,6 +110,7 @@ def initiate_uploads(status):
     # is only one and we can ignore the risk of catching multiple directories with
     # the * wildcard.
     status["backupfileinfo"] = []
+    status["backupfiles"] = []
     status["uploadfiles"] = []
     status["backupsize"] = 0
     status["uploadsize"] = 0
@@ -114,21 +122,33 @@ def initiate_uploads(status):
             filename = path.basename(filepath)
             (froot, fext) = path.splitext(filename)
             sia_fname = '%s.%s%s' % (froot, int(fileinfo.st_mtime), fext)
-            if any(sf['siapath'] == sia_fname and sf['available'] for sf in siafiles):
-                current_app.logger.info("%s is part of the set and already uploaded." % sia_fname)
-            elif any(sf['siapath'] == sia_fname for sf in siafiles):
+            status["backupfiles"].append(sia_fname)
+            if (siafiles
+                and any(sf["siapath"] == sia_fname
+                        and sf["available"]
+                        and sf["redundancy"] > REDUNDANCY_LIMIT
+                        for sf in siafiles)):
+                current_app.logger.info("%s is part of the set and already uploaded."
+                                        % sia_fname)
+            elif (siafiles
+                  and any(sf["siapath"] == sia_fname
+                          for sf in siafiles)):
                 status["uploadsize"] += fileinfo.st_size
                 status["uploadfiles"].append(sia_fname)
-                current_app.logger.info("%s is part of the set and the upload is already in progress." % sia_fname)
+                current_app.logger.info("%s is part of the set and the upload is already in progress."
+                                        % sia_fname)
             else:
                 status["uploadsize"] += fileinfo.st_size
                 status["uploadfiles"].append(sia_fname)
-                current_app.logger.info('%s has to be uploaded, starting that.' % sia_fname)
+                current_app.logger.info("%s has to be uploaded, starting that."
+                                        % sia_fname)
                 siadata, sia_status_code = post_to_sia('renter/upload/%s' % sia_fname,
                                                        {'source': filepath})
                 if sia_status_code != 204:
-                    return False, "ERROR: sia upload error %s: %s" % (sia_status_code, siadata['message'])
-            status["backupfileinfo"].append({"siapath": sia_fname, "size": fileinfo.st_size})
+                    return False, ("ERROR: sia upload error %s: %s"
+                                   % (sia_status_code, siadata["message"]))
+            status["backupfileinfo"].append({"siapath": sia_fname,
+                                             "size": fileinfo.st_size})
 
     with open(bfinfo_path, 'w') as outfile:
         json.dump(status["backupfileinfo"], outfile)
@@ -138,6 +158,7 @@ def wait_for_uploads(status):
     status["message"] = "Waiting for uploads to complete"
     status["step"] = sys._getframe().f_code.co_name.replace("_", " ")
     status["starttime_step"] = time.time()
+    status["available"] = False
     if not status["backupfileinfo"]:
         return False, "ERROR: Backup file info is missing."
     # Loop and sleep as long as the backup is not fully available and uploaded.
@@ -145,12 +166,16 @@ def wait_for_uploads(status):
     while True:
         sia_filedata, sia_status_code = get_from_sia('renter/files')
         if sia_status_code == 200:
+            total_uploaded_size = 0
             uploaded_size = 0
+            redundancy = []
             fully_available = True
             sia_map = dict((d["siapath"], index) for (index, d) in enumerate(sia_filedata["files"]))
             for bfile in status["backupfileinfo"]:
                 if bfile["siapath"] in sia_map:
                     fdata = sia_filedata["files"][sia_map[bfile["siapath"]]]
+                    total_uploaded_size += fdata["filesize"] * fdata["uploadprogress"] / 100.0
+                    redundancy.append(fdata["redundancy"])
                     if fdata["siapath"] in status["uploadfiles"]:
                         uploaded_size += fdata["filesize"] * fdata["uploadprogress"] / 100.0
                     if not fdata["available"]:
@@ -161,17 +186,20 @@ def wait_for_uploads(status):
                 else:
                     current_app.logger.debug('File "%s" not on Sia and not matching watched names.', bfile["siapath"])
             status["uploadprogress"] = 100.0 * uploaded_size / status["uploadsize"] if status["uploadsize"] else 100
-            # Break if the backup is fully available on sia and has enough upload progress.
-            # TODO: target progress should probably be 99% (or even 100%)
-            #       but until sia 1.3 release, we need 66% here due to redundancy change.
-            if fully_available and status["uploadprogress"] > 66:
-                current_app.logger.info("Backup is fully available and progress is %s%%, we can finish things up."
-                                        % int(status["uploadprogress"]))
+            status["totalprogress"] = 100.0 * total_uploaded_size / status["backupsize"] if status["backupsize"] else 100
+            min_redundancy = min(redundancy) if redundancy else 0
+            # Break if the backup is fully available on sia and has enough
+            # minimum redundancy.
+            if fully_available and min_redundancy >= REDUNDANCY_LIMIT:
+                status["available"] = True
+                current_app.logger.info("Backup is fully available and minimum file redundancy is %.1f, we can finish things up."
+                                        % min_redundancy)
                 break
-            # If we are still here, wait 5 minutes for more upload progress.
-            current_app.logger.info("Uploads are not yet complete (%s%%), wait 5 minutes."
-                                    % int(status["uploadprogress"]))
-            time.sleep(5 * 60)
+            # If we are still here, wait some minutes for more upload progress.
+            wait_minutes = 5
+            current_app.logger.info("Uploads are not yet complete (%d%% / min file redundancy %.1f), wait %d minutes."
+                                    % (int(status["uploadprogress"]), min_redundancy, wait_minutes))
+            time.sleep(wait_minutes * 60)
         else:
             return False, "ERROR: Sia daemon needs to be running for any uploads."
     return True, ""
@@ -183,20 +211,24 @@ def save_metadata(status):
     snapname = status["snapname"]
     backupname = status["backupname"]
     metadir = path.join(METADATA_BASE, backupname)
-    # Copy .sia files to metadata directory.
-    for bfile in status["backupfileinfo"]:
-        dest_siafile = path.join(metadir, "%s.sia" % bfile["siapath"])
-        if not path.isfile(dest_siafile):
-            shutil.copy2(path.join(SIA_DIR, "renter", "%s.sia" % bfile["siapath"]), metadir)
+    # Copy renter, gateway and wallet folders to metadata directory.
+    for siafolder in ["renter", "gateway", "wallet"]:
+        # The copytree target needs to be the not-yet-existing target directory.
+        shutil.copytree(path.join(SIA_DIR, siafolder),
+                        path.join(metadir, siafolder))
     # Create a bundle of all metadata for this backup.
     zipname = join(METADATA_BASE, "%s.zip" % backupname)
     if path.isfile(zipname):
         remove(zipname)
     with ZipFile(zipname, 'w') as backupzip:
-        for bfile in status["backupfileinfo"]:
-            siafilename = "%s.sia" % bfile["siapath"]
-            siafile = path.join(metadir, siafilename)
-            backupzip.write(siafile, siafilename)
+        for sfile in glob(path.join(metadir, "*", "*")):
+            # Exclude files we do not require in the zip.
+            if re.match(r'.*\.(json_temp|log)$', sfile):
+                continue
+            basefilename = path.basename(sfile)
+            basedirname = path.basename(path.dirname(sfile))
+            inzipfilename = path.join(basedirname, basefilename)
+            backupzip.write(sfile, inzipfilename)
         backupzip.write(path.join(metadir, INFO_FILENAME), INFO_FILENAME)
     # Upload metadata bundle.
     current_app.logger.info("Upload metadata.")
@@ -208,6 +240,7 @@ def save_metadata(status):
     # Remove metadata directory, leave zip around.
     if path.isfile(zipname) and path.isdir(metadir):
         shutil.rmtree(metadir)
+    status["metadata_uploaded"] = True
     return True, ""
 
 def remove_lower_snapshots(status):
@@ -224,6 +257,7 @@ def remove_old_backups(status, activebackups):
     status["message"] = "Cleaning up old backups"
     status["step"] = sys._getframe().f_code.co_name.replace("_", " ")
     status["starttime_step"] = time.time()
+    restartset = get_backups_to_restart()
     allbackupnames = get_list()
     sia_filedata, sia_status_code = get_from_sia('renter/files')
     if sia_status_code == 200:
@@ -233,19 +267,21 @@ def remove_old_backups(status, activebackups):
     keepfiles = []
     keepset_complete = False
     for backupname in allbackupnames:
+        keep_this_backup = False
         if not keepset_complete:
-            # We don't have all files to keep yet, see if this is our "golden" backup.
+            # We don't have all files to keep yet, see if this is our "golden"
+            # backup, an active or to-restart one - otherwise, schedule removal.
             backupfiles, is_finished = get_files(backupname)
-            current_app.logger.info("Keeping %s backup %s" %
-                                    ("finished" if is_finished else "unfinished",
-                                     backupname))
-            if backupfiles:
-                # Note that extend does not return anything.
-                keepfiles.extend(backupfiles)
-                # Converting to a set eliminates duplicates.
-                # Convert back to list for type consistency.
-                keepfiles = list(set(keepfiles))
-            if is_finished:
+            if backupname in activebackups or backupname in restartset:
+                keep_this_backup = True
+                # If we have an active backup that has metadata uploaded,
+                # we can consider it "golden".
+                if (backupname in activebackups
+                    and "metadata_uploaded" in status
+                    and status["metadata_uploaded"]):
+                    current_app.logger.info("Backup %s is complete!" % backupname)
+                    keepset_complete = True
+            elif backupfiles and is_finished:
                 files_missing = False
                 for bfile in backupfiles:
                    if (not bfile in sia_map
@@ -256,8 +292,18 @@ def remove_old_backups(status, activebackups):
                     # Yay! A finished backup with all files available!
                     # Keep this and everything we already collected, but that's it.
                     current_app.logger.info("Backup %s is fully complete!" % backupname)
+                    keep_this_backup = True
                     keepset_complete = True
-        else:
+            if keep_this_backup:
+                current_app.logger.info("Keeping %s backup %s" %
+                                        ("finished" if is_finished else "unfinished",
+                                         backupname))
+                # Note that extend does not return anything.
+                keepfiles.extend(backupfiles)
+                # Converting to a set eliminates duplicates.
+                # Convert back to list for type consistency.
+                keepfiles = list(set(keepfiles))
+        if not keep_this_backup:
             # We already have all files to keep, any older backup can be discarded.
             current_app.logger.info("Discard old backup %s" % backupname)
             zipname = join(METADATA_BASE, "backup.%s.zip" % backupname)

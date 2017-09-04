@@ -20,12 +20,12 @@
 .notify-window .window {
   position: fixed;
   z-index: 100;
-  width: 500px;
+  width: 600px;
   padding: 40px;
   min-height: 200px;
-  top: 50%;
+  top: 45%;
   left: 50%;
-  margin-left: -250px;
+  margin-left: -300px;
   margin-top: -200px;
 }
 .notify-window .logo {
@@ -57,6 +57,7 @@
   border: 0;
   appearance: none;
   -webkit-appearance: none;
+  min-width: 120px;
 }
 .notify-window button.accept {
   background-color: #24acce;
@@ -66,23 +67,30 @@
 }
 .notify-window .close-btn:before {
   transform: rotate(-45deg);
+  -webkit-transform: rotate(-45deg);
+  -moz-transform: rotate(-45deg);
+  -o-transform: rotate(-45deg);
 }
 .notify-window .close-btn:after {
   transform: rotate(45deg);
+  -webkit-transform: rotate(45deg);
+  -moz-transform: rotate(45deg);
+  -o-transform: rotate(45deg);
 }
 .notify-window .text {
   color: #fff;
   text-align: center;
+  overflow: hidden;
 }
 .notify-window .buttons {
   margin-top: 15px;
   text-align: center;
 }
 .notify-window button + button {
-  margin-right: 15px;
+  margin-left: 15px;
 }
 
-@media ( max-width: 500px ) {
+@media (max-width: 700px) {
   .notify-window .window {
     position: absolute;
     left: 0;
@@ -106,11 +114,14 @@
 @media ( max-height: 560px ) {
   .notify-window .window {
     position: absolute;
-    top: 30%;
-    max-width: 100%;
+    top: 0;
+    left: 0;
     max-height: 100%;
-    overflow: scroll;
-    margin-top: -120px;
+    width: 100%;
+    height: 100%;
+    overflow-y: scroll;
+    margin-top: 0;
+    margin-left: 0;
   }
   .notify-window .close-btn {
     top: 10px;

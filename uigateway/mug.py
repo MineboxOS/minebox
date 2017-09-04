@@ -15,6 +15,7 @@ import logging
 import time
 import subprocess
 import pwd
+import decimal
 import backupinfo
 from connecttools import (set_origin, check_login, get_demo_url,
                           get_from_sia, post_to_sia, get_from_minebd,
@@ -30,6 +31,7 @@ SSL_KEY="/opt/rockstor/certs/rockstor.key"
 MINEBD_STORAGE_PATH="/mnt/storage"
 UPLOADER_CMD=backupinfo.UPLOADER_CMD
 DEMOSIAC_CMD="/root/minebox-client-tools_vm/sia/demosiac.sh"
+SUDO="/usr/bin/sudo"
 MBKEY_CMD="/usr/lib/minebox/mbkey.sh"
 
 config = {}
@@ -160,7 +162,7 @@ def api_key_put():
     elif "messagesource" in mbdata and mbdata["messagesource"] == "MineBD":
         # MineBD is running but encryption is not yet set up, we can actually set a key!
         if len(request.data):
-          retcode = subprocess.call([MBKEY_CMD, "set", request.data])
+          retcode = subprocess.call([SUDO, MBKEY_CMD, "set", request.data])
           if retcode == 0:
               return jsonify(message="Key set successfully"), 200
           else:
@@ -308,6 +310,111 @@ def api_status():
     return jsonify(outdata), 200
 
 
+@app.route("/sia/status", methods=['GET'])
+@set_origin()
+def api_sia_status():
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-siastatus
+    if not check_login():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+    bytes_per_tb = 1e12 # not 2 ** 40 as Sia uses SI TB, see https://github.com/NebulousLabs/Sia/blob/v1.2.2/modules/host.go#L14
+    blocks_per_month = 30 * 24 * 3600 / SEC_PER_BLOCK
+    sctb_per_hb = H_PER_SC / bytes_per_tb # SC / TB -> hastings / byte
+    sctbmon_per_hbblk = sctb_per_hb / blocks_per_month # SC / TB / month -> hastings / byte / block
+    outdata = {}
+    consdata, cons_status_code = get_from_sia('consensus')
+    if cons_status_code == 200:
+        outdata["sia_daemon_running"] = True
+        outdata["consensus"] = {
+          "height": consdata["height"],
+          "synced": consdata["synced"],
+        }
+    else:
+        outdata["sia_daemon_running"] = False
+        outdata["consensus"] = {
+          "height": None,
+          "synced": None,
+        }
+    walletdata, wallet_status_code = get_from_sia('wallet')
+    if wallet_status_code == 200:
+        outdata["wallet"] = {
+          "unlocked": walletdata["unlocked"],
+          "encrypted": walletdata["encrypted"],
+          "confirmed_balance_sc": int(walletdata["confirmedsiacoinbalance"]) / H_PER_SC,
+          "unconfirmed_delta_sc": (int(walletdata["unconfirmedincomingsiacoins"]) -
+                                   int(walletdata["unconfirmedoutgoingsiacoins"])) / H_PER_SC,
+        }
+    else:
+        outdata["wallet"] = {
+          "unlocked": None,
+          "encrypted": None,
+          "confirmed_balance_sc": None,
+          "unconfirmed_delta_sc": None,
+        }
+    siadata, sia_status_code = get_from_sia("renter/contracts")
+    if sia_status_code == 200:
+        outdata["renting"] = {"contracts": len(siadata["contracts"])
+                                           if siadata["contracts"] else 0}
+    else:
+        outdata["renting"] = {"contracts": None}
+    siadata, sia_status_code = get_from_sia("renter/files")
+    if sia_status_code == 200:
+        if siadata["files"]:
+            outdata["renting"]["uploaded_files"] = len(siadata["files"])
+            upsize = 0
+            for fdata in siadata["files"]:
+                upsize += fdata["filesize"] * fdata["redundancy"]
+            outdata["renting"]["uploaded_size"] = upsize
+        else:
+            outdata["renting"]["uploaded_files"] = 0
+            outdata["renting"]["uploaded_size"] = 0
+    else:
+        outdata["renting"]["uploaded_files"] = None
+        outdata["renting"]["uploaded_size"] = None
+    siadata, sia_status_code = get_from_sia("renter")
+    if sia_status_code == 200:
+        outdata["renting"]["allowance_funds_sc"] = int(siadata["settings"]["allowance"]["funds"]) / H_PER_SC
+        outdata["renting"]["allowance_months"] = siadata["settings"]["allowance"]["period"] / blocks_per_month
+        outdata["renting"]["siacoins_spent"] = (int(siadata["financialmetrics"]["contractspending"]) +
+                                                int(siadata["financialmetrics"]["downloadspending"]) +
+                                                int(siadata["financialmetrics"]["storagespending"]) +
+                                                int(siadata["financialmetrics"]["uploadspending"]))/ H_PER_SC
+        outdata["renting"]["siacoins_unspent"] = int(siadata["financialmetrics"]["unspent"]) / H_PER_SC
+    else:
+        outdata["renting"]["allowance_funds_sc"] = None
+        outdata["renting"]["allowance_months"] = None
+        outdata["renting"]["siacoins_spent"] = None
+        outdata["renting"]["siacoins_unspent"] = None
+    siadata, sia_status_code = get_from_sia('host')
+    if sia_status_code == 200:
+        outdata["hosting"] = {
+          "enabled": siadata["internalsettings"]["acceptingcontracts"],
+          "maxduration_months": siadata["internalsettings"]["maxduration"] / blocks_per_month,
+          "netaddress": siadata["internalsettings"]["netaddress"],
+          "collateral_sc": int(siadata["internalsettings"]["collateral"]) / sctbmon_per_hbblk,
+          "collateralbudget_sc": int(siadata["internalsettings"]["collateralbudget"]) / H_PER_SC,
+          "maxcollateral_sc": int(siadata["internalsettings"]["maxcollateral"]) / H_PER_SC,
+          "mincontractprice_sc": int(siadata["internalsettings"]["mincontractprice"]) / H_PER_SC,
+          "mindownloadbandwidthprice_sc": int(siadata["internalsettings"]["mindownloadbandwidthprice"]) / sctb_per_hb,
+          "minstorageprice_sc": int(siadata["internalsettings"]["minstorageprice"]) / sctbmon_per_hbblk,
+          "minuploadbandwidthprice_sc": int(siadata["internalsettings"]["minuploadbandwidthprice"]) / sctb_per_hb,
+          "connectabilitystatus": siadata["connectabilitystatus"],
+          "workingstatus": siadata["workingstatus"],
+          "contracts": siadata["financialmetrics"]["contractcount"],
+          "collateral_locked_sc": int(siadata["financialmetrics"]["lockedstoragecollateral"]) / H_PER_SC,
+          "collateral_lost_sc": int(siadata["financialmetrics"]["loststoragecollateral"]) / H_PER_SC,
+          "collateral_risked_sc": int(siadata["financialmetrics"]["riskedstoragecollateral"]) / H_PER_SC,
+          "revenue_sc": (int(siadata["financialmetrics"]["storagerevenue"]) +
+                         int(siadata["financialmetrics"]["downloadbandwidthrevenue"]) +
+                         int(siadata["financialmetrics"]["uploadbandwidthrevenue"])) / H_PER_SC,
+        }
+    else:
+        outdata["hosting"] = {
+          "enabled": None,
+        }
+
+    return jsonify(outdata), 200
+
+
 @app.route("/wallet/status", methods=['GET'])
 @set_origin()
 def api_wallet_status():
@@ -352,12 +459,19 @@ def api_wallet_send():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-post-walletsend
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    # The sia daemon takes the amount in hastings. Should we also/instead
-    # support an amount specified in SC?
-    amount = request.form["amount"]
-    destination = request.form["destination"]
-    siadata, status_code = post_to_sia('wallet/siacoin',
-                                       {"amount": amount,
+    # The sia daemon takes the amount in hastings.
+    # If no amount in hastings is given, we support an amount_sc in siacoins.
+    if "amount" in request.form:
+        amount = int(request.form["amount"])
+    elif "amount_sc" in request.form:
+        # User decimal.Decimal as float math would not give good enough precision.
+        decimal.getcontext().prec = 36 # 24 decimals for hastings + 12 for SC part
+        amount = int(decimal.Decimal(request.form["amount_sc"]) * H_PER_SC)
+    else:
+        amount = 0
+    destination = request.form["destination"] if "destination" in request.form else ""
+    siadata, status_code = post_to_sia('wallet/siacoins',
+                                       {"amount": str(amount),
                                         "destination": destination})
     if status_code == 200:
         # siadata["transactionids"] is a list of IDs of the transactions that

@@ -8,14 +8,12 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Range;
-import com.google.common.collect.RangeSet;
-import com.google.common.collect.TreeRangeSet;
 import com.google.common.primitives.Ints;
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.Encryption;
-import io.minebox.nbd.MetadataService;
+import io.minebox.nbd.download.DownloadService;
 import io.minebox.nbd.SerialNumberService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,16 +24,16 @@ public class BucketFactory {
     private final String parentDir;
     private final long size;
     private final Encryption encryption;
-    private final MetadataService metadataService;
+    private final Provider<DownloadService> downloadService;
     private File parentFolder;
 
     @Inject
-    public BucketFactory(SerialNumberService serialNumberService, MinebdConfig config, Encryption encryption, MetadataService metadataService) {
+    public BucketFactory(SerialNumberService serialNumberService, MinebdConfig config, Encryption encryption, Provider<DownloadService> downloadService) {
         this.serialNumberService = serialNumberService;
         this.parentDir = config.parentDir;
         this.size = config.bucketSize.toBytes();
         this.encryption = encryption;
-        this.metadataService = metadataService;
+        this.downloadService = downloadService;
     }
 
     private File createParentFolder(SerialNumberService serialNumberService) {
@@ -62,8 +60,8 @@ public class BucketFactory {
         private final String filename;
         private final long bucketNumber;
         //right now we try to keep track of the empty ranges but dont use them anywhere. there is a big optimisation opportunity here to minimize the amount of
-        RangeSet<Long> emptyRange = TreeRangeSet.create(); //offsets in this bucket
         private RandomAccessFile randomAccessFile;
+        private volatile boolean needsFlush = false;
 
         BucketImpl(long bucketNumber) {
             this.bucketNumber = bucketNumber;
@@ -84,10 +82,15 @@ public class BucketFactory {
 
         private void ensureFileExists(File file) {
             if (!file.exists()) {
-                boolean wasDownloaded = metadataService.downloadIfPossible(file);
-                if (!wasDownloaded) {
+                DownloadService.RecoveryStatus wasDownloaded = downloadService.get().downloadIfPossible(file);
+                if (DownloadService.RecoveryStatus.ERROR.equals(wasDownloaded)) {
+                    throw new RuntimeException("i was unable to obtain the expected file");
+                } else if (DownloadService.RecoveryStatus.NO_FILE.equals(wasDownloaded)) {
                     createEmptyFile(file);
-                    emptyRange.add(Range.closed(0L, size));
+                } else if (DownloadService.RecoveryStatus.RECOVERED.equals(wasDownloaded)) {
+                    LOGGER.info("bucket {} is now happy that we got the file {}", bucketNumber, file.getName());
+                } else {
+                    throw new IllegalStateException("unexpected recovery state:" + wasDownloaded);
                 }
             }
         }
@@ -160,6 +163,10 @@ public class BucketFactory {
         }
 
         public void flush() {
+            if (!needsFlush) {
+                return;
+            }
+            needsFlush = false;
             LOGGER.info("flushing bucket {}", bucketNumber);
             try {
                 //todo make sure this triggers after potentially different pending writes have their lock
@@ -176,6 +183,7 @@ public class BucketFactory {
         @Override
         public long putBytes(long offset, ByteBuffer message) throws IOException {
             synchronized (this) {
+                needsFlush = true;
                 final long offsetInThisBucket = offsetInThisBucket(offset);
                 channel.position(offsetInThisBucket);
                 final ByteBuffer encrypted = encryption.encrypt(offset, message);
@@ -189,9 +197,9 @@ public class BucketFactory {
 
         @Override
         public void trim(long offset, long length) throws IOException {
+            needsFlush = true;
             final long offsetInThisBucket = offsetInThisBucket(offset);
             final long lengthInThisBucket = calcLengthInThisBucket(offsetInThisBucket, length); //should be always equal to length since it is normalized in MineboxEport
-            emptyRange.add(Range.closed(offsetInThisBucket, offsetInThisBucket + lengthInThisBucket));
             if (lengthInThisBucket == size) {
                 synchronized (this) {
                     channel.truncate(0);

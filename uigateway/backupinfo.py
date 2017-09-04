@@ -9,7 +9,7 @@ import os
 from glob import glob
 from zipfile import ZipFile
 import re
-from connecttools import get_from_sia
+from connecttools import get_from_sia, get_from_backupservice
 
 
 DATADIR_MASK="/mnt/lower*/data"
@@ -20,115 +20,155 @@ INFO_FILENAME="fileinfo"
 
 
 def get_status(backupname, allow_old=False):
-    backupfileinfo, is_finished, is_archived = get_fileinfo(backupname)
+    status_code = 0
 
-    status_code = 200
-    if backupfileinfo is None:
-        # This backup has no file info available or doesn't exist.
-        status_code = 404
-        files = -1
-        total_size = -1
-        rel_size = -1
-        progress = 100 if is_finished else 0
-        rel_progress = 100 if is_finished else 0
-        status = "ERROR"
-        metadata = "ERROR"
-        fully_available = False
-    elif len(backupfileinfo) < 1:
-        # Before uploads are scheduled, we find a backup but no files.
-        # If we believe we are finished/archived though, the data is damaged.
-        files = -1
-        total_size = -1
-        rel_size = -1
-        progress = 0
-        rel_progress = 0
-        if is_archived or is_finished:
-            status = "DAMAGED"
-            metadata = "DAMAGED"
-        else:
-            status = "PENDING"
-            metadata = "PENDING"
-        fully_available = False
-    else:
-        backuplist = get_list(allow_old)
-        currentidx = backuplist.index(backupname)
-        if currentidx < len(backuplist) - 1:
-            prev_backupfiles, prev_finished = get_files(backuplist[currentidx + 1])
-        else:
-            prev_backupfiles = None
-        sia_filedata, sia_status_code = get_from_sia('renter/files')
-        if sia_status_code == 200:
-            # create a dict generated from the JSON response.
-            files = 0
-            total_size = 0
-            total_pct_size = 0
-            rel_size = 0
-            rel_pct_size = 0
-            fully_available = True
-            sia_map = dict((d["siapath"], index) for (index, d) in enumerate(sia_filedata["files"]))
-            for finfo in backupfileinfo:
-                if not is_archived and finfo["siapath"] in sia_map:
-                    files += 1
-                    fdata = sia_filedata["files"][sia_map[finfo["siapath"]]]
-                    # For now, report all files.
-                    # We may want to only report files not included in previous backups.
-                    total_size += fdata["filesize"]
-                    total_pct_size += fdata["filesize"] * fdata["uploadprogress"] / 100
-                    if prev_backupfiles is None or not fdata["siapath"] in prev_backupfiles:
-                        rel_size += fdata["filesize"]
-                        rel_pct_size += fdata["filesize"] * fdata["uploadprogress"] / 100
-                    if not fdata["available"]:
-                        fully_available = False
-                elif re.match(r'.*\.dat$', finfo["siapath"]):
-                    files += 1
-                    total_size += finfo["size"]
-                    if not is_archived:
-                        fully_available = False
-                        current_app.logger.warn('File %s not found on Sia!', finfo["siapath"])
+    # If this is a backup that backupservice is tracking, let's use info from there.
+    bsdata, bs_status_code = get_from_backupservice("status")
+    if bs_status_code == 200:
+        for binfo in bsdata["backup_info"]:
+            if binfo["name"] == backupname:
+                time_snapshot = binfo["time_snapshot"]
+                files = binfo["filecount"]
+                total_size = binfo["size"]
+                rel_size = binfo["upload_size"]
+                progress = binfo["total_progress"]
+                rel_progress = binfo["upload_progress"]
+                fully_available = binfo["fully_available"]
+                if binfo["failed"]:
+                    status = "ERROR"
+                    metadata = "ERROR"
+                    status_code = 503
+                elif binfo["finished"] and binfo["metadata_uploaded"]:
+                    status = "FINISHED"
+                    metadata = "FINISHED"
+                    status_code = 200
+                elif binfo["finished"]:
+                    status = "FINISHED"
+                    metadata = "UPLOADING"
+                    status_code = 200
+                elif binfo["upload_size"]:
+                    status = "UPLOADING"
+                    metadata = "PENDING"
+                    status_code = 200
                 else:
-                    current_app.logger.debug('File "%s" not on Sia and not matching watched names.', finfo["siapath"])
-            # If size is 0, we report 100% progress.
-            # This is really needed for relative as otherwise a backup with no
-            # difference to the previous would never go to 100%.
-            progress = total_pct_size / total_size * 100 if total_size else 100
-            rel_progress = rel_pct_size / rel_size * 100 if rel_size else 100
-            if is_archived:
-                status = "ARCHIVED"
-            elif is_finished and fully_available:
-                status = "FINISHED"
-            elif is_finished and not fully_available:
-                status = "DAMAGED"
-            elif total_pct_size:
-                status = "UPLOADING"
-            else:
-                status = "PENDING"
-            if is_finished:
-                # Assume metadata is always uploaded when we are finished.
-                # As right now we report finished only if we have a .zip but no
-                # directory, and we delete the directory only after metadata
-                # upload is done, this is actually the case.
-                metadata = "FINISHED"
-            elif is_archived:
-                # Archived backups that are not finished are missing metadata.
-                metadata = "DAMAGED"
-            else:
-                # Otherwise, always report pending metadata.
-                metadata = "PENDING"
-        else:
-            current_app.logger.error("Error %s getting Sia files: %s", status_code, sia_filedata["message"])
-            status_code = 503
+                    status = "PENDING"
+                    metadata = "PENDING"
+                    status_code = 200
+
+    if not status_code:
+        backupfileinfo, is_finished, is_archived = get_fileinfo(backupname)
+
+        status_code = 200
+        time_snapshot = int(backupname)
+        if backupfileinfo is None:
+            # This backup has no file info available or doesn't exist.
+            status_code = 404
+            files = -1
+            total_size = -1
+            rel_size = -1
+            progress = 100 if is_finished else 0
+            rel_progress = 100 if is_finished else 0
+            status = "ERROR"
+            metadata = "ERROR"
+            fully_available = False
+        elif len(backupfileinfo) < 1:
+            # Before uploads are scheduled, we find a backup but no files.
+            # If we believe we are finished/archived though, the data is damaged.
             files = -1
             total_size = -1
             rel_size = -1
             progress = 0
             rel_progress = 0
-            status = "ERROR"
-            metadata = "ERROR"
+            if is_archived or is_finished:
+                status = "DAMAGED"
+                metadata = "DAMAGED"
+            else:
+                status = "PENDING"
+                metadata = "PENDING"
             fully_available = False
+        else:
+            backuplist = get_list(allow_old)
+            currentidx = backuplist.index(backupname)
+            if currentidx < len(backuplist) - 1:
+                prev_backupfiles, prev_finished = get_files(backuplist[currentidx + 1])
+            else:
+                prev_backupfiles = None
+            sia_filedata, sia_status_code = get_from_sia("renter/files")
+            if sia_status_code == 200:
+                # create a dict generated from the JSON response.
+                files = 0
+                total_size = 0
+                total_pct_size = 0
+                rel_size = 0
+                rel_pct_size = 0
+                fully_available = True
+                sia_map = dict((d["siapath"], index) for (index, d) in enumerate(sia_filedata["files"]))
+                for finfo in backupfileinfo:
+                    if not is_archived and finfo["siapath"] in sia_map:
+                        files += 1
+                        fdata = sia_filedata["files"][sia_map[finfo["siapath"]]]
+                        # For now, report all files.
+                        # We may want to only report files not included in previous backups.
+                        total_size += fdata["filesize"]
+                        total_pct_size += fdata["filesize"] * fdata["uploadprogress"] / 100
+                        if prev_backupfiles is None or not fdata["siapath"] in prev_backupfiles:
+                            rel_size += fdata["filesize"]
+                            rel_pct_size += fdata["filesize"] * fdata["uploadprogress"] / 100
+                        if not fdata["available"]:
+                            fully_available = False
+                    elif re.match(r".*\.dat$", finfo["siapath"]):
+                        files += 1
+                        total_size += finfo["size"]
+                        if not is_archived:
+                            fully_available = False
+                            current_app.logger.warn("File %s not found on Sia!",
+                                                    finfo["siapath"])
+                    else:
+                        current_app.logger.debug('File "%s" not on Sia and not matching watched names.',
+                                                 finfo["siapath"])
+                # If size is 0, we report 100% progress.
+                # This is really needed for relative as otherwise a backup with no
+                # difference to the previous would never go to 100%.
+                progress = total_pct_size / total_size * 100 if total_size else 100
+                rel_progress = rel_pct_size / rel_size * 100 if rel_size else 100
+                if is_archived:
+                    status = "ARCHIVED"
+                elif is_finished and fully_available:
+                    status = "FINISHED"
+                elif is_finished and not fully_available:
+                    status = "DAMAGED"
+                elif total_pct_size:
+                    status = "UPLOADING"
+                else:
+                    status = "PENDING"
+                if is_finished:
+                    # Assume metadata is always uploaded when we are finished.
+                    # As right now we report finished only if we have a .zip but no
+                    # directory, and we delete the directory only after metadata
+                    # upload is done, this is actually the case.
+                    metadata = "FINISHED"
+                elif is_archived:
+                    # Archived backups that are not finished are missing metadata.
+                    metadata = "DAMAGED"
+                else:
+                    # Otherwise, always report pending metadata.
+                    metadata = "PENDING"
+            else:
+                current_app.logger.error("Error %s getting Sia files: %s",
+                                         status_code, sia_filedata["message"])
+                status_code = 503
+                files = -1
+                total_size = -1
+                rel_size = -1
+                progress = 0
+                rel_progress = 0
+                status = "ERROR"
+                metadata = "ERROR"
+                fully_available = False
 
     return {
       "name": backupname,
-      "time_snapshot": int(backupname),
+      "time_snapshot": time_snapshot,
       "status": status,
       "metadata": metadata,
       "numFiles": files,

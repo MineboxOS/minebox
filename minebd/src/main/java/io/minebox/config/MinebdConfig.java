@@ -17,6 +17,8 @@ public class MinebdConfig {
     public Size bucketSize = Size.megabytes(40);
     public String httpMetadata;
     public Boolean ignoreMissingPaths = false;
+    public String siaDataDirectory;
+    public String siaClientUrl;
 
     public MinebdConfig() {
         //explicit non-annotated constructor so guice does not accidentally this class badly
