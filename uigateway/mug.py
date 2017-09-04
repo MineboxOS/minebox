@@ -26,9 +26,8 @@ from siatools import H_PER_SC, SEC_PER_BLOCK
 # Define various constants.
 REST_PORT=5000
 CONFIG_JSON_PATH="/etc/minebox/mug_config.json"
-# TODO: The Rockstor certs are at a different location in production!
-SSL_CERT="/root/rockstor-core_vm/certs/rockstor.cert"
-SSL_KEY="/root/rockstor-core_vm/certs/rockstor.key"
+SSL_CERT="/opt/rockstor/certs/rockstor.cert"
+SSL_KEY="/opt/rockstor/certs/rockstor.key"
 MINEBD_STORAGE_PATH="/mnt/storage"
 UPLOADER_CMD=backupinfo.UPLOADER_CMD
 DEMOSIAC_CMD="/root/minebox-client-tools_vm/sia/demosiac.sh"
