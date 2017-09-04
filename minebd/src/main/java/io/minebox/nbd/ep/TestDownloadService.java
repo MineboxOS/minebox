@@ -1,7 +1,6 @@
 package io.minebox.nbd.ep;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.Collections;
 
 import io.minebox.nbd.download.DownloadService;
@@ -26,7 +25,7 @@ public class TestDownloadService implements DownloadService {
     }
 
     @Override
-    public Collection<String> allFilenames() {
-        return Collections.emptyList();
+    public double completedPercent(File parentDir) {
+        return 100.0;
     }
 }
