@@ -28,7 +28,7 @@ public class CrashTest {
         final SymmetricEncryption test123 = new SymmetricEncryption(keyProvider);
         MinebdConfig cfg = TestUtil.createSampleConfig();
 
-        final BucketFactory bucketFactory = new BucketFactory(MineboxExportTest.SERIAL_NUMBER_SERVICE, cfg, test123, new TestDownloadService());
+        final BucketFactory bucketFactory = new BucketFactory(MineboxExportTest.SERIAL_NUMBER_SERVICE, cfg, test123, TestDownloadService::new);
         final SystemdUtil mockSystemD = new SystemdUtil() {
             @Override
             void sendNotify() {
@@ -46,7 +46,7 @@ public class CrashTest {
         final long duration = System.currentTimeMillis() - start;
         java.time.Duration d = java.time.Duration.of(duration, ChronoUnit.MILLIS);
         final long seconds = d.getSeconds();
-        if (seconds == 0){
+        if (seconds == 0) {
             fail();
         }
         final double MBpS = 2000 / seconds;

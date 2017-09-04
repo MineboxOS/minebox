@@ -45,7 +45,7 @@ public class MineboxExportTest {
     }
 
     public static MineboxExport buildMineboxExport(MinebdConfig cfg) {
-        final BucketFactory bucketFactory = new BucketFactory(SERIAL_NUMBER_SERVICE, cfg, new NullEncryption(), new TestDownloadService());
+        final BucketFactory bucketFactory = new BucketFactory(SERIAL_NUMBER_SERVICE, cfg, new NullEncryption(), TestDownloadService::new);
         return new MineboxExport(cfg, new MetricRegistry(), bucketFactory);
     }
 
