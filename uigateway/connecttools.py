@@ -331,7 +331,7 @@ def get_from_mineboxconfig(api):
         return {"message": str(e)}, 500
 
 
-def post_to_faucetservice(api, formData):
+def post_to_faucetservice(api, queryData):
     url = FAUCET_URL + api
     token = _get_metadata_token()
     if token is None:
@@ -340,7 +340,7 @@ def post_to_faucetservice(api, formData):
     try:
         headers = requests.utils.default_headers()
         headers.update({'X-Auth-Token': token})
-        response = requests.post(url, data=formData, headers=headers)
+        response = requests.post(url, params=queryData, headers=headers)
         if ('Content-Type' in response.headers
             and re.match(r'^application/json',
                          response.headers['Content-Type'])):
