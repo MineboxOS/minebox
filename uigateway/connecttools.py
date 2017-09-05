@@ -163,6 +163,15 @@ def get_from_minebd(api):
                 # For error-ish codes, tell that they are from MineBD.
                 mbdata["messagesource"] = "MineBD"
             return mbdata, response.status_code
+        elif response.text[0] == "{" and response.text[-1] == "}":
+            # HACK: We seem to have a JSON response without a JSON Content-Type.
+            # Still try to get it as JSON.
+            current_app.logger.warn('Warning: MineBD sent a JSON response without correct Content-Type for end point /%s', api)
+            mbdata = response.json()
+            if response.status_code >= 400:
+                # For error-ish codes, tell that they are from MineBD.
+                mbdata["messagesource"] = "MineBD"
+            return mbdata, response.status_code
         else:
             return {"message": response.text,
                     "messagesource": "MineBD"}, response.status_code

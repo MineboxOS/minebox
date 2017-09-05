@@ -303,7 +303,7 @@ system status `true`/`false` fields will also be available in this case.
   "minebd_running": true,
   "minebd_encrypted": true,
   "minebd_storage_mounted": true,
-  "minebd_serialnumber": "1234567890abcdef...",
+  "restore_running": false,
   "users_created": true,
   "backup_type": "sia",
   "sia_daemon_running": true,
