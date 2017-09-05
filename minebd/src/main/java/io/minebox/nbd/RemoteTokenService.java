@@ -45,6 +45,9 @@ public class RemoteTokenService {
                     .queryString("timestamp", timeStamp)
                     .queryString("signature", privKey.signMessage(String.valueOf(timeStamp)))
                     .asString();
+            if (token.getStatus() != 200) {
+                return Optional.empty();
+            }
             return Optional.of(token.getBody());
         } catch (UnirestException e) {
             return Optional.empty();

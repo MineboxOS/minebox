@@ -17,10 +17,10 @@ SIAD_URL="http://localhost:9980/"
 MINEBD_URL="http://localhost:8080/v1/"
 MINEBD_AUTH_KEY_FILE="/etc/minebox/local-auth.key"
 BACKUPSERVICE_URL="http://localhost:5100/"
-SETTINGS_URL="https://settings.api.minebox.io/v1/settings/"
+SETTINGS_URL="https://settings.api.minebox.io/v1/settings/settings/"
 FAUCET_URL="https://faucet.api.minebox.io/v1/faucet/"
 ADMIN_URL="https://faucet.api.minebox.io/v1/faucet/admin/"
-METADATA_URL="https://metadata.api.minebox.io/v1/"
+METADATA_URL="https://metadata.api.minebox.io/v1/metadata/"
 LOCALDEMO_URL="http://localhost:8050/v1/"
 DEMOSIAD_URL="http://localhost:9900/"
 
@@ -340,7 +340,7 @@ def get_from_mineboxconfig(api):
         return {"message": str(e)}, 500
 
 
-def post_to_faucetservice(api, formData):
+def post_to_faucetservice(api, queryData):
     url = FAUCET_URL + api
     token = _get_metadata_token()
     if token is None:
@@ -349,7 +349,7 @@ def post_to_faucetservice(api, formData):
     try:
         headers = requests.utils.default_headers()
         headers.update({'X-Auth-Token': token})
-        response = requests.post(url, data=formData, headers=headers)
+        response = requests.post(url, params=queryData, headers=headers)
         if ('Content-Type' in response.headers
             and re.match(r'^application/json',
                          response.headers['Content-Type'])):

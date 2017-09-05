@@ -212,8 +212,14 @@ public class SiaUtil {
         return jsonObject.getString("address");
     }
 
+    public String getWalletInfo() {
+        final HttpResponse<String> stringHttpResponse = siaCommand(Command.WALLET, ImmutableMap.of());
+        return stringHttpResponse.getBody();
+    }
+
     public enum Command {
         //        WALLET("/wallet", "GET"), //confirmedsiacoinbalance
+        WALLET("/wallet", "GET"),
         STOP("/daemon/stop", "GET"),
         CONSENSUS("/consensus", "GET"),
         DOWNLOAD("/renter/download", "GET", true),

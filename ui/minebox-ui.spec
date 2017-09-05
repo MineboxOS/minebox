@@ -8,7 +8,7 @@ Version: %(git describe --tags --match 'ui*'|grep -oP "(?<=ui_v).")
 Release: %(git describe --tags --match 'ui*'|grep -oP "(?<=ui_v..).*" | tr '-' '_')%{?dist}
 Summary: The Minebox UI
 License: Proprietary
-Requires: minebox-virtualenv
+Requires: minebox-rockstor minebox-virtualenv
 
 %description
 The Minebox-specific User Interface pieces.

@@ -24,7 +24,7 @@ minebd:
   encryptionKeyPath: /etc/minebox/minebox.key
   authFile: /etc/minebox/local-auth.key
   bucketSize : 40M
-  httpMetadata: "https://metadata.minebox.io/v1/"
+  httpMetadata: https://metadata.api.minebox.io/v1/metadata/
   ignoreMissingPaths: true
   siaDataDirectory: /mnt/lower1/sia
   siaClientUrl: "http://localhost:9980"
