@@ -15,7 +15,7 @@ import subprocess
 import sys
 
 from connecttools import (get_demo_url, get_from_sia, post_to_sia,
-                          put_to_minebd, put_to_metadata)
+                          get_from_minebd, put_to_minebd, put_to_metadata)
 from backupinfo import *
 from siatools import check_sia_sync, SIA_DIR
 
@@ -107,7 +107,7 @@ def initiate_uploads(status):
 
     # We have a randomly named subdirectory containing the .dat files.
     # The subdirectory matches the serial number that MineBD returns.
-    mbdata, mb_status_code = get_form_minebd('serialnumber')
+    mbdata, mb_status_code = get_from_minebd('serialnumber')
     if mb_status_code == 200:
         mbdirname = mbdata["message"]
     else:
