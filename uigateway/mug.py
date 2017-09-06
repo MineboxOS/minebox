@@ -156,10 +156,10 @@ def api_key_verify():
 @set_origin()
 def api_key_put():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-put-key
-    mbdata, mb_status_code = get_from_minebd('serialnumber')
+    mbdata, mb_status_code = get_from_minebd('status')
     if mb_status_code == 200:
-        return jsonify(message="File system is already encrypted, cannot set key."), 400
-    elif "messagesource" in mbdata and mbdata["messagesource"] == "MineBD":
+        if mbdata["hasEncryptionKey"]:
+            return jsonify(message="File system is already encrypted, cannot set key."), 400
         # MineBD is running but encryption is not yet set up, we can actually set a key!
         if len(request.data):
           retcode = subprocess.call([SUDO, MBKEY_CMD, "set", request.data])
@@ -255,25 +255,17 @@ def api_status():
         outdata["logged_in"] = False
         outdata["user"] = None
 
-    mbdata, mb_status_code = get_from_minebd('serialnumber')
+    mbdata, mb_status_code = get_from_minebd('status')
     if mb_status_code == 200:
         outdata["minebd_running"] = True
-        outdata["minebd_encrypted"] = True
+        outdata["minebd_encrypted"] = mbdata["hasEncryptionKey"]
         outdata["minebd_storage_mounted"] = ismount(MINEBD_STORAGE_PATH)
-        if username:
-            outdata["minebd_serialnumber"] = mbdata["message"]
-        else:
-            outdata["minebd_serialnumber"] = None
-    elif "messagesource" in mbdata and mbdata["messagesource"] == "MineBD":
-        outdata["minebd_running"] = True
-        outdata["minebd_encrypted"] = False
-        outdata["minebd_storage_mounted"] = False
-        outdata["minebd_serialnumber"] = None
+        outdata["restore_running"] = mbdata["restoreRunning"]
     else:
         outdata["minebd_running"] = False
         outdata["minebd_encrypted"] = None
         outdata["minebd_storage_mounted"] = False
-        outdata["minebd_serialnumber"] = None
+        outdata["restore_running"] = False
 
     hasusers = False
     for user in pwd.getpwall():
