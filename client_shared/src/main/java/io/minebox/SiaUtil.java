@@ -123,7 +123,7 @@ public class SiaUtil {
         if (statusGood(downloadResult)) {
             return true;
         }
-        LOGGER.warn("unable to download file {} for an unexpected reason: {} ", siaPath, downloadResult.getBody().toString());
+        LOGGER.warn("unable to download file {} for an unexpected reason: {} ", siaPath, downloadResult.getBody());
         return false;
     }
 

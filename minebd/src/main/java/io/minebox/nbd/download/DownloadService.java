@@ -3,7 +3,6 @@ package io.minebox.nbd.download;
 import com.google.inject.ProvidedBy;
 
 import java.io.File;
-import java.util.Collection;
 
 /**
  * Created by andreas on 27.04.17.
@@ -12,7 +11,7 @@ import java.util.Collection;
 public interface DownloadService {
 
     enum RecoveryStatus {
-        NO_FILE, RECOVERED, ERROR
+        NO_FILE, RECOVERED, ERROR;
     }
 
     RecoveryStatus downloadIfPossible(File file);
@@ -21,5 +20,5 @@ public interface DownloadService {
 
     boolean connectedMetadata();
 
-    Collection<String> allFilenames();
+    double completedPercent(File parentDir);
 }

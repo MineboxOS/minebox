@@ -36,7 +36,7 @@ public class BucketFactory {
         this.downloadService = downloadService;
     }
 
-    private File createParentFolder(SerialNumberService serialNumberService) {
+    private File createParentFolder() {
         if (this.parentFolder == null) {
             parentFolder = new File(parentDir, serialNumberService.getPublicIdentifier());
             parentFolder.mkdirs();
@@ -68,7 +68,7 @@ public class BucketFactory {
             baseOffset = bucketNumber * size;
             upperBound = baseOffset + size - 1;
             filename = "minebox_v1_" + bucketNumber + ".dat";
-            final File parentFolder = createParentFolder(serialNumberService);
+            final File parentFolder = createParentFolder();
             final File file = new File(parentFolder, filename);
             LOGGER.debug("starting to monitor bucket {} with file {}", bucketNumber, file.getAbsolutePath());
             ensureFileExists(file);
