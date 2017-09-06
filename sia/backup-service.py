@@ -285,6 +285,10 @@ def get_running_helpers():
 
 def restart_backups():
     with app.app_context():
+        success, errmsg = check_backup_prerequisites()
+        if not success:
+            app.logger.error('Prerequisites not met, not restarting any backups.')
+            return
         active_backups = get_running_backups()
         app.logger.debug('Active backups: %s', active_backups)
         for snapname in get_backups_to_restart():
