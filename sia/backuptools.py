@@ -19,7 +19,7 @@ from connecttools import (get_demo_url, get_from_sia, post_to_sia,
 from backupinfo import *
 from siatools import check_sia_sync, SIA_DIR
 
-REDUNDANCY_LIMIT = 2.0
+REDUNDANCY_LIMIT = 2.5
 
 def check_backup_prerequisites():
     # Check if prerequisites are met to make backups.
