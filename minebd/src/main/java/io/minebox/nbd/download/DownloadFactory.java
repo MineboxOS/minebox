@@ -7,6 +7,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
@@ -31,6 +32,7 @@ import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+@Singleton
 public class DownloadFactory implements Provider<DownloadService> {
     private final MetaDataStatus.MetaDataStatusProvider metaDataStatusProvider;
     private RemoteTokenService remoteTokenService;
@@ -88,7 +90,7 @@ public class DownloadFactory implements Provider<DownloadService> {
         final MetaDataStatus metaDataStatus = metaDataStatusProvider.get();
         if (!metaDataStatus.lookup.isEmpty()) {
 //            case OldNonempty
-            LOGGER.info("metadata was old and nonempty, we have work to do to restore up to {} files", metaDataStatus.lookup);
+            LOGGER.info("metadata was old and nonempty, we have work to do to restore up to {} files", metaDataStatus.lookup.size());
             //todo count those missing files, maybe we're good already..
             initializedDownloadService = new SiaHostedDownload(siaUtilProvider.get(), metaDataStatus.lookup);
         } else {
