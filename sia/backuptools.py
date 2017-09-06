@@ -106,15 +106,19 @@ def initiate_uploads(status):
         return False, "ERROR: sia daemon needs to be running for any uploads."
 
     # We have a randomly named subdirectory containing the .dat files.
-    # As the random string is based on the wallet seed, we can be pretty sure there
-    # is only one and we can ignore the risk of catching multiple directories with
-    # the * wildcard.
+    # The subdirectory matches the serial number that MineBD returns.
+    mbdata, mb_status_code = get_form_minebd('serialnumber')
+    if mb_status_code == 200:
+        mbdirname = mbdata["message"]
+    else:
+        return False, "ERROR: Could not get serial number from MineBD."
+
     status["backupfileinfo"] = []
     status["backupfiles"] = []
     status["uploadfiles"] = []
     status["backupsize"] = 0
     status["uploadsize"] = 0
-    for filepath in glob(path.join(DATADIR_MASK, 'snapshots', snapname, '*', '*.dat')):
+    for filepath in glob(path.join(DATADIR_MASK, 'snapshots', snapname, mbdirname, '*.dat')):
         fileinfo = stat(filepath)
         # Only use files of non-zero size.
         if fileinfo.st_size:
