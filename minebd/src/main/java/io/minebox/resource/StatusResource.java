@@ -36,7 +36,7 @@ public class StatusResource {
     }
 
     @GET
-    @Produces("text/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @PermitAll
     public Status getStatus() {
         //todo extract to status service
