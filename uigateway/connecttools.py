@@ -395,6 +395,8 @@ def post_to_adminservice(api, usetoken, jsonData):
                     "messagesource": "Admin"}, response.status_code
     except requests.ConnectionError as e:
         return {"message": str(e)}, 503
+    except ValueError as e:
+        return {"message": str(e)}, 503
     except requests.RequestException as e:
         return {"message": str(e)}, 500
 
