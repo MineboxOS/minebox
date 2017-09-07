@@ -308,7 +308,7 @@ def get_upload_status(backupfileinfo, uploadfiles, is_archived=False):
     sia_filedata, sia_status_code = get_from_sia("renter/files")
     if sia_status_code >= 400:
         current_app.logger.error("Error %s getting Sia files: %s",
-                                  status_code, sia_filedata["message"])
+                                  sia_status_code, sia_filedata["message"])
         return False
 
     upstatus = {
