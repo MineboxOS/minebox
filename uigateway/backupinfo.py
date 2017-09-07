@@ -8,6 +8,7 @@ from os.path import isfile, isdir, join
 import os
 from glob import glob
 from zipfile import ZipFile
+import time
 import re
 from connecttools import get_from_sia, get_from_backupservice
 
@@ -22,10 +23,24 @@ INFO_FILENAME="fileinfo"
 def get_status(backupname, allow_old=False):
     status_code = 0
 
+    # If we do not have a status from backupservice or timestamp is older than
+    # 60 seconds, fetch a new one, else use the cached status.
+    if (not hasattr(get_status, "bsdata") or get_status.bsdata is None
+        or get_status.bstimestamp < time.time() - 60):
+        # Always set the timestamp so we do not have to test above if it's set,
+        #  as it's only unset when token is also unset
+        get_status.bstimestamp = time.time()
+        bsdata, bs_status_code = get_from_backupservice("status")
+        if bs_status_code == 200:
+            get_status.bsdata = bsdata
+        else:
+            current_app.logger.warn('Error %s getting status from backup service: %s',
+                                    bs_status_code,  bsdata["message"])
+            get_status.bsdata = None
+
     # If this is a backup that backupservice is tracking, let's use info from there.
-    bsdata, bs_status_code = get_from_backupservice("status")
-    if bs_status_code == 200:
-        for binfo in bsdata["backup_info"]:
+    if get_status.bsdata:
+        for binfo in get_status.bsdata["backup_info"]:
             if binfo["name"] == backupname:
                 time_snapshot = binfo["time_snapshot"]
                 files = binfo["filecount"]
@@ -41,7 +56,9 @@ def get_status(backupname, allow_old=False):
                 elif binfo["finished"] and binfo["metadata_uploaded"]:
                     status = "FINISHED"
                     metadata = "FINISHED"
-                    status_code = 200
+                    # Do not set status code as we need to update the progress
+                    # because backup service stops updating it after finish.
+                    #status_code = 200
                 elif binfo["finished"]:
                     status = "FINISHED"
                     metadata = "UPLOADING"
@@ -54,6 +71,9 @@ def get_status(backupname, allow_old=False):
                     status = "PENDING"
                     metadata = "PENDING"
                     status_code = 200
+                if not binfo["size"]:
+                    # Clean cache, we may have info the next time we're called.
+                    get_status.bsdata = None
 
     if not status_code:
         backupfileinfo, is_finished, is_archived = get_fileinfo(backupname)
@@ -87,57 +107,34 @@ def get_status(backupname, allow_old=False):
                 metadata = "PENDING"
             fully_available = False
         else:
+            # Nice, we actually have good file info.
+            # First, find out uploadfiles.
             backuplist = get_list(allow_old)
             currentidx = backuplist.index(backupname)
             if currentidx < len(backuplist) - 1:
                 prev_backupfiles, prev_finished = get_files(backuplist[currentidx + 1])
-            else:
-                prev_backupfiles = None
-            sia_filedata, sia_status_code = get_from_sia("renter/files")
-            if sia_status_code == 200:
-                # create a dict generated from the JSON response.
-                files = 0
-                total_size = 0
-                total_pct_size = 0
-                rel_size = 0
-                rel_pct_size = 0
-                fully_available = True
-                sia_map = dict((d["siapath"], index) for (index, d) in enumerate(sia_filedata["files"]))
+                uploadfiles = []
                 for finfo in backupfileinfo:
-                    if not is_archived and finfo["siapath"] in sia_map:
-                        files += 1
-                        fdata = sia_filedata["files"][sia_map[finfo["siapath"]]]
-                        # For now, report all files.
-                        # We may want to only report files not included in previous backups.
-                        total_size += fdata["filesize"]
-                        total_pct_size += fdata["filesize"] * fdata["uploadprogress"] / 100
-                        if prev_backupfiles is None or not fdata["siapath"] in prev_backupfiles:
-                            rel_size += fdata["filesize"]
-                            rel_pct_size += fdata["filesize"] * fdata["uploadprogress"] / 100
-                        if not fdata["available"]:
-                            fully_available = False
-                    elif re.match(r".*\.dat$", finfo["siapath"]):
-                        files += 1
-                        total_size += finfo["size"]
-                        if not is_archived:
-                            fully_available = False
-                            current_app.logger.warn("File %s not found on Sia!",
-                                                    finfo["siapath"])
-                    else:
-                        current_app.logger.debug('File "%s" not on Sia and not matching watched names.',
-                                                 finfo["siapath"])
-                # If size is 0, we report 100% progress.
-                # This is really needed for relative as otherwise a backup with no
-                # difference to the previous would never go to 100%.
-                progress = total_pct_size / total_size * 100 if total_size else 100
-                rel_progress = rel_pct_size / rel_size * 100 if rel_size else 100
+                    if (prev_backupfiles is None
+                        or not finfo["siapath"] in prev_backupfiles):
+                        uploadfiles.append(finfo["siapath"])
+            else:
+                uploadfiles = [finfo["siapath"] for finfo in backupfileinfo]
+            # Get actual status (this queries Sia).
+            upstatus = get_upload_status(backupfileinfo, uploadfiles, is_archived)
+            if upstatus:
+                files = upstatus["filecount"]
+                total_size = upstatus["backupsize"]
+                rel_size = upstatus["uploadsize"]
+                progress = upstatus["totalprogress"]
+                rel_progress = upstatus["uploadprogress"]
                 if is_archived:
                     status = "ARCHIVED"
-                elif is_finished and fully_available:
+                elif is_finished and upstatus["fully_available"]:
                     status = "FINISHED"
-                elif is_finished and not fully_available:
+                elif is_finished and not upstatus["fully_available"]:
                     status = "DAMAGED"
-                elif total_pct_size:
+                elif upstatus["total_uploaded_size"]:
                     status = "UPLOADING"
                 else:
                     status = "PENDING"
@@ -153,9 +150,8 @@ def get_status(backupname, allow_old=False):
                 else:
                     # Otherwise, always report pending metadata.
                     metadata = "PENDING"
+                fully_available = upstatus["fully_available"]
             else:
-                current_app.logger.error("Error %s getting Sia files: %s",
-                                         status_code, sia_filedata["message"])
                 status_code = 503
                 files = -1
                 total_size = -1
@@ -307,3 +303,61 @@ def get_fileinfo(backupname):
 def is_finished(backupname):
     backupfileinfo, is_finished, is_archived = get_fileinfo(backupname)
     return is_finished
+
+def get_upload_status(backupfileinfo, uploadfiles, is_archived=False):
+    sia_filedata, sia_status_code = get_from_sia("renter/files")
+    if sia_status_code >= 400:
+        current_app.logger.error("Error %s getting Sia files: %s",
+                                  status_code, sia_filedata["message"])
+        return False
+
+    upstatus = {
+      "filecount": 0,
+      "backupsize": 0,
+      "uploadsize": 0,
+      "total_uploaded_size": 0,
+      "uploaded_size": 0,
+      "fully_available": True,
+    }
+    redundancy = []
+    # create a dict generated from the JSON response.
+    sia_map = dict((d["siapath"], index)
+                    for (index, d) in enumerate(sia_filedata["files"]))
+    for finfo in backupfileinfo:
+        if not is_archived and finfo["siapath"] in sia_map:
+            upstatus["filecount"] += 1
+            fdata = sia_filedata["files"][sia_map[finfo["siapath"]]]
+            upstatus["backupsize"] += fdata["filesize"]
+            upstatus["total_uploaded_size"] += (fdata["filesize"] *
+                                                fdata["uploadprogress"] /
+                                                100.0)
+            if fdata["siapath"] in uploadfiles:
+                upstatus["uploadsize"] += fdata["filesize"]
+                upstatus["uploaded_size"] += (fdata["filesize"] *
+                                              fdata["uploadprogress"] /
+                                              100.0)
+            if not fdata["available"]:
+                upstatus["fully_available"] = False
+        elif re.match(r".*\.dat$", finfo["siapath"]):
+            upstatus["filecount"] += 1
+            upstatus["backupsize"] += finfo["size"]
+            if not is_archived:
+                upstatus["fully_available"] = False
+                current_app.logger.warn("File %s not found on Sia!",
+                                        finfo["siapath"])
+        else:
+            current_app.logger.debug(
+              'File "%s" not on Sia and not matching watched names.',
+              finfo["siapath"])
+
+    # If size is 0, we report 100% progress.
+    # This is really needed for upload as otherwise a backup with no
+    # new uploadfiles would never go to 100%.
+    upstatus["uploadprogress"] = (100.0 * upstatus["uploaded_size"] /
+                                          upstatus["uploadsize"]
+                                  if upstatus["uploadsize"] else 100)
+    upstatus["totalprogress"] = (100.0 * upstatus["total_uploaded_size"] /
+                                          upstatus["backupsize"]
+                                  if upstatus["backupsize"] else 100)
+    upstatus["min_redundancy"] = min(redundancy) if redundancy else 0
+    return upstatus
