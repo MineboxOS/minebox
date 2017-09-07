@@ -8,6 +8,7 @@ from os.path import isfile, isdir, join
 import os
 from glob import glob
 from zipfile import ZipFile
+import time
 import re
 from connecttools import get_from_sia, get_from_backupservice
 
@@ -22,10 +23,24 @@ INFO_FILENAME="fileinfo"
 def get_status(backupname, allow_old=False):
     status_code = 0
 
+    # If we do not have a status from backupservice or timestamp is older than
+    # 60 seconds, fetch a new one, else use the cached status.
+    if (not hasattr(get_status, "bsdata") or get_status.bsdata is None
+        or get_status.bstimestamp < time.time() - 60):
+        # Always set the timestamp so we do not have to test above if it's set,
+        #  as it's only unset when token is also unset
+        get_status.bstimestamp = time.time()
+        bsdata, bs_status_code = get_from_backupservice("status")
+        if bs_status_code == 200:
+            get_status.bsdata = bsdata
+        else:
+            current_app.logger.warn('Error %s getting status from backup service: %s',
+                                    bs_status_code,  bsdata["message"])
+            get_status.bsdata = None
+
     # If this is a backup that backupservice is tracking, let's use info from there.
-    bsdata, bs_status_code = get_from_backupservice("status")
-    if bs_status_code == 200:
-        for binfo in bsdata["backup_info"]:
+    if get_status.bsdata:
+        for binfo in get_status.bsdata["backup_info"]:
             if binfo["name"] == backupname:
                 time_snapshot = binfo["time_snapshot"]
                 files = binfo["filecount"]
@@ -41,7 +56,9 @@ def get_status(backupname, allow_old=False):
                 elif binfo["finished"] and binfo["metadata_uploaded"]:
                     status = "FINISHED"
                     metadata = "FINISHED"
-                    status_code = 200
+                    # Do not set status code as we need to update the progress
+                    # because backup service stops updating it after finish.
+                    #status_code = 200
                 elif binfo["finished"]:
                     status = "FINISHED"
                     metadata = "UPLOADING"
