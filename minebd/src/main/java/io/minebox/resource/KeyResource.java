@@ -38,8 +38,6 @@ public class KeyResource {
     }
 
     @GET
-    @ApiOperation(value = "just a dummy  lists all WS classes",
-            response = String.class)
     @Produces("text/plain")
     @PermitAll
     public String currentKey() {
@@ -48,8 +46,6 @@ public class KeyResource {
 
     @GET
     @Path("/asJson")
-    @ApiOperation(value = "just a dummy  lists all WS classes",
-            response = List.class)
     @Produces("application/json")
     @PermitAll
     public Response jsonKey() {

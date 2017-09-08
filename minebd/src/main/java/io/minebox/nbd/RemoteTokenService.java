@@ -41,7 +41,8 @@ public class RemoteTokenService {
 //        }
         final long timeStamp = Instant.now().toEpochMilli();
         try {
-            final HttpResponse<String> token = Unirest.post(rootPath + "auth/token")
+            final String url = rootPath + "auth/token";
+            final HttpResponse<String> token = Unirest.post(url)
                     .queryString("timestamp", timeStamp)
                     .queryString("signature", privKey.signMessage(String.valueOf(timeStamp)))
                     .asString();

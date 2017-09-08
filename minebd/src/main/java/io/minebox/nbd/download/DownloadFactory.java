@@ -14,6 +14,7 @@ import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import io.minebox.SiaUtil;
 import io.minebox.nbd.RemoteTokenService;
+import io.minebox.nbd.SiaSeedService;
 import io.minebox.nbd.encryption.EncyptionKeyProvider;
 import org.apache.commons.lang3.tuple.Pair;
 import org.json.JSONArray;
@@ -39,23 +40,29 @@ public class DownloadFactory implements Provider<DownloadService> {
     private final String metadataUrl;
     private final Path siaDir;
     private final SiaUtil siaUtil;
+    private final SiaSeedService siaSeedService;
 
 
     static final private Logger LOGGER = LoggerFactory.getLogger(DownloadFactory.class);
     private volatile DownloadService initializedDownloadService;
+    private final SiaProcessController siaProcessController;
 
     @Inject
     public DownloadFactory(MetaDataStatus.MetaDataStatusProvider metaDataStatusProvider,
                            RemoteTokenService remoteTokenService,
                            @Named("httpMetadata") String metadataUrl,
                            @Named("siaDataDirectory") String siaDataDirectory,
-                           SiaUtil siaUtil) {
+                           SiaUtil siaUtil,
+                           SiaSeedService siaSeedService,
+                           SiaProcessController siaProcessController) {
 
         this.metaDataStatusProvider = metaDataStatusProvider;
         this.remoteTokenService = remoteTokenService;
         this.metadataUrl = metadataUrl;
         siaDir = Paths.get(siaDataDirectory).toAbsolutePath();
         this.siaUtil = siaUtil;
+        this.siaSeedService = siaSeedService;
+        this.siaProcessController = siaProcessController;
     }
 
     @Inject
@@ -119,8 +126,11 @@ public class DownloadFactory implements Provider<DownloadService> {
             filenameLookup = Maps.newHashMap();
         } else {
             LOGGER.info("metadata was fresh and nonempty, we have work to do to restore up to {} files", siaPaths.size());
-            //todo stop siad here. extractSiaLookupMap will add new files. then restart / init the seed
+            //stopping siad here. extractSiaLookupMap will add new files. then restart / init the seed
+            siaProcessController.stopProcess();
             filenameLookup = extractSiaLookupMap(siaPaths);
+            siaProcessController.startProcess();
+            siaUtil.unlockWallet(siaSeedService.getSiaSeed());
             //todo init the seed. this will take a while. nevertheless we don't want to assign initializedDownloadService just yet, because it would not be ready.
             initializedDownloadService = new SiaHostedDownload(siaUtil, filenameLookup);
         }
@@ -129,6 +139,7 @@ public class DownloadFactory implements Provider<DownloadService> {
         toWrite.lookup = filenameLookup;
         metaDataStatusProvider.write(toWrite);
     }
+
 
     private static Map<String, String> extractSiaLookupMap(ImmutableList<String> siaPaths) {
         Map<String, String> filenameLookup = Maps.newHashMap();
@@ -232,7 +243,10 @@ public class DownloadFactory implements Provider<DownloadService> {
         LOGGER.info("unpacking file {}", dest.toAbsolutePath().toString());
 //        if (entryName.startsWith("renter")) {
         try {
-            Files.deleteIfExists(dest); //yes, we overwrite everything we find
+            final boolean deleted = Files.deleteIfExists(dest);//yes, we overwrite everything we find
+            if (deleted) {
+                LOGGER.info("deleted file {}, recreating from metadata", dest);
+            }
             Files.copy(zis, dest);
         } catch (IOException e) {
             throw new RuntimeException("unable to create renter file", e);
