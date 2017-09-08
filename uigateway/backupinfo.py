@@ -341,6 +341,8 @@ def get_upload_status(backupfileinfo, uploadfiles, is_archived=False):
         elif re.match(r".*\.dat$", finfo["siapath"]):
             upstatus["filecount"] += 1
             upstatus["backupsize"] += finfo["size"]
+            if finfo["siapath"] in uploadfiles:
+                upstatus["uploadsize"] += finfo["size"]
             if not is_archived:
                 upstatus["fully_available"] = False
                 current_app.logger.warn("File %s not found on Sia!",
