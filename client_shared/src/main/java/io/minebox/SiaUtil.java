@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.Month;
@@ -81,17 +82,18 @@ public class SiaUtil {
         return checkErrorFragment(reply, NOT_SYNCED);
     }
 
-    public String calcHastingsAmount(double sendingEurAmount) {
-        double eurPerBTC = 2911;
-        double bitcoinPerSiacoin = 0.00000247;
-        double siacoins = sendingEurAmount / eurPerBTC / bitcoinPerSiacoin;
+
+    public BigInteger calcHastingsAmount(double sendingCentsAmount) {
+        double eurPerBTC = 3400;
+        double bitcoinPerSiacoin = 0.00000170;
+        double siacoins = sendingCentsAmount / 100 / eurPerBTC / bitcoinPerSiacoin;
 
         return siaToHastings(siacoins);
     }
 
-    private String siaToHastings(double siacoins) {
+    private BigInteger siaToHastings(double siacoins) {
         BigDecimal hastings_per_sia = BigDecimal.valueOf(10).pow(24);
-        return BigDecimal.valueOf(siacoins).multiply(hastings_per_sia).toBigIntegerExact().toString();
+        return BigDecimal.valueOf(siacoins).multiply(hastings_per_sia).toBigIntegerExact();
     }
 
 
@@ -107,8 +109,8 @@ public class SiaUtil {
     }
 
 
-    HttpResponse<String> sendFunds(String amount, String destination) {
-        return siaCommand(Command.SENDCOINS, ImmutableMap.of("amount", amount, "destination", destination));
+    HttpResponse<String> sendFunds(BigInteger amount, String destination) {
+        return siaCommand(Command.SENDCOINS, ImmutableMap.of("amount", amount.toString(), "destination", destination));
 
     }
 
@@ -280,7 +282,7 @@ public class SiaUtil {
     }
 
     private static class NoConnectException extends RuntimeException {
-        public NoConnectException(UnirestException e) {
+        NoConnectException(UnirestException e) {
             super(e);
         }
     }

@@ -38,7 +38,7 @@ public class DownloadFactory implements Provider<DownloadService> {
     private RemoteTokenService remoteTokenService;
     private final String metadataUrl;
     private final Path siaDir;
-    private final Provider<SiaUtil> siaUtilProvider;
+    private final SiaUtil siaUtil;
 
 
     static final private Logger LOGGER = LoggerFactory.getLogger(DownloadFactory.class);
@@ -49,19 +49,22 @@ public class DownloadFactory implements Provider<DownloadService> {
                            RemoteTokenService remoteTokenService,
                            @Named("httpMetadata") String metadataUrl,
                            @Named("siaDataDirectory") String siaDataDirectory,
-                           Provider<SiaUtil> siaUtilProvider) {
+                           SiaUtil siaUtil) {
 
         this.metaDataStatusProvider = metaDataStatusProvider;
         this.remoteTokenService = remoteTokenService;
         this.metadataUrl = metadataUrl;
         siaDir = Paths.get(siaDataDirectory).toAbsolutePath();
-        this.siaUtilProvider = siaUtilProvider;
+        this.siaUtil = siaUtil;
     }
 
     @Inject
     public void initMetaData(EncyptionKeyProvider encyptionKeyProvider) {
         LOGGER.info("registering init callback when key is loaded..");
         encyptionKeyProvider.onLoadKey(this::init);
+//        if (encyptionKeyProvider.getMasterPassword().isDone()){
+//            if (siaUtil.hasSeed()); maybe check the state of sia, if there is no seed file but an initialized sia, something is fishy?
+//        }
     }
 
     private void init() {
@@ -92,7 +95,7 @@ public class DownloadFactory implements Provider<DownloadService> {
 //            case OldNonempty
             LOGGER.info("metadata was old and nonempty, we have work to do to restore up to {} files", metaDataStatus.lookup.size());
             //todo count those missing files, maybe we're good already..
-            initializedDownloadService = new SiaHostedDownload(siaUtilProvider.get(), metaDataStatus.lookup);
+            initializedDownloadService = new SiaHostedDownload(siaUtil, metaDataStatus.lookup);
         } else {
             //we were fresh, nothing to download...
 //            case OldEmpty
@@ -119,7 +122,7 @@ public class DownloadFactory implements Provider<DownloadService> {
             //todo stop siad here. extractSiaLookupMap will add new files. then restart / init the seed
             filenameLookup = extractSiaLookupMap(siaPaths);
             //todo init the seed. this will take a while. nevertheless we don't want to assign initializedDownloadService just yet, because it would not be ready.
-            initializedDownloadService = new SiaHostedDownload(siaUtilProvider.get(), filenameLookup);
+            initializedDownloadService = new SiaHostedDownload(siaUtil, filenameLookup);
         }
         LOGGER.info("writing out info about metadata so we can later start up even if offline");
         final MetaDataStatus toWrite = new MetaDataStatus();
