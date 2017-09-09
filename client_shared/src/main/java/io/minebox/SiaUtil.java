@@ -6,13 +6,18 @@ import com.google.inject.name.Named;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.HttpRequest;
+import io.minebox.nbd.download.SiaFileUtil;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.FileTime;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.temporal.ChronoUnit;
@@ -117,17 +122,28 @@ public class SiaUtil {
     }
 
     public boolean download(String siaPath, Path destination) {
-        final String dest = destination.toAbsolutePath().toString();
-        final HttpResponse<String> downloadResult = siaCommand(SiaCommand.DOWNLOAD, ImmutableMap.of("destination", dest), siaPath);
+//        final String dest = destination.toAbsolutePath().toString();
+        final FileTime lastModified = SiaFileUtil.getFileTime(siaPath);
+
+        final String tempFileName = destination.getFileName().toString() + ".tempdownload";
+        Path tempFile = destination.getParent().resolve(tempFileName);
+        final HttpResponse<String> downloadResult = siaCommand(SiaCommand.DOWNLOAD, ImmutableMap.of("destination", tempFile.toAbsolutePath().toString()), siaPath);
         final boolean noHosts = checkErrorFragment(downloadResult, NO_HOSTS);
         if (noHosts) {
             LOGGER.warn("unable to download file {} due to NO_HOSTS  ", siaPath);
             return false;
         }
         if (statusGood(downloadResult)) {
+            try {
+                Files.setLastModifiedTime(tempFile, lastModified);
+                Files.move(tempFile, destination, StandardCopyOption.ATOMIC_MOVE);
+                Files.setLastModifiedTime(destination, lastModified);
+            } catch (IOException e) {
+                throw new RuntimeException("unable to do atomic swap of file " + destination);
+            }
             return true;
         }
-        LOGGER.warn("unable to download file {} for an unexpected reason: {} ", siaPath, downloadResult.getBody());
+        LOGGER.warn("unable to download siaPath {} for an unexpected reason: {} ", siaPath, downloadResult.getBody());
         return false;
     }
 
