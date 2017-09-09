@@ -3,6 +3,7 @@ package io.minebox.nbd.download;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import io.minebox.sia.SiaFileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,7 +1,7 @@
 package io.minebox.nbd;
 
 import ch.qos.logback.classic.Level;
-import io.minebox.SiaUtil;
+import io.minebox.sia.SiaUtil;
 import net.lingala.zip4j.core.ZipFile;
 import org.apache.commons.io.FileUtils;
 import org.junit.*;

@@ -1,4 +1,4 @@
-package io.minebox;
+package io.minebox.sia;
 
 import com.google.common.base.Joiner;
 import com.mashape.unirest.http.Unirest;

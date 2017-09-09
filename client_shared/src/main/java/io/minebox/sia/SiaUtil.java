@@ -1,4 +1,4 @@
-package io.minebox;
+package io.minebox.sia;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -6,7 +6,6 @@ import com.google.inject.name.Named;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.HttpRequest;
-import io.minebox.nbd.download.SiaFileUtil;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,20 +67,20 @@ public class SiaUtil {
         return body.contains(fragment);
     }
 
-    static boolean notAnAddress(HttpResponse<String> reply) {
+    public static boolean notAnAddress(HttpResponse<String> reply) {
         return checkErrorFragment(reply, NO_ADDRESS);
     }
 
-    static boolean notEnoughFunds(HttpResponse<String> reply) {
+    public static boolean notEnoughFunds(HttpResponse<String> reply) {
         return checkErrorFragment(reply, NO_FUNDS);
     }
 
-    static boolean walletIsLocked(HttpResponse<String> reply) {
+    public static boolean walletIsLocked(HttpResponse<String> reply) {
         return checkErrorFragment(reply, LOCKED);
 
     }
 
-    static boolean isNotSynced(HttpResponse<String> reply) {
+    public static boolean isNotSynced(HttpResponse<String> reply) {
         return checkErrorFragment(reply, NOT_SYNCED);
     }
 
@@ -116,7 +115,7 @@ public class SiaUtil {
         siaCommand(SiaCommand.STOP, ImmutableMap.of());
     }
 
-    HttpResponse<String> sendFunds(BigInteger amount, String destination) {
+    public HttpResponse<String> sendFunds(BigInteger amount, String destination) {
         return siaCommand(SiaCommand.SENDCOINS, ImmutableMap.of("amount", amount.toString(), "destination", destination));
 
     }

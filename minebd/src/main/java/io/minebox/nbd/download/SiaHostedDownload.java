@@ -1,13 +1,12 @@
 package io.minebox.nbd.download;
 
 import com.google.inject.Inject;
-import io.minebox.SiaUtil;
+import io.minebox.sia.SiaUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class SiaHostedDownload implements DownloadService {
 

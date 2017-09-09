@@ -12,7 +12,7 @@ import com.google.inject.name.Named;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
-import io.minebox.SiaUtil;
+import io.minebox.sia.SiaUtil;
 import io.minebox.nbd.RemoteTokenService;
 import io.minebox.nbd.SerialNumberService;
 import io.minebox.nbd.SiaSeedService;

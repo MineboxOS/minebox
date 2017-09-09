@@ -1,5 +1,6 @@
 package io.minebox.nbd.download;
 
+import io.minebox.sia.SiaFileUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
