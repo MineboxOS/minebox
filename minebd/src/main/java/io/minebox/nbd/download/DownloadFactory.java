@@ -121,7 +121,7 @@ public class DownloadFactory implements Provider<DownloadService> {
         }
     }
 
-    private SiaHostedDownload buildSiaDownload(Map<String, String> lookup) {
+    private DownloadService buildSiaDownload(Map<String, String> lookup) {
         final SiaHostedDownload siaHostedDownload = new SiaHostedDownload(siaUtil, lookup);
         File parentFolder = new File(parentDir, serialNumberService.getPublicIdentifier());
 
@@ -131,8 +131,8 @@ public class DownloadFactory implements Provider<DownloadService> {
                 .filter(file -> !file.exists())
                 .collect(Collectors.toList());
 
-        new BackgroundDelegatedDownloadService(siaHostedDownload, recoverableFiles);
-        return siaHostedDownload;
+        return new BackgroundDelegatedDownloadService(siaHostedDownload, recoverableFiles);
+//        return siaHostedDownload;
     }
 
     private void initFreshKey() {

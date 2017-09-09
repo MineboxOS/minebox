@@ -122,6 +122,7 @@ public class SiaUtil {
     }
 
     public boolean download(String siaPath, Path destination) {
+        LOGGER.info("downloading {}", siaPath);
 //        final String dest = destination.toAbsolutePath().toString();
         final FileTime lastModified = SiaFileUtil.getFileTime(siaPath);
 

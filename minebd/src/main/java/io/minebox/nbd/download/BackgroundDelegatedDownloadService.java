@@ -51,7 +51,7 @@ public class BackgroundDelegatedDownloadService implements DownloadService {
         new Thread("downloadInserter") {
             @Override
             public void run() {
-                while (!allRecoverableFiles.isEmpty()) { //todo find a way to shut this down gracefully
+                while (!allRecoverableFiles.isEmpty()) { //todo find a way to shut this down gracefully if needed
                     submitBackgroundDownload();
                 }
                 LOGGER.info("all download tasks are finished now, quitting..");
@@ -77,7 +77,11 @@ public class BackgroundDelegatedDownloadService implements DownloadService {
                     mino2 = o2Distance;
                 }
             }
-            return mino1 - mino2;
+            final int distanceDifference = mino1 - mino2;
+            if (distanceDifference == 0) {
+                //todo check access times to prioritize
+            }
+            return distanceDifference;
 
         });
         LOGGER.info("determining top prio files");
