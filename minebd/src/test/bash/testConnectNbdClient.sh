@@ -1,17 +1,16 @@
 #!/usr/bin/env bash
-systemctl stop  nbd-server
-sudo modprobe nbd
 
-#_term() {
-#  echo "Caught SIGTERM signal!"
-#  kill -TERM "$child" 2>/dev/null
-#}
+if [ "$EUID" -ne 0 ]
+  then echo "Please run as root"
+  exit
+fi
+
+modprobe nbd
+
+umount /dev/nbd0
+echo "Starting nbd-client with 5 mins timeout"
+
 #
-#trap _term SIGTERM
-#
-#echo "Starting nbd-client"
-
-nbd-client -N defaultMount localhost 10809 /dev/nbd0 -n
-
-#child=$!
-#wait "$child"
+nbd-client -N defaultMount localhost 10809 /dev/nbd0 -n -t 300 -p
+echo "mounting /mnt/restoretest"
+mount /dev/nbd0 /mnt/restoretest
