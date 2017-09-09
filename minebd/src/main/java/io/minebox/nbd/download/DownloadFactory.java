@@ -14,6 +14,7 @@ import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import io.minebox.SiaUtil;
 import io.minebox.nbd.RemoteTokenService;
+import io.minebox.nbd.SerialNumberService;
 import io.minebox.nbd.SiaSeedService;
 import io.minebox.nbd.encryption.EncyptionKeyProvider;
 import org.apache.commons.lang3.tuple.Pair;
@@ -22,14 +23,17 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -39,6 +43,7 @@ public class DownloadFactory implements Provider<DownloadService> {
     private RemoteTokenService remoteTokenService;
     private final String metadataUrl;
     private final Path siaDir;
+    private final String parentDir;
     private final SiaUtil siaUtil;
     private final SiaSeedService siaSeedService;
 
@@ -46,23 +51,28 @@ public class DownloadFactory implements Provider<DownloadService> {
     static final private Logger LOGGER = LoggerFactory.getLogger(DownloadFactory.class);
     private volatile DownloadService initializedDownloadService;
     private final SiaProcessController siaProcessController;
+    private final SerialNumberService serialNumberService;
 
     @Inject
     public DownloadFactory(MetaDataStatus.MetaDataStatusProvider metaDataStatusProvider,
                            RemoteTokenService remoteTokenService,
                            @Named("httpMetadata") String metadataUrl,
                            @Named("siaDataDirectory") String siaDataDirectory,
+                           @Named("parentDir") String parentDir,
                            SiaUtil siaUtil,
                            SiaSeedService siaSeedService,
-                           SiaProcessController siaProcessController) {
+                           SiaProcessController siaProcessController,
+                           SerialNumberService serialNumberService) {
 
         this.metaDataStatusProvider = metaDataStatusProvider;
         this.remoteTokenService = remoteTokenService;
         this.metadataUrl = metadataUrl;
         siaDir = Paths.get(siaDataDirectory).toAbsolutePath();
+        this.parentDir = parentDir;
         this.siaUtil = siaUtil;
         this.siaSeedService = siaSeedService;
         this.siaProcessController = siaProcessController;
+        this.serialNumberService = serialNumberService;
     }
 
     @Inject
@@ -102,13 +112,27 @@ public class DownloadFactory implements Provider<DownloadService> {
 //            case OldNonempty
             LOGGER.info("metadata was old and nonempty, we have work to do to restore up to {} files", metaDataStatus.lookup.size());
             //todo count those missing files, maybe we're good already..
-            initializedDownloadService = new SiaHostedDownload(siaUtil, metaDataStatus.lookup);
+            initializedDownloadService = buildSiaDownload(metaDataStatus.lookup);
         } else {
             //we were fresh, nothing to download...
 //            case OldEmpty
             LOGGER.info("metadata was old but empty, assuming a fresh file system");
             initializedDownloadService = new NothingTodoDownloadService();
         }
+    }
+
+    private SiaHostedDownload buildSiaDownload(Map<String, String> lookup) {
+        final SiaHostedDownload siaHostedDownload = new SiaHostedDownload(siaUtil, lookup);
+        File parentFolder = new File(parentDir, serialNumberService.getPublicIdentifier());
+
+        final List<File> recoverableFiles = lookup.keySet().stream()
+                .map(filename -> new File(parentFolder, filename))
+                //files which already exists are not reciverable, they are already recovered
+                .filter(file -> !file.exists())
+                .collect(Collectors.toList());
+
+        new BackgroundDelegatedDownloadService(siaHostedDownload, recoverableFiles);
+        return siaHostedDownload;
     }
 
     private void initFreshKey() {
@@ -132,7 +156,7 @@ public class DownloadFactory implements Provider<DownloadService> {
             siaProcessController.startProcess();
             siaUtil.unlockWallet(siaSeedService.getSiaSeed());
             //todo init the seed. this will take a while. nevertheless we don't want to assign initializedDownloadService just yet, because it would not be ready.
-            initializedDownloadService = new SiaHostedDownload(siaUtil, filenameLookup);
+            initializedDownloadService = buildSiaDownload(filenameLookup);
         }
         LOGGER.info("writing out info about metadata so we can later start up even if offline");
         final MetaDataStatus toWrite = new MetaDataStatus();
