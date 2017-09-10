@@ -8,6 +8,7 @@ import io.minebox.nbd.SerialNumberService;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 public class MetaDataStatus {
@@ -18,15 +19,15 @@ public class MetaDataStatus {
     public static class MetaDataStatusProvider implements Provider<MetaDataStatus> {
 
         private File file;
-        private final String parentDir;
+        private final List<String> parentDirs;
         private final SerialNumberService serialNumberService;
 
         @Inject
         public MetaDataStatusProvider(
-                @Named("parentDir") String parentDir,
+                @Named("parentDirs") List<String> parentDir,
                 SerialNumberService serialNumberService) {
 
-            this.parentDir = parentDir;
+            this.parentDirs = parentDir;
             this.serialNumberService = serialNumberService;
         }
 
@@ -52,7 +53,7 @@ public class MetaDataStatus {
 
         private void initFile() {
             if (file == null) {
-                file = getStatusFile(parentDir, serialNumberService);
+                file = getStatusFile(parentDirs.get(0), serialNumberService);
             }
         }
 

@@ -43,7 +43,7 @@ public class DownloadFactory implements Provider<DownloadService> {
     private RemoteTokenService remoteTokenService;
     private final String metadataUrl;
     private final Path siaDir;
-    private final String parentDir;
+    private final List<String> parentDirs;
     private final SiaUtil siaUtil;
     private final SiaSeedService siaSeedService;
 
@@ -58,7 +58,7 @@ public class DownloadFactory implements Provider<DownloadService> {
                            RemoteTokenService remoteTokenService,
                            @Named("httpMetadata") String metadataUrl,
                            @Named("siaDataDirectory") String siaDataDirectory,
-                           @Named("parentDir") String parentDir,
+                           @Named("parentDirs") List<String> parentDirs,
                            SiaUtil siaUtil,
                            SiaSeedService siaSeedService,
                            SiaProcessController siaProcessController,
@@ -68,7 +68,7 @@ public class DownloadFactory implements Provider<DownloadService> {
         this.remoteTokenService = remoteTokenService;
         this.metadataUrl = metadataUrl;
         siaDir = Paths.get(siaDataDirectory).toAbsolutePath();
-        this.parentDir = parentDir;
+        this.parentDirs = parentDirs;
         this.siaUtil = siaUtil;
         this.siaSeedService = siaSeedService;
         this.siaProcessController = siaProcessController;
@@ -121,14 +121,22 @@ public class DownloadFactory implements Provider<DownloadService> {
         }
     }
 
+    public boolean existsSomewhere(RecoverableFile recoverableFile) {
+        for (File parentDirectory : recoverableFile.parentDirectories) {
+            final boolean exists = new File(parentDirectory, recoverableFile.fileName).exists();
+            if (exists) return true;
+        }
+        return false;
+    }
+
     private DownloadService buildSiaDownload(Map<String, String> lookup) {
         final SiaHostedDownload siaHostedDownload = new SiaHostedDownload(siaUtil, lookup);
-        File parentFolder = new File(parentDir, serialNumberService.getPublicIdentifier());
+//
 
-        final List<File> recoverableFiles = lookup.keySet().stream()
-                .map(filename -> new File(parentFolder, filename))
+        final List<RecoverableFile> recoverableFiles = lookup.keySet().stream()
+                .map(filename -> RecoverableFile.from(filename, serialNumberService.getPublicIdentifier(), parentDirs))
                 //files which already exists are not reciverable, they are already recovered
-                .filter(file -> !file.exists())
+                .filter(file -> !existsSomewhere(file))
                 .collect(Collectors.toList());
 
         return new BackgroundDelegatedDownloadService(siaHostedDownload, recoverableFiles);

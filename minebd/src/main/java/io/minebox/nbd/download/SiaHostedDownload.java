@@ -6,6 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Map;
 
 public class SiaHostedDownload implements DownloadService {
@@ -22,17 +24,30 @@ public class SiaHostedDownload implements DownloadService {
     }
 
     @Override
-    public RecoveryStatus downloadIfPossible(File file) {
-        final String siaPath = lookup.get(file.getName());
+    public RecoveryStatus downloadIfPossible(RecoverableFile file) {
+        final String siaPath = lookup.get(file.fileName);
         if (siaPath == null) {
             return RecoveryStatus.NO_FILE;
         }
-        final boolean download = siaUtil.download(siaPath, file.toPath());
+        final File firstFile = new File(file.parentDirectories.get(0), file.fileName);
+        final boolean download = siaUtil.download(siaPath, firstFile.toPath());
+        copyFirstToOthers(file, firstFile);
         if (download) {
             return RecoveryStatus.RECOVERED;
         }
         return RecoveryStatus.ERROR;
 
+    }
+
+    private void copyFirstToOthers(RecoverableFile file, File firstFile) {
+        for (int i = 1; i < file.parentDirectories.size(); i++) {
+            final File copy = file.parentDirectories.get(i);
+            try {
+                Files.copy(firstFile.toPath(), copy.toPath());
+            } catch (IOException e) {
+                throw new RuntimeException("error copying over file" + firstFile, e);
+            }
+        }
     }
 
     @Override

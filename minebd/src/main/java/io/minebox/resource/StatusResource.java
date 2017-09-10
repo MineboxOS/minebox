@@ -3,6 +3,7 @@ package io.minebox.resource;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import io.minebox.nbd.SerialNumberService;
 import io.minebox.nbd.download.DownloadFactory;
 import io.minebox.nbd.download.DownloadService;
 import io.minebox.nbd.encryption.EncyptionKeyProvider;
@@ -16,6 +17,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import java.io.File;
+import java.util.List;
 
 @Path(StatusResource.PATH)
 @Produces(MediaType.APPLICATION_JSON)
@@ -25,14 +27,14 @@ public class StatusResource {
     public static final String PATH = "/status";
     private static final Logger LOGGER = LoggerFactory.getLogger(StatusResource.class);
     final private EncyptionKeyProvider encyptionKeyProvider;
-    private final File parentDir;
+    private final File firstDir;
     final private DownloadFactory downloadFactory;
 
     @Inject
-    public StatusResource(EncyptionKeyProvider encyptionKeyProvider, @Named("parentDir") String parentDir, DownloadFactory downloadFactory) {
+    public StatusResource(EncyptionKeyProvider encyptionKeyProvider, @Named("parentDirs") List<String> parentDirs, DownloadFactory downloadFactory, SerialNumberService serialNumberService) {
         this.encyptionKeyProvider = encyptionKeyProvider;
-        this.parentDir = new File(parentDir);
         this.downloadFactory = downloadFactory;
+        this.firstDir = new File(parentDirs.get(0), serialNumberService.getPublicIdentifier());
     }
 
     @GET
@@ -55,7 +57,7 @@ public class StatusResource {
             if (!status.remoteMetadataDetected) {
                 return status;
             }
-            status.completedRestorePercent = downloadService.completedPercent(parentDir);
+            status.completedRestorePercent = downloadService.completedPercent(firstDir);
             status.restoreRunning = status.completedRestorePercent < 100.0;
         } else {
             status.connectedMetadata = false;

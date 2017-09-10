@@ -1,11 +1,10 @@
 package io.minebox.nbd.download;
 
 import java.io.File;
-import java.util.Collections;
 
 public class NothingTodoDownloadService implements DownloadService {
     @Override
-    public RecoveryStatus downloadIfPossible(File file) {
+    public RecoveryStatus downloadIfPossible(RecoverableFile file) {
         return RecoveryStatus.NO_FILE;
     }
 

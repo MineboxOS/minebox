@@ -14,7 +14,7 @@ public interface DownloadService {
         NO_FILE, RECOVERED, ERROR;
     }
 
-    RecoveryStatus downloadIfPossible(File file);
+    RecoveryStatus downloadIfPossible(RecoverableFile file);
 
     boolean hasMetadata();
 

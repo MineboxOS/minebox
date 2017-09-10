@@ -58,7 +58,7 @@ public class MineBdModule extends AbstractModule {
 
     @SuppressWarnings("unchecked")
     private LinkedBindingBuilder<Object> getObjectBinderFor(Field field) {
-        return (LinkedBindingBuilder<Object>) bind(field.getType())
+        return (LinkedBindingBuilder<Object>) bind(TypeLiteral.get(field.getGenericType()))
                 .annotatedWith(Names.named(field.getName()));
     }
 

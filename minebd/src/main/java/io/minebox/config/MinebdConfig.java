@@ -1,7 +1,8 @@
 package io.minebox.config;
 
-import com.google.inject.name.Named;
 import io.dropwizard.util.Size;
+
+import java.util.List;
 
 /**
  * Created by andreas on 11.04.17.
@@ -10,7 +11,7 @@ public class MinebdConfig {
 
     public Integer nbdPort = 10809;
     public Integer maxOpenFiles = 10;
-    public String parentDir;
+    public List<String> parentDirs;
     public Size reportedSize = Size.gigabytes(4);
     public String encryptionKeyPath;
     public String authFile;

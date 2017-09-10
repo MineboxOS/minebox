@@ -4,14 +4,12 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import com.codahale.metrics.MetricRegistry;
-import com.google.inject.Provider;
 import io.dropwizard.util.Size;
 import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.NullEncryption;
 import io.minebox.nbd.SerialNumberService;
 import io.minebox.nbd.StaticEncyptionKeyProvider;
 import io.minebox.nbd.TestUtil;
-import io.minebox.nbd.download.DownloadService;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -50,7 +48,7 @@ public class BucketTest {
         long bucketSize = cfg.bucketSize.toBytes();
         final BucketFactory bucketFactory = new BucketFactory(new SerialNumberService(new StaticEncyptionKeyProvider("testJunit")), cfg, new NullEncryption(), TestDownloadService::new);
 
-        final BucketFactory.BucketImpl underTest = (BucketFactory.BucketImpl) bucketFactory.create(0);
+        final Raid1Buckets underTest = (Raid1Buckets) bucketFactory.create(0);
 
 
         Assert.assertEquals(bucketSize, underTest.calcLengthInThisBucket(0, bucketSize));

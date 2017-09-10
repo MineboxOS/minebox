@@ -3,6 +3,7 @@ package io.minebox.nbd.ep.chunked;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Collections;
 
 import com.codahale.metrics.MetricRegistry;
 import io.dropwizard.util.Size;
@@ -34,14 +35,16 @@ public class MineboxExportTest {
         System.out.println("Setup");
         startTime = System.currentTimeMillis();
         cfg = new MinebdConfig();
-        cfg.parentDir = "minedbTESTDat";
+        cfg.parentDirs = Collections.singletonList("minedbTESTDat");
     }
 
     @AfterClass
     public static void getMeStopped() throws IOException {
         long current = System.currentTimeMillis();
         System.out.println("Stopped - took me " + (current - startTime) + " sec.");
-        FileUtils.deleteDirectory(new File(cfg.parentDir));
+        for (String parentDir : cfg.parentDirs) {
+            FileUtils.deleteDirectory(new File(parentDir));
+        }
     }
 
     public static MineboxExport buildMineboxExport(MinebdConfig cfg) {
@@ -59,9 +62,10 @@ public class MineboxExportTest {
         underTest.read(22 * Constants.MEGABYTE, 1024);
         underTest.read(32 * Constants.MEGABYTE, 1024);
         underTest.read(111 * Constants.MEGABYTE, 1024);
-
-        final String[] files = new File(cfg.parentDir, SERIAL_NUMBER_SERVICE.getPublicIdentifier()).list();
-        Assert.assertEquals(2, files.length);
+        for (String parentDir : cfg.parentDirs) {
+            final String[] files = new File(parentDir, SERIAL_NUMBER_SERVICE.getPublicIdentifier()).list();
+            Assert.assertEquals(2, files.length);
+        }
     }
 
     @Test
@@ -70,7 +74,7 @@ public class MineboxExportTest {
 
         cfg.bucketSize = Size.bytes(16); //buckets for ants
         cfg.maxOpenFiles = 3;
-        cfg.parentDir = "tinyfiles";
+        cfg.parentDirs = Collections.singletonList("tinyfiles");
 
         final MineboxExport underTest = buildMineboxExport(cfg);
         final byte[] data = new byte[257];

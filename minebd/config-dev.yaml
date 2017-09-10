@@ -20,7 +20,9 @@ logging:
 minebd:
   nbdPort : 10811
   maxOpenFiles : 1
-  parentDir : minedbDat #for dev this is a relative directory to where it was started in. VM/physical should configure absolute path
+  parentDirs :
+   - minedbDat1
+   - minedbDat2
   reportedSize : 10G
   encryptionKeyPath: ./localetc/minebox/minebox.key
   authFile: ./localetc/minebox/local-auth.key

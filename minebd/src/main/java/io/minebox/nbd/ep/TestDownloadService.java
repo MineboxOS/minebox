@@ -1,16 +1,16 @@
 package io.minebox.nbd.ep;
 
 import java.io.File;
-import java.util.Collections;
 
 import io.minebox.nbd.download.DownloadService;
+import io.minebox.nbd.download.RecoverableFile;
 
 /**
  * Created by andreas on 27.04.17.
  */
 public class TestDownloadService implements DownloadService {
     @Override
-    public RecoveryStatus downloadIfPossible(File file) {
+    public RecoveryStatus downloadIfPossible(RecoverableFile file) {
         return RecoveryStatus.NO_FILE;
     }
 

@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import static java.util.stream.Collectors.toList;
 
-@Singleton //holds bucks which hold open files, we dont want this to be recreated over and over
+@Singleton //holds buckets which hold open files, we dont want this to be recreated over and over
 public class MineboxExport implements ExportProvider {
 
     private final long bucketSize;//according to taek42 , 40 MB is the bucket size for contracts, so we use the same for efficientcy.
@@ -54,7 +54,7 @@ public class MineboxExport implements ExportProvider {
     }
 
     private LoadingCache<Integer, Bucket> createFilesCache(final MinebdConfig config) {
-        Preconditions.checkNotNull(config.parentDir);
+        Preconditions.checkNotNull(config.parentDirs);
         final Integer maxOpenFiles = config.maxOpenFiles;
         Preconditions.checkNotNull(maxOpenFiles);
         Preconditions.checkArgument(maxOpenFiles > 0);

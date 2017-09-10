@@ -10,30 +10,33 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class BackgroundDelegatedDownloadService implements DownloadService {
 
-    public static final ExecutorService BACKGROUND_SCHEDULER = Executors.newFixedThreadPool(2); //for scheduling background downloads
-    public static final ExecutorService DOWNLOADER = Executors.newCachedThreadPool(); //infinite "foreground downloader slots.
+    private static final ExecutorService BACKGROUND_SCHEDULER = Executors.newFixedThreadPool(2); //for scheduling background downloads
+    private static final ExecutorService DOWNLOADER = Executors.newCachedThreadPool(); //infinite "foreground downloader slots.
     private static final Logger LOGGER = LoggerFactory.getLogger(BackgroundDelegatedDownloadService.class);
     private final DownloadService delegate;
-    private final Deque<File> allRecoverableFiles;
+    private final Deque<RecoverableFile> allRecoverableFiles;
     private final TreeSet<UserFileRequest> userRequestedFiles; //todo limit this size to same as background_downloader
 
-    private final LoadingCache<File, RecoveryStatus> requestCache = CacheBuilder.newBuilder().build(new CacheLoader<File, RecoveryStatus>() {
+    private final LoadingCache<RecoverableFile, RecoveryStatus> requestCache = CacheBuilder.newBuilder().build(new CacheLoader<RecoverableFile, RecoveryStatus>() {
         @Override
-        public RecoveryStatus load(File maxPriorityFile) throws Exception {
+        public RecoveryStatus load(RecoverableFile maxPriorityFile) throws Exception {
             return getSubmitter(maxPriorityFile, DOWNLOADER).call();
         }
     });
 
     private static class UserFileRequest implements Comparable<UserFileRequest> {
         Instant requestedAt;
-        File file;
+        RecoverableFile file;
         int bucketNumber;
 
-        public UserFileRequest(Instant requestedAt, File file) {
+        public UserFileRequest(Instant requestedAt, RecoverableFile file) {
             this.requestedAt = requestedAt;
             this.file = file;
         }
@@ -44,7 +47,7 @@ public class BackgroundDelegatedDownloadService implements DownloadService {
         }
     }
 
-    public BackgroundDelegatedDownloadService(DownloadService delegate, Collection<File> recoverableFiles) {
+    public BackgroundDelegatedDownloadService(DownloadService delegate, List<RecoverableFile> recoverableFiles) {
         this.delegate = delegate;
         LOGGER.info("found {} files to potentially download in background", recoverableFiles.size());
         this.allRecoverableFiles = new ArrayDeque<>(recoverableFiles);
@@ -61,11 +64,14 @@ public class BackgroundDelegatedDownloadService implements DownloadService {
     }
 
     private void sortByDistanceToRequested() {
-        List<File> list = new ArrayList<>(this.allRecoverableFiles);
-        //todo find a way to do this more elegantly, this is O(n²) and lots of linear overhead.. bad.
+        List<RecoverableFile> list = new ArrayList<>(this.allRecoverableFiles);
+        //todo find a way to do this more elegantly, this is O(n*log(n)*m) and lots of linear overhead.. bad.
+        //where n = number of buckets and m = buckets requested.
+        //potential solution: limit userRequestedFile to a small number, based on access time.
+        //
         list.sort((o1, o2) -> {
-            final int o1BucketNumber = SiaFileUtil.fileToNumber(o1);
-            final int o2BucketNumber = SiaFileUtil.fileToNumber(o2);
+            final int o1BucketNumber = SiaFileUtil.fileToNumber(o1.fileName);
+            final int o2BucketNumber = SiaFileUtil.fileToNumber(o2.fileName);
             int mino1 = Integer.MAX_VALUE;
             int mino2 = Integer.MAX_VALUE;
             for (UserFileRequest userRequestedFile : userRequestedFiles) {
@@ -97,8 +103,8 @@ public class BackgroundDelegatedDownloadService implements DownloadService {
             CountDownLatch started = new CountDownLatch(1);
             BACKGROUND_SCHEDULER.submit(() -> {
                 sortByDistanceToRequested();
-                final File maxPriorityFile = allRecoverableFiles.removeFirst();
-                LOGGER.info("putting {} in the queue", maxPriorityFile.getName());
+                final RecoverableFile maxPriorityFile = allRecoverableFiles.removeFirst();
+                LOGGER.info("putting {} in the queue", maxPriorityFile.fileName);
                 started.countDown();
                 requestCache.getUnchecked(maxPriorityFile);
             });
@@ -109,16 +115,16 @@ public class BackgroundDelegatedDownloadService implements DownloadService {
         }
     }
 
-    private Callable<RecoveryStatus> getSubmitter(File maxPriorityFile, ExecutorService service) {
+    private Callable<RecoveryStatus> getSubmitter(RecoverableFile maxPriorityFile, ExecutorService service) {
         return () -> service.submit(() -> {
-            LOGGER.debug("delegating download of {}", maxPriorityFile.getName());
+            LOGGER.debug("delegating download of {}", maxPriorityFile.fileName);
             return this.delegate.downloadIfPossible(maxPriorityFile);
         }).get();
     }
 
     @Override
-    public RecoveryStatus downloadIfPossible(File file) {
-        LOGGER.info("directly requesting {} in the immediate downloader", file.getName());
+    public RecoveryStatus downloadIfPossible(RecoverableFile file) {
+        LOGGER.info("directly requesting {} in the immediate downloader", file.fileName);
         userRequestedFiles.add(new UserFileRequest(Instant.now(), file));
         return requestCache.getUnchecked(file);
     }

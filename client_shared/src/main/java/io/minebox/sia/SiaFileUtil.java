@@ -3,7 +3,6 @@ package io.minebox.sia;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 
-import java.io.File;
 import java.nio.file.attribute.FileTime;
 import java.util.concurrent.TimeUnit;
 
@@ -16,8 +15,8 @@ public class SiaFileUtil {
         return Integer.parseInt(seconds);
     }
 
-    public static int fileToNumber(File file) {
-        final String number = Splitter.on(CharMatcher.anyOf("_.")).splitToList(file.getName()).get(2);
+    public static int fileToNumber(String name) {
+        final String number = Splitter.on(CharMatcher.anyOf("_.")).splitToList(name).get(2);
         return Integer.parseInt(number);
     }
 
