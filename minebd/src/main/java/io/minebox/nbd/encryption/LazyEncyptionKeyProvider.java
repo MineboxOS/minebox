@@ -67,7 +67,7 @@ public class LazyEncyptionKeyProvider implements EncyptionKeyProvider {
         while (true) {
             final WatchKey take = watchService.take();
             for (WatchEvent<?> watchEvent : take.pollEvents()) {
-                WatchEvent<Path> evP = (WatchEvent<Path>) watchEvent;
+                WatchEvent<Path> evP = getWatchEvent(watchEvent);
                 if (evP.kind() == StandardWatchEventKinds.ENTRY_CREATE || evP.kind() == StandardWatchEventKinds.ENTRY_MODIFY) {
                     final Path createdFile = ((Path) take.watchable()).resolve(evP.context());
                     LOGGER.info("detected new key file: " + createdFile);
@@ -79,6 +79,11 @@ public class LazyEncyptionKeyProvider implements EncyptionKeyProvider {
             }
             watchKey.reset();
         }
+    }
+
+    @SuppressWarnings("unchecked") //its own method so we can cast this without warning
+    private WatchEvent<Path> getWatchEvent(WatchEvent<?> watchEvent) {
+        return (WatchEvent<Path>) watchEvent;
     }
 
     /**

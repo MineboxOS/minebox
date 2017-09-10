@@ -1,19 +1,22 @@
-package io.minebox;
+package io.minebox.sia;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.mashape.unirest.http.HttpResponse;
-import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.HttpRequest;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.FileTime;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.temporal.ChronoUnit;
@@ -64,38 +67,39 @@ public class SiaUtil {
         return body.contains(fragment);
     }
 
-    static boolean notAnAddress(HttpResponse<String> reply) {
+    public static boolean notAnAddress(HttpResponse<String> reply) {
         return checkErrorFragment(reply, NO_ADDRESS);
     }
 
-    static boolean notEnoughFunds(HttpResponse<String> reply) {
+    public static boolean notEnoughFunds(HttpResponse<String> reply) {
         return checkErrorFragment(reply, NO_FUNDS);
     }
 
-    static boolean walletIsLocked(HttpResponse<String> reply) {
+    public static boolean walletIsLocked(HttpResponse<String> reply) {
         return checkErrorFragment(reply, LOCKED);
 
     }
 
-    static boolean isNotSynced(HttpResponse<String> reply) {
+    public static boolean isNotSynced(HttpResponse<String> reply) {
         return checkErrorFragment(reply, NOT_SYNCED);
     }
 
-    public String calcHastingsAmount(double sendingEurAmount) {
-        double eurPerBTC = 2911;
-        double bitcoinPerSiacoin = 0.00000247;
-        double siacoins = sendingEurAmount / eurPerBTC / bitcoinPerSiacoin;
+
+    public BigInteger calcHastingsAmount(double sendingCentsAmount) {
+        double eurPerBTC = 3400;
+        double bitcoinPerSiacoin = 0.00000170;
+        double siacoins = sendingCentsAmount / 100 / eurPerBTC / bitcoinPerSiacoin;
 
         return siaToHastings(siacoins);
     }
 
-    private String siaToHastings(double siacoins) {
+    private BigInteger siaToHastings(double siacoins) {
         BigDecimal hastings_per_sia = BigDecimal.valueOf(10).pow(24);
-        return BigDecimal.valueOf(siacoins).multiply(hastings_per_sia).toBigIntegerExact().toString();
+        return BigDecimal.valueOf(siacoins).multiply(hastings_per_sia).toBigIntegerExact();
     }
 
 
-    private HttpResponse<String> siaCommand(Command command, ImmutableMap<String, Object> params, String... extraCommand) {
+    private HttpResponse<String> siaCommand(SiaCommand command, ImmutableMap<String, Object> params, String... extraCommand) {
         try {
             final HttpRequest httpRequest = command.unirest(path, extraCommand)
                     .header("User-Agent", "Sia-Agent")
@@ -107,23 +111,39 @@ public class SiaUtil {
     }
 
 
-    HttpResponse<String> sendFunds(String amount, String destination) {
-        return siaCommand(Command.SENDCOINS, ImmutableMap.of("amount", amount, "destination", destination));
+    public void stopProcess() {
+        siaCommand(SiaCommand.STOP, ImmutableMap.of());
+    }
+
+    public HttpResponse<String> sendFunds(BigInteger amount, String destination) {
+        return siaCommand(SiaCommand.SENDCOINS, ImmutableMap.of("amount", amount.toString(), "destination", destination));
 
     }
 
     public boolean download(String siaPath, Path destination) {
-        final String dest = destination.toAbsolutePath().toString();
-        final HttpResponse<String> downloadResult = siaCommand(Command.DOWNLOAD, ImmutableMap.of("destination", dest), siaPath);
+        LOGGER.info("downloading {}", siaPath);
+//        final String dest = destination.toAbsolutePath().toString();
+        final FileTime lastModified = SiaFileUtil.getFileTime(siaPath);
+
+        final String tempFileName = destination.getFileName().toString() + ".tempdownload";
+        Path tempFile = destination.getParent().resolve(tempFileName);
+        final HttpResponse<String> downloadResult = siaCommand(SiaCommand.DOWNLOAD, ImmutableMap.of("destination", tempFile.toAbsolutePath().toString()), siaPath);
         final boolean noHosts = checkErrorFragment(downloadResult, NO_HOSTS);
         if (noHosts) {
             LOGGER.warn("unable to download file {} due to NO_HOSTS  ", siaPath);
             return false;
         }
         if (statusGood(downloadResult)) {
+            try {
+                Files.setLastModifiedTime(tempFile, lastModified);
+                Files.move(tempFile, destination, StandardCopyOption.ATOMIC_MOVE);
+                Files.setLastModifiedTime(destination, lastModified);
+            } catch (IOException e) {
+                throw new RuntimeException("unable to do atomic swap of file " + destination);
+            }
             return true;
         }
-        LOGGER.warn("unable to download file {} for an unexpected reason: {} ", siaPath, downloadResult.getBody().toString());
+        LOGGER.warn("unable to download siaPath {} for an unexpected reason: {} ", siaPath, downloadResult.getBody());
         return false;
     }
 
@@ -136,7 +156,7 @@ public class SiaUtil {
     }
 
     private HttpResponse<String> initSeed(String seed) {
-        return siaCommand(Command.INITSEED, ImmutableMap.of("encryptionpassword", seed, "seed", seed));
+        return siaCommand(SiaCommand.INITSEED, ImmutableMap.of("encryptionpassword", seed, "seed", seed));
     }
 
     public void waitForConsensus() {
@@ -145,7 +165,7 @@ public class SiaUtil {
             LOGGER.warn("checking if blockchain is ready");
             HttpResponse<String> result;
             try {
-                result = this.siaCommand(Command.CONSENSUS, ImmutableMap.of());
+                result = this.siaCommand(SiaCommand.CONSENSUS, ImmutableMap.of());
             } catch (NoConnectException e) {
                 result = null;
             }
@@ -170,12 +190,10 @@ public class SiaUtil {
             }
 
         }
-
-
     }
 
     public boolean unlockWallet(String seed) {
-        HttpResponse<String> unlockReply = siaCommand(Command.UNLOCK, ImmutableMap.of("encryptionpassword", seed));
+        HttpResponse<String> unlockReply = siaCommand(SiaCommand.UNLOCK, ImmutableMap.of("encryptionpassword", seed));
         if (alreadyUnderway(unlockReply)) {
             LOGGER.info("unable to unlock, operation was already started..");
             return false;
@@ -197,70 +215,16 @@ public class SiaUtil {
         return true;
     }
 
-    public HttpResponse<String> gracefulStop() {
-        try {
-            return siaCommand(Command.STOP, ImmutableMap.of());
-        } catch (NoConnectException e) {
-            LOGGER.warn("unable to stop gracefully");
-            return null;
-        }
-    }
 
     public String myAddress() {
-        final HttpResponse<String> string = siaCommand(Command.ADDRESS, ImmutableMap.of());
+        final HttpResponse<String> string = siaCommand(SiaCommand.ADDRESS, ImmutableMap.of());
         final JSONObject jsonObject = new JSONObject(string.getBody());
         return jsonObject.getString("address");
     }
 
     public String getWalletInfo() {
-        final HttpResponse<String> stringHttpResponse = siaCommand(Command.WALLET, ImmutableMap.of());
+        final HttpResponse<String> stringHttpResponse = siaCommand(SiaCommand.WALLET, ImmutableMap.of());
         return stringHttpResponse.getBody();
-    }
-
-    public enum Command {
-        //        WALLET("/wallet", "GET"), //confirmedsiacoinbalance
-        WALLET("/wallet", "GET"),
-        STOP("/daemon/stop", "GET"),
-        CONSENSUS("/consensus", "GET"),
-        DOWNLOAD("/renter/download", "GET", true),
-        ADDRESS("/wallet/address", "GET"),
-        INITSEED("/wallet/init/seed", "POST", true),
-        SENDCOINS("/wallet/siacoins", "POST"),//        amount      // hastings //        destination // address
-        UNLOCK("/wallet/unlock", "POST", true);
-
-        private final String command;
-        private final String httpMethod;
-        private final boolean longOperation;
-
-
-        Command(String command, String httpMethod, boolean longOperation) {
-            this.command = command;
-            this.httpMethod = httpMethod;
-            this.longOperation = longOperation;
-        }
-
-
-        Command(String command, String method) {
-            this(command, method, false);
-        }
-
-        HttpRequest unirest(String baseUrl, String... extraPath) {
-            if (longOperation) {
-                Unirest.setTimeouts(10000, 15 * 60000);
-            } else {
-                Unirest.setTimeouts(10000, 60000);
-            }
-            String joinedPath = "/" + Joiner.on("/").join(extraPath);
-            if (joinedPath.length() == 1) {
-                joinedPath = "";
-            }
-            if (httpMethod.equals("GET")) {
-                return Unirest.get(baseUrl + command + joinedPath);
-            } else if (httpMethod.equals("POST")) {
-                return Unirest.post(baseUrl + command + joinedPath);
-            }
-            throw new IllegalStateException("unknown method");
-        }
     }
 
     public double estimatedPercent(long blocks) {
@@ -280,7 +244,7 @@ public class SiaUtil {
     }
 
     private static class NoConnectException extends RuntimeException {
-        public NoConnectException(UnirestException e) {
+        NoConnectException(UnirestException e) {
             super(e);
         }
     }

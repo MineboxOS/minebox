@@ -103,6 +103,7 @@ public class NbdServer implements Managed {
                     ch.pipeline().addLast(new HandshakePhase(exportProvider));
                 }
             });
+            initializeBlockZero();
             final ChannelFuture bind = bootstrap.bind();
             ChannelFuture f;
             try {
@@ -115,6 +116,18 @@ public class NbdServer implements Managed {
             systemdUtil.sendNotify(); //tell systemd we are ready
             state = STARTED;
         });
+    }
+
+    private void initializeBlockZero() {
+        LOGGER.info("trying to obtain block 0");
+        //we try to read a single byte from the beginning of the "disk".
+        // this should in turn trigger download of the file minebox_v1_0.dat since it looks like a user.
+        try {
+            exportProvider.read(0, 1);
+        } catch (IOException e) {
+            throw new RuntimeException("problem getting block 0", e);
+        }
+        LOGGER.info("successfully read block 0");
     }
 
     enum State {

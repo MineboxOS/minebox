@@ -15,11 +15,11 @@ import subprocess
 import sys
 
 from connecttools import (get_demo_url, get_from_sia, post_to_sia,
-                          put_to_minebd, put_to_metadata)
+                          get_from_minebd, put_to_minebd, put_to_metadata)
 from backupinfo import *
 from siatools import check_sia_sync, SIA_DIR
 
-REDUNDANCY_LIMIT = 2.0
+REDUNDANCY_LIMIT = 2.5
 
 def check_backup_prerequisites():
     # Check if prerequisites are met to make backups.
@@ -106,15 +106,19 @@ def initiate_uploads(status):
         return False, "ERROR: sia daemon needs to be running for any uploads."
 
     # We have a randomly named subdirectory containing the .dat files.
-    # As the random string is based on the wallet seed, we can be pretty sure there
-    # is only one and we can ignore the risk of catching multiple directories with
-    # the * wildcard.
+    # The subdirectory matches the serial number that MineBD returns.
+    mbdata, mb_status_code = get_from_minebd('serialnumber')
+    if mb_status_code == 200:
+        mbdirname = mbdata["message"]
+    else:
+        return False, "ERROR: Could not get serial number from MineBD."
+
     status["backupfileinfo"] = []
     status["backupfiles"] = []
     status["uploadfiles"] = []
     status["backupsize"] = 0
     status["uploadsize"] = 0
-    for filepath in glob(path.join(DATADIR_MASK, 'snapshots', snapname, '*', '*.dat')):
+    for filepath in glob(path.join(DATADIR_MASK, 'snapshots', snapname, mbdirname, '*.dat')):
         fileinfo = stat(filepath)
         # Only use files of non-zero size.
         if fileinfo.st_size:
@@ -164,41 +168,26 @@ def wait_for_uploads(status):
     # Loop and sleep as long as the backup is not fully available and uploaded.
     # To "emulate" a do loop, we loop "forever" and break on our condition.
     while True:
-        sia_filedata, sia_status_code = get_from_sia('renter/files')
-        if sia_status_code == 200:
-            total_uploaded_size = 0
-            uploaded_size = 0
-            redundancy = []
-            fully_available = True
-            sia_map = dict((d["siapath"], index) for (index, d) in enumerate(sia_filedata["files"]))
-            for bfile in status["backupfileinfo"]:
-                if bfile["siapath"] in sia_map:
-                    fdata = sia_filedata["files"][sia_map[bfile["siapath"]]]
-                    total_uploaded_size += fdata["filesize"] * fdata["uploadprogress"] / 100.0
-                    redundancy.append(fdata["redundancy"])
-                    if fdata["siapath"] in status["uploadfiles"]:
-                        uploaded_size += fdata["filesize"] * fdata["uploadprogress"] / 100.0
-                    if not fdata["available"]:
-                        fully_available = False
-                elif re.match(r'.*\.dat$', bfile["siapath"]):
-                    fully_available = False
-                    current_app.logger.warn('File "%s" not found on Sia!', bfile["siapath"])
-                else:
-                    current_app.logger.debug('File "%s" not on Sia and not matching watched names.', bfile["siapath"])
-            status["uploadprogress"] = 100.0 * uploaded_size / status["uploadsize"] if status["uploadsize"] else 100
-            status["totalprogress"] = 100.0 * total_uploaded_size / status["backupsize"] if status["backupsize"] else 100
-            min_redundancy = min(redundancy) if redundancy else 0
+        # Get upload status (this queries Sia).
+        upstatus = get_upload_status(status["backupfileinfo"], status["uploadfiles"])
+        if upstatus:
+            status["uploadprogress"] = upstatus["uploadprogress"]
+            status["totalprogress"] = upstatus["totalprogress"]
+            min_redundancy = upstatus["min_redundancy"]
             # Break if the backup is fully available on sia and has enough
             # minimum redundancy.
-            if fully_available and min_redundancy >= REDUNDANCY_LIMIT:
+            if (upstatus["fully_available"]
+                and upstatus["min_redundancy"] >= REDUNDANCY_LIMIT):
                 status["available"] = True
-                current_app.logger.info("Backup is fully available and minimum file redundancy is %.1f, we can finish things up."
-                                        % min_redundancy)
+                current_app.logger.info(
+                  "Backup is fully available and minimum file redundancy is %.1f, we can finish things up.",
+                  upstatus["min_redundancy"])
                 break
             # If we are still here, wait some minutes for more upload progress.
             wait_minutes = 5
-            current_app.logger.info("Uploads are not yet complete (%d%% / min file redundancy %.1f), wait %d minutes."
-                                    % (int(status["uploadprogress"]), min_redundancy, wait_minutes))
+            current_app.logger.info(
+              "Uploads are not yet complete (%d%% / min file redundancy %.1f), wait %d minutes.",
+              int(status["uploadprogress"]), upstatus["min_redundancy"], wait_minutes)
             time.sleep(wait_minutes * 60)
         else:
             return False, "ERROR: Sia daemon needs to be running for any uploads."

@@ -1,17 +1,13 @@
 package io.minebox.nbd;
 
 import ch.qos.logback.classic.Level;
-import com.mashape.unirest.http.exceptions.UnirestException;
-import io.minebox.SiaUtil;
-import io.minebox.nbd.download.DownloadService;
-import io.minebox.nbd.download.SiaHostedDownload;
+import io.minebox.sia.SiaUtil;
 import net.lingala.zip4j.core.ZipFile;
 import org.apache.commons.io.FileUtils;
 import org.junit.*;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 
 @Ignore //we need a solution for the big pristine file
@@ -80,7 +76,7 @@ public class SiaHostedDownloadTest {
     }
 
     private static void stopSiad() {
-        siaUtil.gracefulStop();
+        siaUtil.stopProcess();
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {

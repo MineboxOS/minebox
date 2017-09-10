@@ -7,12 +7,15 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
-import io.minebox.SiaUtil;
+import io.minebox.sia.SiaUtil;
 import io.minebox.nbd.RemoteTokenService;
+import io.minebox.nbd.SerialNumberService;
+import io.minebox.nbd.SiaSeedService;
 import io.minebox.nbd.encryption.EncyptionKeyProvider;
 import org.apache.commons.lang3.tuple.Pair;
 import org.json.JSONArray;
@@ -20,46 +23,65 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+@Singleton
 public class DownloadFactory implements Provider<DownloadService> {
     private final MetaDataStatus.MetaDataStatusProvider metaDataStatusProvider;
     private RemoteTokenService remoteTokenService;
     private final String metadataUrl;
     private final Path siaDir;
-    private final Provider<SiaUtil> siaUtilProvider;
+    private final String parentDir;
+    private final SiaUtil siaUtil;
+    private final SiaSeedService siaSeedService;
 
 
     static final private Logger LOGGER = LoggerFactory.getLogger(DownloadFactory.class);
     private volatile DownloadService initializedDownloadService;
+    private final SiaProcessController siaProcessController;
+    private final SerialNumberService serialNumberService;
 
     @Inject
     public DownloadFactory(MetaDataStatus.MetaDataStatusProvider metaDataStatusProvider,
                            RemoteTokenService remoteTokenService,
                            @Named("httpMetadata") String metadataUrl,
                            @Named("siaDataDirectory") String siaDataDirectory,
-                           Provider<SiaUtil> siaUtilProvider) {
+                           @Named("parentDir") String parentDir,
+                           SiaUtil siaUtil,
+                           SiaSeedService siaSeedService,
+                           SiaProcessController siaProcessController,
+                           SerialNumberService serialNumberService) {
 
         this.metaDataStatusProvider = metaDataStatusProvider;
         this.remoteTokenService = remoteTokenService;
         this.metadataUrl = metadataUrl;
         siaDir = Paths.get(siaDataDirectory).toAbsolutePath();
-        this.siaUtilProvider = siaUtilProvider;
+        this.parentDir = parentDir;
+        this.siaUtil = siaUtil;
+        this.siaSeedService = siaSeedService;
+        this.siaProcessController = siaProcessController;
+        this.serialNumberService = serialNumberService;
     }
 
     @Inject
     public void initMetaData(EncyptionKeyProvider encyptionKeyProvider) {
         LOGGER.info("registering init callback when key is loaded..");
         encyptionKeyProvider.onLoadKey(this::init);
+//        if (encyptionKeyProvider.getMasterPassword().isDone()){
+//            if (siaUtil.hasSeed()); maybe check the state of sia, if there is no seed file but an initialized sia, something is fishy?
+//        }
     }
 
     private void init() {
@@ -88,15 +110,29 @@ public class DownloadFactory implements Provider<DownloadService> {
         final MetaDataStatus metaDataStatus = metaDataStatusProvider.get();
         if (!metaDataStatus.lookup.isEmpty()) {
 //            case OldNonempty
-            LOGGER.info("metadata was old and nonempty, we have work to do to restore up to {} files", metaDataStatus.lookup);
+            LOGGER.info("metadata was old and nonempty, we have work to do to restore up to {} files", metaDataStatus.lookup.size());
             //todo count those missing files, maybe we're good already..
-            initializedDownloadService = new SiaHostedDownload(siaUtilProvider.get(), metaDataStatus.lookup);
+            initializedDownloadService = buildSiaDownload(metaDataStatus.lookup);
         } else {
             //we were fresh, nothing to download...
 //            case OldEmpty
             LOGGER.info("metadata was old but empty, assuming a fresh file system");
             initializedDownloadService = new NothingTodoDownloadService();
         }
+    }
+
+    private DownloadService buildSiaDownload(Map<String, String> lookup) {
+        final SiaHostedDownload siaHostedDownload = new SiaHostedDownload(siaUtil, lookup);
+        File parentFolder = new File(parentDir, serialNumberService.getPublicIdentifier());
+
+        final List<File> recoverableFiles = lookup.keySet().stream()
+                .map(filename -> new File(parentFolder, filename))
+                //files which already exists are not reciverable, they are already recovered
+                .filter(file -> !file.exists())
+                .collect(Collectors.toList());
+
+        return new BackgroundDelegatedDownloadService(siaHostedDownload, recoverableFiles);
+//        return siaHostedDownload;
     }
 
     private void initFreshKey() {
@@ -114,16 +150,20 @@ public class DownloadFactory implements Provider<DownloadService> {
             filenameLookup = Maps.newHashMap();
         } else {
             LOGGER.info("metadata was fresh and nonempty, we have work to do to restore up to {} files", siaPaths.size());
-            //todo stop siad here. extractSiaLookupMap will add new files. then restart / init the seed
+            //stopping siad here. extractSiaLookupMap will add new files. then restart / init the seed
+            siaProcessController.stopProcess();
             filenameLookup = extractSiaLookupMap(siaPaths);
+            siaProcessController.startProcess();
+            siaUtil.unlockWallet(siaSeedService.getSiaSeed());
             //todo init the seed. this will take a while. nevertheless we don't want to assign initializedDownloadService just yet, because it would not be ready.
-            initializedDownloadService = new SiaHostedDownload(siaUtilProvider.get(), filenameLookup);
+            initializedDownloadService = buildSiaDownload(filenameLookup);
         }
         LOGGER.info("writing out info about metadata so we can later start up even if offline");
         final MetaDataStatus toWrite = new MetaDataStatus();
         toWrite.lookup = filenameLookup;
         metaDataStatusProvider.write(toWrite);
     }
+
 
     private static Map<String, String> extractSiaLookupMap(ImmutableList<String> siaPaths) {
         Map<String, String> filenameLookup = Maps.newHashMap();
@@ -227,7 +267,10 @@ public class DownloadFactory implements Provider<DownloadService> {
         LOGGER.info("unpacking file {}", dest.toAbsolutePath().toString());
 //        if (entryName.startsWith("renter")) {
         try {
-            Files.deleteIfExists(dest); //yes, we overwrite everything we find
+            final boolean deleted = Files.deleteIfExists(dest);//yes, we overwrite everything we find
+            if (deleted) {
+                LOGGER.info("deleted file {}, recreating from metadata", dest);
+            }
             Files.copy(zis, dest);
         } catch (IOException e) {
             throw new RuntimeException("unable to create renter file", e);

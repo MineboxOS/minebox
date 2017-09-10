@@ -1,23 +1,12 @@
 package io.minebox.nbd.download;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
-import io.minebox.SiaUtil;
-import io.minebox.nbd.RemoteTokenService;
-import io.minebox.nbd.encryption.EncyptionKeyProvider;
-import org.json.JSONArray;
+import io.minebox.sia.SiaUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Collection;
 import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 public class SiaHostedDownload implements DownloadService {
 
@@ -56,8 +45,12 @@ public class SiaHostedDownload implements DownloadService {
         return true;
     }
 
+
     @Override
-    public Collection<String> allFilenames() {
-        return lookup.keySet();
+    public double completedPercent(File parentDir) {
+        final long missing = lookup.keySet().stream()
+                .filter(s -> !new File(parentDir, s).exists())
+                .count();
+        return 100.0 * (1.0 - (double) missing / lookup.size());
     }
 }
