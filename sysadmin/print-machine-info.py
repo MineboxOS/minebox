@@ -6,7 +6,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 import logging
-from systemtools import get_machine_info
+from systemtools import get_machine_info, get_local_ipaddress
 
 # *** variables & constants ***
 
@@ -24,6 +24,7 @@ def run(*args):
     logger.info("System UUID: %s", machine_info["system_uuid"])
     logger.info("Model (SKU): %s", machine_info["system_sku"])
     logger.info("Serial Number (Chassis): %s", machine_info["chassis_serial"])
+    logger.info("IP Address: %s", get_local_ipaddress())
 
 
 # Avoid running the script when e.g. simply importing the file.
