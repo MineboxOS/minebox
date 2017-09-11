@@ -8,7 +8,7 @@ User=sia
 Nice=5
 # WorkingDirectory may not be required but to be sure.
 WorkingDirectory=/mnt/lower1/sia
-ExecStart=/usr/local/bin/siad --sia-directory /mnt/lower1/sia
+ExecStart=/usr/bin/siad --sia-directory /mnt/lower1/sia
 Restart=on-failure
 RestartSec=30
 

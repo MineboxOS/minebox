@@ -15,8 +15,8 @@ Sia is a new decentralized cloud storage platform that radically alters the land
 
 # Packaging
 %install
-install -pD --mode 755 "%{_topdir}BUILD/siad" "$RPM_BUILD_ROOT/usr/local/siad"
-install -pD --mode 755 "%{_topdir}BUILD/siac" "$RPM_BUILD_ROOT/usr/local/siac"
+install -pD --mode 755 "%{_topdir}BUILD/siad" "$RPM_BUILD_ROOT/usr/bin/siad"
+install -pD --mode 755 "%{_topdir}BUILD/siac" "$RPM_BUILD_ROOT/usr/bin/siac"
 install -pD --mode 644 "%{_topdir}sia/systemd/sia.service" "$RPM_BUILD_ROOT/etc/systemd/system/sia.service"
 
 # Installation script
@@ -51,6 +51,6 @@ systemctl daemon-reload
 
 %files
 
-/usr/local/siac
-/usr/local/siad
+/usr/bin/siac
+/usr/bin/siad
 /etc/systemd/system/sia.service
