@@ -30,6 +30,8 @@ def register_machine():
 def submit_machine_auth():
     machine_info = get_machine_info()
     ipaddress = get_local_ipaddress()
+    if not ipaddress:
+        return False, ("ERROR: No IP address found.")
 
     # Second parameter is True because token is required with this one.
     admindata, admin_status_code = post_to_adminservice("authMachine", True,
@@ -71,7 +73,10 @@ def get_local_ipaddress():
     # to work correctly - but we want to submit this to the auth service,
     # which is out there anyhow.
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.connect((HOSTNAME_TO_CONNECT, 80))
-    ipaddress = sock.getsockname()[0]
-    sock.close()
+    try:
+        sock.connect((HOSTNAME_TO_CONNECT, 80))
+        ipaddress = sock.getsockname()[0]
+        sock.close()
+    except: # On *ANY* exception, we error out.
+        return False
     return ipaddress
