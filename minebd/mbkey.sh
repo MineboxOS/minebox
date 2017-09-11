@@ -46,7 +46,7 @@ set)
   chown root:root $KEY_FILE
   chmod gu+r,o-r,a-wx $KEY_FILE
   # Also set the full key as root password
-  #echo "root:$newkey" | chpasswd
+  echo "root:$newkey" | chpasswd
   # We should be done!
   ;;
 get)
