@@ -32,7 +32,7 @@ public class EncyptionKeyProviderTest {
         try {
             Assert.assertTrue(Files.exists(keyfile));
             final LazyEncyptionKeyProvider key = new LazyEncyptionKeyProvider("./junit/etc/minebox/randomkey.txt");
-            Thread.sleep(100); //waiting 100ms to load file from disk
+            Thread.sleep(1000); //waiting 1000ms to load file from disk
             Assert.assertEquals(PW, key.getImmediatePassword());
         } finally {
             Files.delete(keyfile);
@@ -48,7 +48,7 @@ public class EncyptionKeyProviderTest {
             final ListenableFuture<String> masterPassword = key.getMasterPassword();
             Assert.assertFalse(masterPassword.isDone());
             Files.write(keyfile, PWBYTES);
-            Thread.sleep(100);
+            Thread.sleep(1000);
             Assert.assertTrue(masterPassword.isDone());
             Assert.assertEquals(PW, key.getImmediatePassword());
         } finally {
