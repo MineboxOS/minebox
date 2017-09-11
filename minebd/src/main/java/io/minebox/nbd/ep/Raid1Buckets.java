@@ -1,7 +1,5 @@
 package io.minebox.nbd.ep;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,10 +9,10 @@ import java.util.List;
 
 public class Raid1Buckets implements Bucket {
     private static final Logger LOGGER = LoggerFactory.getLogger(Raid1Buckets.class);
-    private final List<SingleFileBucket> buckets;
+    private final List<Bucket> buckets;
     private final int bucketIndex;
 
-    public Raid1Buckets(List<SingleFileBucket> buckets, int bucketIndex) {
+    public Raid1Buckets(List<Bucket> buckets, int bucketIndex) {
         this.buckets = buckets;
         this.bucketIndex = bucketIndex;
     }
@@ -22,10 +20,11 @@ public class Raid1Buckets implements Bucket {
     @Override
     public long putBytes(long offset, ByteBuffer message) throws IOException {
         long bytes = -1;
-        for (SingleFileBucket bucket : buckets) {
-            final long written = bucket.putBytes(offset, message);
+        for (Bucket bucket : buckets) {
+            final ByteBuffer duplByteBuffer = message.duplicate();
+            final long written = bucket.putBytes(offset, duplByteBuffer);
             if (bytes != -1 && written != bytes) {
-                LOGGER.warn("unexpected differences when writing in bucket:{} lastWritten: {}, nowWritten: {}", bucket.bucketNumber, bytes, written);
+                LOGGER.warn("unexpected differences when writing in bucket:{} lastWritten: {}, nowWritten: {}", bucket.bucketIndex(), bytes, written);
             }
             bytes = written;
         }
@@ -34,7 +33,7 @@ public class Raid1Buckets implements Bucket {
 
     @Override
     public void trim(long offset, long length) throws IOException {
-        for (SingleFileBucket bucket : buckets) {
+        for (Bucket bucket : buckets) {
             bucket.trim(offset, length);
         }
     }
@@ -49,20 +48,20 @@ public class Raid1Buckets implements Bucket {
         return getDominantBucket().getUpperBound();
     }
 
-    private SingleFileBucket getDominantBucket() {
+    private Bucket getDominantBucket() {
         return buckets.get(getDominantIndex());
     }
 
     @Override
     public void close() throws IOException {
-        for (SingleFileBucket bucket : buckets) {
+        for (Bucket bucket : buckets) {
             bucket.close();
         }
     }
 
     @Override
     public void flush() throws IOException {
-        for (SingleFileBucket bucket : buckets) {
+        for (Bucket bucket : buckets) {
             bucket.flush();
         }
     }
@@ -72,12 +71,17 @@ public class Raid1Buckets implements Bucket {
         return getDominantBucket().getBytes(writeInto, offsetForThisBucket, length);
     }
 
+    @Override
+    public long bucketIndex() {
+        return bucketIndex;
+    }
+
     private int getDominantIndex() {
         return bucketIndex % buckets.size();
     }
 
-    @VisibleForTesting
-    long calcLengthInThisBucket(long offsetInThisBucket, long length) {
+    @Override
+    public long calcLengthInThisBucket(long offsetInThisBucket, long length) {
         return getDominantBucket().calcLengthInThisBucket(offsetInThisBucket, length);
     }
 }

@@ -84,8 +84,14 @@ class SingleFileBucket implements Bucket {
         return lengthInThisBucket;
     }
 
+    @Override
+    public long bucketIndex() {
+        return bucketNumber;
+    }
+
     @VisibleForTesting
-    long calcLengthInThisBucket(long offsetInThisBucket, long length) {
+    @Override
+    public long calcLengthInThisBucket(long offsetInThisBucket, long length) {
         if (length < 1) {
             throw new UnsupportedOperationException("she said it's too small: " + length);
         } else if (offsetInThisBucket < 0) {
