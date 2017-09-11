@@ -36,7 +36,6 @@ public class RemoteTokenResource {
     @Produces("text/plain")
     @PermitAll
     public Response getMetadataToken() {
-
         final Optional<String> token = remoteTokenService.getToken();
         if (token.isPresent()) {
             return Response.ok(token).build();
