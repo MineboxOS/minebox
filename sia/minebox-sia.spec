@@ -4,9 +4,9 @@ Version: 1.3.0
 Release: %(git describe --tags --match 'minebox*'|grep -oP "(?<=minebox_v).*" | tr '-' '_')%{?dist}
 Summary: Sia - decentralized cloud storage platform
 License: MIT License
-Requires: minebox-virtualenv minebox-uigateway
-Requires(pre): /usr/sbin/useradd, /usr/bin/getent
-Requires(postun): /usr/sbin/userdel
+Requires: minebox-virtualenv minebox-uigateway systemd
+Requires(pre): /usr/sbin/useradd, /usr/sbin/groupadd, /usr/bin/getent
+Requires(postun): /usr/sbin/userdel,  /usr/sbin/groupdel
 
 %description
 Sia is a new decentralized cloud storage platform that radically alters the landscape of cloud storage. By leveraging smart contracts, client-side encryption, and sophisticated redundancy (via Reed-Solomon codes), Sia allows users to safely store their data with hosts that they do not know or trust.

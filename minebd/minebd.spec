@@ -8,6 +8,7 @@ Version: %(git describe --tags --match 'minebd*'|grep -oP "(?<=minebd_v).")
 Release: %(git describe --tags --match 'minebd*'|grep -oP "(?<=minebd_v..).*" | tr '-' '_')%{?dist}
 Summary: Our core module
 License: Proprietary
+Requires: minebox-sia java-1.8.0-openjdk-headless nbd systemd
 
 %description
 MineBD is the core module of a Minebox

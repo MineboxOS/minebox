@@ -16,7 +16,6 @@ from connecttools import get_from_sia, get_from_backupservice
 DATADIR_MASK="/mnt/lower*/data"
 METADATA_BASE="/mnt/lower1/mineboxmeta"
 MINEBD_STORAGE_PATH="/mnt/storage"
-UPLOADER_CMD="/usr/lib/minebox/uploader-bg.sh"
 INFO_FILENAME="fileinfo"
 
 
