@@ -32,7 +32,9 @@ install -pD --mode 644 "%{_topdir}distro-tools/VM/nbd-client-config" "$RPM_BUILD
 systemctl daemon-reload
 # TBD do this different and don't append all the time
 echo modprobe nbd >> "/etc/rc.modules"
+chmod +x /etc/rc.modules
 modprobe nbd
+
 systemctl enable minebd
 systemctl start minebd &
 
