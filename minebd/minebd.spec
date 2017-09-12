@@ -53,7 +53,7 @@ systemctl daemon-reload
 /usr/lib/minebox/minebd-1.0-SNAPSHOT-all.jar
 /usr/lib/minebox/mount-nbd0.sh
 /usr/lib/minebox/mbkey.sh
-/etc/minebox/config.yaml
+%config(noreplace) /etc/minebox/config.yaml
 /etc/systemd/system/minebd.service
 /etc/systemd/system/nbd@nbd0.service.d/mount.conf
 /etc/nbdtab
