@@ -28,7 +28,7 @@ install -pD --mode 644 "%{_topdir}uigateway/connecttools.py" "$RPM_BUILD_ROOT/us
 # Installation script
 %pre
 /usr/bin/getent group mug || /usr/sbin/groupadd -r mug
-/usr/bin/getent passwd mug || /usr/sbin/useradd -r -d /usr/lib/minebox/mbvenv -s /sbin/nologin -g mug -G rockstorWEB mug
+/usr/bin/getent passwd mug || /usr/sbin/useradd -r -d /usr/lib/minebox/mbvenv -s /sbin/nologin -g mug mug
 set +e
 systemctl stop mug
 set -e
