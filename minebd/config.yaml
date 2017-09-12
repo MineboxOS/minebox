@@ -10,7 +10,7 @@ swagger:
 logging:
   level: INFO
   loggers:
-    io.minebox: DEBUG
+    io.minebox: INFO
     io.minebox.nbd.NbdStatsReporter: INFO
     org.bitcoin.Secp256k1Context: ERROR
 #    io.minebox.nbd.TransmissionPhase: INFO
