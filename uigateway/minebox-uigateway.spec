@@ -8,7 +8,7 @@ Version: %(git describe --tags --match 'mug*'|grep -oP "(?<=mug_v).")
 Release: %(git describe --tags --match 'mug*'|grep -oP "(?<=mug_v..).*" | tr '-' '_')%{?dist}
 Summary: Minebox UI Gateway (MUG)
 License: Proprietary
-Requires: minebox-virtualenv minebox-rockstor
+Requires: minebox-virtualenv minebox-rockstor MineBD sudo systemd
 Requires(pre): /usr/sbin/useradd, /usr/sbin/groupadd, /usr/bin/getent
 Requires(postun): /usr/sbin/userdel,  /usr/sbin/groupdel
 
@@ -20,6 +20,7 @@ The Minebox UI Gateway (MUG) is a python service that allows the UI to access Mi
 # Packaging
 %install
 install -pD --mode 755 "%{_topdir}uigateway/mug.sh" "$RPM_BUILD_ROOT/usr/lib/minebox/mug.sh"
+install -pD --mode 644 "%{_topdir}uigateway/sudoers.d/mug" "$RPM_BUILD_ROOT/etc/sudoers.d/mug"
 install -pD --mode 644 "%{_topdir}uigateway/systemd/mug.service" "$RPM_BUILD_ROOT/etc/systemd/system/mug.service"
 install -pD --mode 755 "%{_topdir}uigateway/mug.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/mug.py"
 install -pD --mode 644 "%{_topdir}uigateway/backupinfo.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/backupinfo.py"
@@ -57,6 +58,7 @@ systemctl daemon-reload
 %files
 
 /usr/lib/minebox/mug.sh
+/etc/sudoers.d/mug
 /etc/systemd/system/mug.service
 /usr/lib/minebox/mbvenv/mug.py
 /usr/lib/minebox/mbvenv/mug.pyc
