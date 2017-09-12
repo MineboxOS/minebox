@@ -27,14 +27,20 @@ public class StatusResource {
     public static final String PATH = "/status";
     private static final Logger LOGGER = LoggerFactory.getLogger(StatusResource.class);
     final private EncyptionKeyProvider encyptionKeyProvider;
-    private final File firstDir;
+    private final List<String> parentDirs;
     final private DownloadFactory downloadFactory;
+    private final SerialNumberService serialNumberService;
 
     @Inject
-    public StatusResource(EncyptionKeyProvider encyptionKeyProvider, @Named("parentDirs") List<String> parentDirs, DownloadFactory downloadFactory, SerialNumberService serialNumberService) {
+    public StatusResource(EncyptionKeyProvider encyptionKeyProvider
+            , @Named("parentDirs") List<String> parentDirs
+            , DownloadFactory downloadFactory
+            , SerialNumberService serialNumberService) {
+
         this.encyptionKeyProvider = encyptionKeyProvider;
+        this.parentDirs = parentDirs;
         this.downloadFactory = downloadFactory;
-        this.firstDir = new File(parentDirs.get(0), serialNumberService.getPublicIdentifier());
+        this.serialNumberService = serialNumberService;
     }
 
     @GET
@@ -57,7 +63,10 @@ public class StatusResource {
             if (!status.remoteMetadataDetected) {
                 return status;
             }
-            status.completedRestorePercent = downloadService.completedPercent(firstDir);
+            if (status.hasEncryptionKey) {
+                final File firstDir = new File(parentDirs.get(0), serialNumberService.getPublicIdentifier());
+                status.completedRestorePercent = downloadService.completedPercent(firstDir);
+            }
             status.restoreRunning = status.completedRestorePercent < 100.0;
         } else {
             status.connectedMetadata = false;
