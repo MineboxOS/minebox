@@ -54,7 +54,7 @@ public class BucketFactory {
         final RecoverableFile recoverableFile = from(fileName, serialNumberService.getPublicIdentifier(), parentDirs);
 //        recoverableFile.forEach(file -> ensureFileExists(bucketIndex, file));
         ensureFileExists(bucketIndex, recoverableFile);
-        final List<SingleFileBucket> buckets = parentFolders.stream()
+        final List<Bucket> buckets = parentFolders.stream()
                 .map(parentFolder -> new SingleFileBucket(bucketIndex, size, encryption, new File(parentFolder, fileName)))
                 .collect(Collectors.toList());
 
