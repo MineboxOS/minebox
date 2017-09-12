@@ -29,7 +29,6 @@ CONFIG_JSON_PATH="/etc/minebox/mug_config.json"
 SSL_CERT="/opt/rockstor/certs/rockstor.cert"
 SSL_KEY="/opt/rockstor/certs/rockstor.key"
 MINEBD_STORAGE_PATH="/mnt/storage"
-UPLOADER_CMD=backupinfo.UPLOADER_CMD
 DEMOSIAC_CMD="/root/minebox-client-tools_vm/sia/demosiac.sh"
 SUDO="/usr/bin/sudo"
 MBKEY_CMD="/usr/lib/minebox/mbkey.sh"
