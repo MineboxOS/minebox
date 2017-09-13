@@ -17,6 +17,7 @@ MineBD is the core module of a Minebox
 
 # Packaging
 %install
+install -pD --mode 755 "%{_topdir}minebd/minebd" "$RPM_BUILD_ROOT/usr/lib/minebox/minebd"
 install -pD --mode 644 "%{_topdir}minebd/build/libs/minebd-1.0-SNAPSHOT-all.jar" "$RPM_BUILD_ROOT/usr/lib/minebox/minebd-1.0-SNAPSHOT-all.jar"
 install -pD --mode 755 "%{_topdir}minebd/systemd/mount-nbd0.sh" "$RPM_BUILD_ROOT/usr/lib/minebox/mount-nbd0.sh"
 install -pD --mode 755 "%{_topdir}minebd/mbkey.sh" "$RPM_BUILD_ROOT/usr/lib/minebox/mbkey.sh"
@@ -56,6 +57,7 @@ if [ "$1" = 0 ] ; then
 fi
 
 %files
+/usr/lib/minebox/minebd
 /usr/lib/minebox/minebd-1.0-SNAPSHOT-all.jar
 /usr/lib/minebox/mount-nbd0.sh
 /usr/lib/minebox/mbkey.sh

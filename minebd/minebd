@@ -1,0 +1,4 @@
+#!/usr/bin/bash
+
+# Script for launching the Minebox block device daemon.
+/usr/bin/java -jar /usr/lib/minebox/minebd-1.0-SNAPSHOT-all.jar /etc/minebox/config.yaml
