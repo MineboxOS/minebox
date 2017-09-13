@@ -2,14 +2,13 @@ package io.minebox.util;
 
 import java.io.IOException;
 import java.nio.file.*;
-import java.nio.file.attribute.PosixFileAttributeView;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.UserPrincipalLookupService;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
+import java.nio.file.attribute.*;
+import java.util.*;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by andreas on 12.05.17.
@@ -24,36 +23,54 @@ public class FileUtil {
         }
     }
 
-    public static String readLocalAuth(String filePath, Boolean ignoreMissingPaths, String defaultValue) {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileUtil.class);
+
+    static String readLocalAuth(String filePath) {
         final Path path = Paths.get(filePath);
         try {
-            final List<String> lines = Files.readAllLines(path);
-            return lines.get(0);
-        } catch (IOException e) {
-            if (ignoreMissingPaths) {
-                writeRootDefault(defaultValue, path);
-                return defaultValue;
+            if (!Files.exists(path)) {
+                LOGGER.info("authFile not found, creating it");
+                final UUID uuid = UUID.randomUUID();
+                final Path temp = path.getParent().resolve(path.getFileName().toString() + ".temp");
+                createFileWithPermissions(temp);
+                final String written = uuid.toString();
+                Files.write(temp, written.getBytes(Charsets.UTF_8));
+                Files.move(temp, path, StandardCopyOption.ATOMIC_MOVE);
+                return written;
+            } else {
+                final List<String> lines = Files.readAllLines(path);
+                Preconditions.checkState(lines.size() == 1);
+                final String ret = lines.get(0);
+                final UUID ignored = UUID.fromString(ret);//check if this throws an exception, that might mean that
+                return ret;
             }
+        } catch (IOException e) {
             throw new RuntimeException("unable to read password file at " + filePath, e);
         }
     }
 
-    private static void writeRootDefault(String defaultValue, Path path) {
-        try {
-            Files.createFile(path);
-//            fixAttributes(path);
-            Files.write(path, Collections.singletonList(defaultValue));
-        } catch (IOException e1) {
-            throw new RuntimeException("write default value to " + path, e1);
-        }
-    }
-
-    private static void fixAttributes(Path path) throws IOException {
+    private static void createFileWithPermissions(Path path) throws IOException {
+        FileAttribute<Set<PosixFilePermission>> noPermissions
+                = PosixFilePermissions.asFileAttribute(Collections.emptySet());
+        Files.createFile(path, noPermissions);
         final PosixFileAttributeView attrs = Files.getFileAttributeView(path, PosixFileAttributeView.class);
-        attrs.setPermissions(EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.GROUP_READ));
         FileSystem fs = FileSystems.getDefault();
         UserPrincipalLookupService gLS = fs.getUserPrincipalLookupService();
-        attrs.setGroup(gLS.lookupPrincipalByGroupName("root"));
-        attrs.setOwner(gLS.lookupPrincipalByName("root"));
+
+        String myusername = System.getProperty("user.name"  );
+        LOGGER.info("creating auth file with user {}", myusername);
+        attrs.setOwner(gLS.lookupPrincipalByName(myusername));
+        try {
+            attrs.setGroup(gLS.lookupPrincipalByGroupName("minebd"));
+            final EnumSet<PosixFilePermission> ownerGroupPermissions = EnumSet.of(PosixFilePermission.GROUP_READ, PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ);
+            attrs.setPermissions(ownerGroupPermissions);
+        } catch (UserPrincipalNotFoundException e) {
+            LOGGER.warn("local auth key could not be set to group minebd. falling back to username");
+            attrs.setGroup(gLS.lookupPrincipalByGroupName(myusername));
+            final EnumSet<PosixFilePermission> ownerPermissions = EnumSet.of(PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ);
+            attrs.setPermissions(ownerPermissions);
+        }
+
     }
+
 }
