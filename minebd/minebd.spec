@@ -2,13 +2,13 @@ Name: MineBD
 #read Version from git tag
 # we excpect a tag "minebd_vM.m.p"
 
-# *NOTE* M is the Major number and has to be a _single digit_
-
-Version: %(git describe --tags --match 'minebd*'|grep -oP "(?<=minebd_v).")
-Release: %(git describe --tags --match 'minebd*'|grep -oP "(?<=minebd_v..).*" | tr '-' '_')%{?dist}
+Version: %(git describe --tags --match 'minebd*'|grep -oP "(?<=minebd_v)[^-]+")
+Release: %{BUILD_ID}%(git describe --tags --match 'minebd*'|grep -oP "-.*$" | tr '-' '_')%{?dist}
 Summary: Our core module
 License: Proprietary
 Requires: minebox-sia java-1.8.0-openjdk-headless nbd systemd
+Requires(pre): /usr/sbin/groupadd, /usr/bin/getent
+Requires(postun): /usr/sbin/groupdel
 
 %description
 MineBD is the core module of a Minebox
@@ -27,6 +27,7 @@ install -pD --mode 644 "%{_topdir}distro-tools/VM/nbd-client-config" "$RPM_BUILD
 
 # Installation script
 %pre
+/usr/bin/getent group minebd || /usr/sbin/groupadd -r minebd
 
 %post
 systemctl daemon-reload
@@ -50,6 +51,9 @@ fi
 
 %postun
 systemctl daemon-reload
+if [ "$1" = 0 ] ; then
+/usr/sbin/groupdel minebd
+fi
 
 %files
 /usr/lib/minebox/minebd-1.0-SNAPSHOT-all.jar

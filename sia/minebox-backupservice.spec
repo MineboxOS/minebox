@@ -2,10 +2,8 @@ Name: minebox-backupservice
 #read Version from git tag
 # we excpect a tag "bkupsvc_vM.m.p"
 
-# *NOTE* M is the Major number and has to be a _single digit_
-
-Version: %(git describe --tags --match 'bkupsvc*'|grep -oP "(?<=bkupsvc_v).")
-Release: %(git describe --tags --match 'bkupsvc*'|grep -oP "(?<=bkupsvc_v..).*" | tr '-' '_')%{?dist}
+Version: %(git describe --tags --match 'bkupsvc*'|grep -oP "(?<=bkupsvc_v)[^-]+")
+Release: %{BUILD_ID}%(git describe --tags --match 'bkupsvc*'|grep -oP "-.*$" | tr '-' '_')%{?dist}
 Summary: Minebox Backup Service
 License: Proprietary
 Requires: minebox-virtualenv minebox-uigateway systemd cronie btrfs-progs minebox-sia dmidecode

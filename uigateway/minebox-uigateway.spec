@@ -2,10 +2,8 @@ Name: minebox-uigateway
 #read Version from git tag
 # we excpect a tag "mug_vM.m.p"
 
-# *NOTE* M is the Major number and has to be a _single digit_
-
-Version: %(git describe --tags --match 'mug*'|grep -oP "(?<=mug_v).")
-Release: %(git describe --tags --match 'mug*'|grep -oP "(?<=mug_v..).*" | tr '-' '_')%{?dist}
+Version: %(git describe --tags --match 'mug*'|grep -oP "(?<=mug_v)[^-]+")
+Release: %{BUILD_ID}%(git describe --tags --match 'mug*'|grep -oP "-.*$" | tr '-' '_')%{?dist}
 Summary: Minebox UI Gateway (MUG)
 License: Proprietary
 Requires: minebox-virtualenv minebox-rockstor MineBD sudo systemd
@@ -29,7 +27,7 @@ install -pD --mode 644 "%{_topdir}uigateway/connecttools.py" "$RPM_BUILD_ROOT/us
 # Installation script
 %pre
 /usr/bin/getent group mug || /usr/sbin/groupadd -r mug
-/usr/bin/getent passwd mug || /usr/sbin/useradd -r -d /usr/lib/minebox/mbvenv -s /sbin/nologin -g mug mug
+/usr/bin/getent passwd mug || /usr/sbin/useradd -r -d /usr/lib/minebox/mbvenv -s /sbin/nologin -g mug -G minebd mug
 set +e
 systemctl stop mug
 set -e
