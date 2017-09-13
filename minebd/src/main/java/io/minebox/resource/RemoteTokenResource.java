@@ -40,7 +40,7 @@ public class RemoteTokenResource {
         if (token.isPresent()) {
             return Response.ok(token).build();
         } else {
-            return Response.status(Response.Status.SERVICE_UNAVAILABLE).build();
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE).entity("unable to get token").build();
         }
     }
 }
