@@ -9,13 +9,13 @@ doc/*.png
 *.pyo
 *~
 .#*
+.~*
 
 var/
 ext/
 doc/whitepaper/*/*.log
 
-keymanager/api/build/
-keymanager/.gradle/
+.gradle/
 *.img
 *.dat
 .idea
