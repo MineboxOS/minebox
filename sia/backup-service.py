@@ -18,6 +18,8 @@ from systemtools import MACHINE_AUTH_FILE, submit_machine_auth
 from connecttools import get_from_sia
 
 # Define various constants.
+REST_HOST="127.0.0.1"
+REST_HOST_DEBUG="0.0.0.0"
 REST_PORT=5100
 
 threadstatus = {}
@@ -414,10 +416,12 @@ def page_not_found(error):
 
 
 if __name__ == "__main__":
+    useHost = REST_HOST
     if 'DEBUG' in environ:
         app.debug = True
+        useHost = REST_HOST_DEBUG
     if not app.debug:
         # In production mode, add log handler to sys.stderr.
         app.logger.addHandler(logging.StreamHandler())
         app.logger.setLevel(logging.INFO)
-    app.run(host='0.0.0.0', port=REST_PORT, threaded=True)
+    app.run(host=useHost, port=REST_PORT, threaded=True)
