@@ -5,7 +5,7 @@ Name: minebox-ui
 # *NOTE* M is the Major number and has to be a _single digit_
 
 Version: %(git describe --tags --match 'ui*'|grep -oP "(?<=ui_v)[^-]+")
-Release: %{BUILD_ID}%(git describe --tags --match 'ui*'|grep -oP "-.*$" | tr '-' '_')%{?dist}
+Release: $BUILD_ID%(git describe --tags --match 'ui*'|grep -oP "-.*$" | tr '-' '_')%{?dist}
 Summary: The Minebox UI
 License: Proprietary
 Requires: minebox-rockstor minebox-uigateway

@@ -3,7 +3,7 @@ Name: MineBD
 # we excpect a tag "minebd_vM.m.p"
 
 Version: %(git describe --tags --match 'minebd*'|grep -oP "(?<=minebd_v)[^-]+")
-Release: %{BUILD_ID}%(git describe --tags --match 'minebd*'|grep -oP "-.*$" | tr '-' '_')%{?dist}
+Release: $BUILD_ID%(git describe --tags --match 'minebd*'|grep -oP "-.*$" | tr '-' '_')%{?dist}
 Summary: Our core module
 License: Proprietary
 Requires: minebox-sia java-1.8.0-openjdk-headless nbd systemd

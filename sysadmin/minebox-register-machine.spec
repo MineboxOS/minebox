@@ -3,7 +3,7 @@ Name: minebox-register-machine
 # we excpect a tag "sysadmin_vM.m.p"
 
 Version: %(git describe --tags --match 'sysadmin*'|grep -oP "(?<=sysadmin_v)[^-]+")
-Release: %{BUILD_ID}%(git describe --tags --match 'sysadmin*'|grep -oP "-.*$" | tr '-' '_')%{?dist}
+Release: $BUILD_ID%(git describe --tags --match 'sysadmin*'|grep -oP "-.*$" | tr '-' '_')%{?dist}
 Summary: Minebox machine registration script
 License: Proprietary
 Requires: minebox-backupservice minebox-uigateway
