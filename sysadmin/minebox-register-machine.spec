@@ -2,10 +2,8 @@ Name: minebox-register-machine
 #read Version from git tag
 # we excpect a tag "sysadmin_vM.m.p"
 
-# *NOTE* M is the Major number and has to be a _single digit_
-
-Version: %(git describe --tags --match 'sysadmin*'|grep -oP "(?<=sysadmin_v).")
-Release: %(git describe --tags --match 'sysadmin*'|grep -oP "(?<=sysadmin_v..).*" | tr '-' '_')%{?dist}
+Version: %(git describe --tags --match 'sysadmin*'|grep -oP "(?<=sysadmin_v)[^-]+")
+Release: %{getenv:BUILD_ID}%(git describe --tags --match 'sysadmin*'|grep -oP "-.*$" | tr '-' '_')%{?dist}
 Summary: Minebox machine registration script
 License: Proprietary
 Requires: minebox-backupservice minebox-uigateway
