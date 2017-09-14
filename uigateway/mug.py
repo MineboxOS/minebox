@@ -24,6 +24,9 @@ from siatools import H_PER_SC, SEC_PER_BLOCK
 
 
 # Define various constants.
+REST_HOST="127.0.0.1"
+REST_HOST_DEBUG="0.0.0.0"
+REST_HOST_TLS="0.0.0.0"
 REST_PORT=5000
 CONFIG_JSON_PATH="/etc/minebox/mug_config.json"
 SSL_CERT="/opt/rockstor/certs/rockstor.cert"
@@ -48,6 +51,8 @@ def before_first_request():
     # Set default values.
     if not "allowed_cors_hosts" in config:
         config["allowed_cors_hosts"] = []
+    if not "use_tls" in config:
+        config["use_tls"] = False
     # Copy those values to the Flask app that may be used in imports.
     app.config["allowed_cors_hosts"] = config["allowed_cors_hosts"]
 
@@ -489,11 +494,18 @@ def page_not_found(error):
 
 
 if __name__ == "__main__":
+    useHost = REST_HOST
     if 'DEBUG' in environ:
         app.debug = True
+        useHost = REST_HOST_DEBUG
+    if config["use_tls"]:
+        ssl_context = (SSL_CERT, SSL_KEY)
+        useHost = REST_HOST_TLS
+    else:
+        ssl_context = None
     if not app.debug:
         # In production mode, add log handler to sys.stderr.
         app.logger.addHandler(logging.StreamHandler())
         app.logger.setLevel(logging.INFO)
-    app.run(host='0.0.0.0', port=REST_PORT, ssl_context=(SSL_CERT, SSL_KEY),
+    app.run(host=useHost, port=REST_PORT, ssl_context=ssl_context,
             threaded=True)
