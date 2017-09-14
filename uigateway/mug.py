@@ -51,8 +51,6 @@ def before_first_request():
     # Set default values.
     if not "allowed_cors_hosts" in config:
         config["allowed_cors_hosts"] = []
-    if not "use_tls" in config:
-        config["use_tls"] = False
     # Copy those values to the Flask app that may be used in imports.
     app.config["allowed_cors_hosts"] = config["allowed_cors_hosts"]
 
@@ -498,7 +496,7 @@ if __name__ == "__main__":
     if 'DEBUG' in environ:
         app.debug = True
         useHost = REST_HOST_DEBUG
-    if config["use_tls"]:
+    if 'USE_TLS' in environ:
         ssl_context = (SSL_CERT, SSL_KEY)
         useHost = REST_HOST_TLS
     else:
