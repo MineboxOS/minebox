@@ -9,8 +9,13 @@ Type=notify
 # Once we properly install Minbd, we should put it in a nicer path.
 ExecStart=/usr/lib/minebox/minebd
 ExecStartPost=/usr/bin/systemctl start nbd@nbd0
-#the exepected return code is 143, since this is the one java sends as answer to SIGTERM (kill -15) 143 = 128+15
+# The exepected return code is 143, since this is the one java sends as answer
+# to SIGTERM (kill -15) 143 = 128+15
 SuccessExitStatus=143
+# As we start via a script, the actual MineBD sending the notify has a different
+# PID than the main process. We need to allow any process started from this
+# service to send the notify.
+NotifyAccess=all
 # To disable the timeout, systemd 229 and later uses infinity, but CentOS 7
 # has systemd 219, where only 0 works for that. 229+ support 0 for compat.
 # See https://github.com/systemd/systemd/blob/v229/NEWS#L109-L113
