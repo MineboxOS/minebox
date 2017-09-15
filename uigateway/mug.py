@@ -263,11 +263,13 @@ def api_status():
         outdata["minebd_encrypted"] = mbdata["hasEncryptionKey"]
         outdata["minebd_storage_mounted"] = ismount(MINEBD_STORAGE_PATH)
         outdata["restore_running"] = mbdata["restoreRunning"]
+        outdata["restore_progress"] = mbdata["completedRestorePercent"]
     else:
         outdata["minebd_running"] = False
         outdata["minebd_encrypted"] = None
         outdata["minebd_storage_mounted"] = False
         outdata["restore_running"] = False
+        outdata["restore_progress"] = None
 
     hasusers = False
     for user in pwd.getpwall():
