@@ -7,7 +7,7 @@ Release: %{getenv:BUILD_ID}%(git describe --tags --match 'mug*'|grep -oP -- "-.*
 Summary: Minebox UI Gateway (MUG)
 License: Proprietary
 Requires: minebox-virtualenv minebox-rockstor MineBD sudo systemd
-Requires(pre): /usr/sbin/useradd, /usr/sbin/groupadd, /usr/bin/getent
+Requires(pre): /usr/sbin/useradd, /usr/sbin/groupadd, /usr/bin/getent, /usr/sbin/usermod
 Requires(postun): /usr/sbin/userdel,  /usr/sbin/groupdel
 
 %description
@@ -27,7 +27,8 @@ install -pD --mode 644 "%{_topdir}uigateway/connecttools.py" "$RPM_BUILD_ROOT/us
 # Installation script
 %pre
 /usr/bin/getent group mug || /usr/sbin/groupadd -r mug
-/usr/bin/getent passwd mug || /usr/sbin/useradd -r -d /usr/lib/minebox/mbvenv -s /sbin/nologin -g mug -G minebd mug
+/usr/bin/getent passwd mug || /usr/sbin/useradd -r -d /usr/lib/minebox/mbvenv -s /sbin/nologin -g mug mug
+/usr/sbin/usermod mug -a -G minebd
 set +e
 systemctl stop mug
 set -e
