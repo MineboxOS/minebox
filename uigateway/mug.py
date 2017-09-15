@@ -20,7 +20,7 @@ import backupinfo
 from connecttools import (set_origin, check_login, get_demo_url,
                           get_from_sia, post_to_sia, get_from_minebd,
                           get_from_backupservice)
-from siatools import H_PER_SC, SEC_PER_BLOCK
+from siatools import H_PER_SC, SEC_PER_BLOCK, estimate_current_height
 
 
 # Define various constants.
@@ -324,11 +324,17 @@ def api_sia_status():
           "height": consdata["height"],
           "synced": consdata["synced"],
         }
+        if consdata["synced"]:
+            outdata["consensus"]["sync_progress"] = 100
+        else:
+            outdata["consensus"]["sync_progress"] = (100 * consdata["height"]
+                                                     // estimate_current_height)
     else:
         outdata["sia_daemon_running"] = False
         outdata["consensus"] = {
           "height": None,
           "synced": None,
+          "sync_progress": None,
         }
     walletdata, wallet_status_code = get_from_sia('wallet')
     if wallet_status_code == 200:

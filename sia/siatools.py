@@ -5,6 +5,7 @@ from __future__ import division
 from __future__ import print_function
 from flask import current_app, json
 from glob import glob
+from datetime import datetime
 import subprocess
 import os
 import re
@@ -379,6 +380,16 @@ def get_sia_config():
           },
         }
     return get_sia_config.settings
+
+def estimate_current_height():
+    # Estimate current block height so we can estimate a sync progress.
+    # See https://github.com/NebulousLabs/Sia/blob/master/siac/consensuscmd.go#L50
+    est_datetime = datetime.now()
+    block100k_datetime = datetime(2017, 4, 13, 23, 29, 49, 0) # Assumes UTC
+    block_seconds = 9 * 60 # estimate shorter block time for better UX
+    diff_seconds = (est_datetime - block100k_datetime).total_seconds()
+    est_height = 100000 + round(float(diff_seconds) / block_seconds)
+    return est_height
 
 def _get_btrfs_space(diskpath):
     spaceinfo = {}
