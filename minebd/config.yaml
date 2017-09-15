@@ -1,10 +1,17 @@
 server:
   registerDefaultExceptionMappers: false
   rootPath: /v1/*
+  applicationConnectors:
+    - type: http
+      port: 8080
+      bindHost: 127.0.0.1 # only bind to loopback
+  adminConnectors:
+    - type: http
+      port: 8081
+      bindHost: 127.0.0.1 # only bind to loopback
 
 swagger:
   resourcePackage: io.minebox.resource
-
 
 # Logging settings.
 logging:

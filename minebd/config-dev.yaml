@@ -1,6 +1,14 @@
 server:
   registerDefaultExceptionMappers: false
   rootPath: /v1/*
+  applicationConnectors:
+    - type: http
+      port: 8089
+      bindHost: 127.0.0.1 # only bind to loopback
+  adminConnectors:
+    - type: http
+      port: 8081
+      bindHost: 127.0.0.1 # only bind to loopback
 
 swagger:
   resourcePackage: io.minebox.resource
@@ -23,7 +31,7 @@ minebd:
   parentDirs :
    - minedbDat1
    - minedbDat2
-  reportedSize : 10G
+  reportedSize : 200G
   encryptionKeyPath: ./localetc/minebox/minebox.key
   authFile: ./localetc/minebox/local-auth.key
   bucketSize : 40M
