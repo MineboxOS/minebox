@@ -328,7 +328,7 @@ def api_sia_status():
             outdata["consensus"]["sync_progress"] = 100
         else:
             outdata["consensus"]["sync_progress"] = (100 * consdata["height"]
-                                                     // estimate_current_height)
+                                                     // estimate_current_height())
     else:
         outdata["sia_daemon_running"] = False
         outdata["consensus"] = {
