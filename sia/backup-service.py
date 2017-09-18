@@ -99,6 +99,10 @@ def api_ping():
         app.logger.info("Exiting because sia is not ready, let's check again on next ping.")
         return "", 204
 
+    if not os.path.ismount(MINEBD_STORAGE_PATH):
+        current_app.logger.info("Upper storage is not mounted (yet), let's check again on next ping.")
+        return "", 204
+
     # See if sia is fully set up and do init tasks if needed.
     # Setting up hosting is the last step, so if that is not active, we still
     # need to do something.

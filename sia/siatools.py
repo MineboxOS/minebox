@@ -210,7 +210,7 @@ def rebalance_diskspace():
     # MineBD reports a large block device size but the filesystem is formatted
     # with much less.
     if not os.path.ismount(MINEBD_STORAGE_PATH):
-        current_app.logger.error("Upper storage is not mounted (yet), cannot rebalance disk space.")
+        current_app.logger.warn("Upper storage is not mounted (yet), cannot rebalance disk space.")
         return False
     devsize = _get_device_size(MINEBD_DEVICE_PATH)
     upper_space = _get_btrfs_space(MINEBD_STORAGE_PATH)
@@ -243,11 +243,18 @@ def rebalance_diskspace():
             return False
     elif upper_space["free_est"] < UPPER_SPACE_MIN:
         current_app.logger.warn("Less than %s MB free on upper, but device fully used!" % (UPPER_SPACE_MIN // 2**20))
+    else:
+        # Even if free space is plenty, let's rebalance the hosting.
+        if not _rebalance_hosting_to_ratio():
+            return False
     return True
 
 def _rebalance_hosting_to_ratio():
     settings = get_sia_config()
     folderdata = {}
+    if not settings["minebox_sharing"]["enabled"]:
+        current_app.logger.warn("Sharing not enabled, cannot rebalance hosting space.")
+        return False
     siadata, sia_status_code = get_from_sia("host/storage")
     if sia_status_code >= 400:
         current_app.logger.error("Sia error %s: %s" % (sia_status_code,
@@ -269,6 +276,8 @@ def _rebalance_hosting_to_ratio():
             share_size = 0
         if hostpath in folderdata:
             # Existing folder, (try to) resize it.
+            current_app.logger.info("Resize Sia hosting space at %s to %s MB.",
+                                    hostpath, (share_size // 2**20))
             siadata, sia_status_code = post_to_sia("host/storage/folders/resize",
                                                    {"path": hostpath,
                                                     "newsize": share_size})
@@ -278,6 +287,8 @@ def _rebalance_hosting_to_ratio():
                 success = False
         else:
             # New folder, add it.
+            current_app.logger.info("Add Sia hosting space at %s with %s MB.",
+                                    hostpath, (share_size // 2**20))
             siadata, sia_status_code = post_to_sia("host/storage/folders/add",
                                                    {"path": hostpath,
                                                     "size": share_size})
