@@ -10,6 +10,8 @@ from __future__ import print_function
 from flask import Flask, request, jsonify, json
 from os.path import ismount, isfile
 from os import environ
+import socket
+import errno
 import re
 import logging
 import time
@@ -513,5 +515,11 @@ if __name__ == "__main__":
         # In production mode, add log handler to sys.stderr.
         app.logger.addHandler(logging.StreamHandler())
         app.logger.setLevel(logging.INFO)
-    app.run(host=useHost, port=REST_PORT, ssl_context=ssl_context,
-            threaded=True)
+    try:
+        app.run(host=useHost, port=REST_PORT, ssl_context=ssl_context,
+                threaded=True)
+    except socket.error as e:
+        if e.errno != errno.EPIPE:
+            # Not a broken pipe, throw the exception
+            raise
+        app.logger.warn("Encountered a broken pipe, the connection was probably terminated prematurely.")
