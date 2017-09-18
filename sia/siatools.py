@@ -209,6 +209,9 @@ def _absdiff(comparevalue, basevalue):
 def rebalance_diskspace():
     # MineBD reports a large block device size but the filesystem is formatted
     # with much less.
+    if not os.path.ismount(MINEBD_STORAGE_PATH):
+        current_app.logger.error("Upper storage is not mounted (yet), cannot rebalance disk space.")
+        return False
     devsize = _get_device_size(MINEBD_DEVICE_PATH)
     upper_space = _get_btrfs_space(MINEBD_STORAGE_PATH)
     if (upper_space["free_est"] < UPPER_SPACE_MIN
