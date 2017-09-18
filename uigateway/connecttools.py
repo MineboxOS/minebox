@@ -7,6 +7,7 @@ from flask import request, make_response, current_app
 from functools import update_wrapper
 from urlparse import urlparse
 from os import environ
+import os
 import time
 import re
 import requests
@@ -149,7 +150,9 @@ def get_from_backupservice(api):
 
 def get_from_minebd(api):
     url = MINEBD_URL + api
-    # siad requires a specific UA header, so add that to defaults.
+    # MineBD access requires the local key, fetch it.
+    if not os.path.isfile(MINEBD_AUTH_KEY_FILE):
+        return {"message": "No local key found, aborting."}, 503
     with open(MINEBD_AUTH_KEY_FILE) as f:
         local_key = f.read().rstrip()
     try:
@@ -183,7 +186,9 @@ def get_from_minebd(api):
 
 def put_to_minebd(api, formData, addHeaders = []):
     url = MINEBD_URL + api
-    # siad requires a specific UA header, so add that to defaults.
+    # MineBD access requires the local key, fetch it.
+    if not os.path.isfile(MINEBD_AUTH_KEY_FILE):
+        return {"message": "No local key found, aborting."}, 503
     with open(MINEBD_AUTH_KEY_FILE) as f:
         local_key = f.read().rstrip()
     # Add headers to default request.
