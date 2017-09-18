@@ -31,6 +31,11 @@ def check_backup_prerequisites():
         return False, siadata["message"]
     if not siadata["contracts"]:
         return False, "No Sia renter contracts, so uploading is not possible."
+    mbdata, mb_status_code = get_from_minebd('status')
+    if mb_status_code >= 400:
+        return False, mbdata["message"]
+    if mbdata["restoreRunning"] and mbdata["completedRestorePercent"] < 100:
+        return False, "MineBD is running an incomplete restore, so creating a backup is not possible."
     # Potentially check things other than sia.
     return True, ""
 
