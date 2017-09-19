@@ -26,6 +26,7 @@ public class BucketFactory {
     private final Encryption encryption;
     private final Provider<DownloadService> downloadService;
     private List<File> parentFolders;
+    private boolean parentFoldersCreated = false;
 
     @Inject
     public BucketFactory(SerialNumberService serialNumberService, MinebdConfig config, Encryption encryption, Provider<DownloadService> downloadService) {
@@ -34,27 +35,26 @@ public class BucketFactory {
         this.size = config.bucketSize.toBytes();
         this.encryption = encryption;
         this.downloadService = downloadService;
-        createParentFolders();
     }
 
-    private List<File> createParentFolders() {
-
-
+    private void createParentFolders() {
+        if (parentFoldersCreated) {
+            return;
+        }
+        parentFoldersCreated = true;
         parentFolders = parentDirs.stream()
                 .map(dir -> new File(dir, serialNumberService.getPublicIdentifier()))
                 .collect(Collectors.toList());
         parentFolders.forEach(File::mkdirs);
-
-        return parentFolders;
-
     }
 
     Bucket create(Integer bucketIndex) {
+        createParentFolders();
         final String fileName = "minebox_v1_" + bucketIndex + ".dat";
         final RecoverableFile recoverableFile = from(fileName, serialNumberService.getPublicIdentifier(), parentDirs);
 //        recoverableFile.forEach(file -> ensureFileExists(bucketIndex, file));
         ensureFileExists(bucketIndex, recoverableFile);
-        final List<SingleFileBucket> buckets = parentFolders.stream()
+        final List<Bucket> buckets = parentFolders.stream()
                 .map(parentFolder -> new SingleFileBucket(bucketIndex, size, encryption, new File(parentFolder, fileName)))
                 .collect(Collectors.toList());
 
@@ -74,7 +74,7 @@ public class BucketFactory {
         }
 
         if (oneFileExists) {
-            //todo repair files
+            //todo repair files which are missing
             //determine newest file
             //copy file over to other destinations
         } else {

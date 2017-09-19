@@ -8,7 +8,7 @@ Type=simple
 # Use "DEMO=local" for demoServer running on localhost,
 # anything else for using Minebox metadata server.
 #Environment="DEMO=metadata"
-ExecStart=/usr/lib/minebox/backup-service.sh start
+ExecStart=/usr/lib/minebox/backup-service start
 Restart=on-failure
 RestartSec=30
 

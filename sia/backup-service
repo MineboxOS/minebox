@@ -16,7 +16,7 @@ trigger)
 *)
   echo "Script for controlling the Minebox Backup Service"
   echo
-  echo "Usage: backup-service.sh <command>"
+  echo "Usage: backup-service <command>"
   echo
   echo "Commands:"
   echo "  start         Start the backup service."

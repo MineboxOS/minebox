@@ -1,2 +1,2 @@
 # Ping the backup service so it can check if it has to do something.
-*/5 * * * *     root  /usr/lib/minebox/backup-service.sh ping
+*/5 * * * *     root  /usr/lib/minebox/backup-service ping

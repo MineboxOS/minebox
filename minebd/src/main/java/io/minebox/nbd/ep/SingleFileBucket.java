@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 
 class SingleFileBucket implements Bucket {
 
@@ -24,6 +25,7 @@ class SingleFileBucket implements Bucket {
     private final long upperBound;
     public final long bucketNumber;
     private final long size;
+    private volatile boolean fileWasZero;
     //right now we try to keep track of the empty ranges but dont use them anywhere. there is a big optimisation opportunity here to minimize the amount of
     private RandomAccessFile randomAccessFile;
     private volatile boolean needsFlush = false;
@@ -42,6 +44,13 @@ class SingleFileBucket implements Bucket {
         } catch (FileNotFoundException e) {
             throw new IllegalStateException(e);
         }
+        try {
+            final long existingFileSize = Files.size(file.toPath());
+            this.fileWasZero = existingFileSize == 0;
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+
         channel = randomAccessFile.getChannel();
     }
 
@@ -84,8 +93,14 @@ class SingleFileBucket implements Bucket {
         return lengthInThisBucket;
     }
 
+    @Override
+    public long bucketIndex() {
+        return bucketNumber;
+    }
+
     @VisibleForTesting
-    long calcLengthInThisBucket(long offsetInThisBucket, long length) {
+    @Override
+    public long calcLengthInThisBucket(long offsetInThisBucket, long length) {
         if (length < 1) {
             throw new UnsupportedOperationException("she said it's too small: " + length);
         } else if (offsetInThisBucket < 0) {
@@ -120,6 +135,9 @@ class SingleFileBucket implements Bucket {
 
     @Override
     public long putBytes(long offset, ByteBuffer message) throws IOException {
+        if (stillAllZeroes(message)) {
+            return message.remaining();
+        }
         synchronized (this) {
             needsFlush = true;
             final long offsetInThisBucket = offsetInThisBucket(offset);
@@ -127,6 +145,24 @@ class SingleFileBucket implements Bucket {
             final ByteBuffer encrypted = encryption.encrypt(offset, message);
             return channel.write(encrypted);
         }
+    }
+
+    private boolean stillAllZeroes(ByteBuffer message) {
+        if (fileWasZero) {
+            final ByteBuffer checkForZeroes = message.duplicate();
+            checkForZeroes.rewind();
+            while (checkForZeroes.hasRemaining()) {
+                final byte b = checkForZeroes.get();
+                if (b != 0) {
+                    fileWasZero = false;
+                }
+            }
+            if (fileWasZero) {
+                LOGGER.debug("saved some resources by not writing zeroes");
+                return true;
+            }
+        }
+        return false;
     }
 
     private long offsetInThisBucket(long offset) {

@@ -18,6 +18,8 @@ from systemtools import MACHINE_AUTH_FILE, submit_machine_auth
 from connecttools import get_from_sia
 
 # Define various constants.
+REST_HOST="127.0.0.1"
+REST_HOST_DEBUG="0.0.0.0"
 REST_PORT=5100
 
 threadstatus = {}
@@ -95,6 +97,10 @@ def api_ping():
         # Return early, we need a synced consensus to do anything.
         app.logger.debug(errmsg)
         app.logger.info("Exiting because sia is not ready, let's check again on next ping.")
+        return "", 204
+
+    if not os.path.ismount(MINEBD_STORAGE_PATH):
+        current_app.logger.info("Upper storage is not mounted (yet), let's check again on next ping.")
         return "", 204
 
     # See if sia is fully set up and do init tasks if needed.
@@ -414,10 +420,12 @@ def page_not_found(error):
 
 
 if __name__ == "__main__":
+    useHost = REST_HOST
     if 'DEBUG' in environ:
         app.debug = True
+        useHost = REST_HOST_DEBUG
     if not app.debug:
         # In production mode, add log handler to sys.stderr.
         app.logger.addHandler(logging.StreamHandler())
         app.logger.setLevel(logging.INFO)
-    app.run(host='0.0.0.0', port=REST_PORT, threaded=True)
+    app.run(host=useHost, port=REST_PORT, threaded=True)

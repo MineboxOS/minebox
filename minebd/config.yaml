@@ -1,16 +1,23 @@
 server:
   registerDefaultExceptionMappers: false
   rootPath: /v1/*
+  applicationConnectors:
+    - type: http
+      port: 8080
+      bindHost: 127.0.0.1 # only bind to loopback
+  adminConnectors:
+    - type: http
+      port: 8081
+      bindHost: 127.0.0.1 # only bind to loopback
 
 swagger:
   resourcePackage: io.minebox.resource
-
 
 # Logging settings.
 logging:
   level: INFO
   loggers:
-    io.minebox: DEBUG
+    io.minebox: INFO
     io.minebox.nbd.NbdStatsReporter: INFO
     org.bitcoin.Secp256k1Context: ERROR
 #    io.minebox.nbd.TransmissionPhase: INFO
@@ -21,7 +28,7 @@ minebd:
   maxOpenFiles : 20
   parentDirs:
    - /mnt/lower1/data/
-#   - /mnt/lower2/data/
+   - /mnt/lower2/data/
   reportedSize : 1TB
   encryptionKeyPath: /etc/minebox/minebox.key
   authFile: /etc/minebox/local-auth.key

@@ -20,16 +20,18 @@ import backupinfo
 from connecttools import (set_origin, check_login, get_demo_url,
                           get_from_sia, post_to_sia, get_from_minebd,
                           get_from_backupservice)
-from siatools import H_PER_SC, SEC_PER_BLOCK
+from siatools import H_PER_SC, SEC_PER_BLOCK, estimate_current_height
 
 
 # Define various constants.
+REST_HOST="127.0.0.1"
+REST_HOST_DEBUG="0.0.0.0"
+REST_HOST_TLS="0.0.0.0"
 REST_PORT=5000
 CONFIG_JSON_PATH="/etc/minebox/mug_config.json"
 SSL_CERT="/opt/rockstor/certs/rockstor.cert"
 SSL_KEY="/opt/rockstor/certs/rockstor.key"
 MINEBD_STORAGE_PATH="/mnt/storage"
-UPLOADER_CMD=backupinfo.UPLOADER_CMD
 DEMOSIAC_CMD="/root/minebox-client-tools_vm/sia/demosiac.sh"
 SUDO="/usr/bin/sudo"
 MBKEY_CMD="/usr/lib/minebox/mbkey.sh"
@@ -261,11 +263,13 @@ def api_status():
         outdata["minebd_encrypted"] = mbdata["hasEncryptionKey"]
         outdata["minebd_storage_mounted"] = ismount(MINEBD_STORAGE_PATH)
         outdata["restore_running"] = mbdata["restoreRunning"]
+        outdata["restore_progress"] = mbdata["completedRestorePercent"]
     else:
         outdata["minebd_running"] = False
         outdata["minebd_encrypted"] = None
         outdata["minebd_storage_mounted"] = False
         outdata["restore_running"] = False
+        outdata["restore_progress"] = None
 
     hasusers = False
     for user in pwd.getpwall():
@@ -320,11 +324,17 @@ def api_sia_status():
           "height": consdata["height"],
           "synced": consdata["synced"],
         }
+        if consdata["synced"]:
+            outdata["consensus"]["sync_progress"] = 100
+        else:
+            outdata["consensus"]["sync_progress"] = (100 * consdata["height"]
+                                                     // estimate_current_height())
     else:
         outdata["sia_daemon_running"] = False
         outdata["consensus"] = {
           "height": None,
           "synced": None,
+          "sync_progress": None,
         }
     walletdata, wallet_status_code = get_from_sia('wallet')
     if wallet_status_code == 200:
@@ -490,11 +500,18 @@ def page_not_found(error):
 
 
 if __name__ == "__main__":
+    useHost = REST_HOST
     if 'DEBUG' in environ:
         app.debug = True
+        useHost = REST_HOST_DEBUG
+    if 'USE_TLS' in environ:
+        ssl_context = (SSL_CERT, SSL_KEY)
+        useHost = REST_HOST_TLS
+    else:
+        ssl_context = None
     if not app.debug:
         # In production mode, add log handler to sys.stderr.
         app.logger.addHandler(logging.StreamHandler())
         app.logger.setLevel(logging.INFO)
-    app.run(host='0.0.0.0', port=REST_PORT, ssl_context=(SSL_CERT, SSL_KEY),
+    app.run(host=useHost, port=REST_PORT, ssl_context=ssl_context,
             threaded=True)

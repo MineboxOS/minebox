@@ -17,7 +17,11 @@ public interface Bucket {
 
     void close() throws IOException;
 
+    long calcLengthInThisBucket(long offsetInThisBucket, long length);
+
     void flush() throws IOException;
 
     long getBytes(ByteBuffer writeInto, long offsetForThisBucket, int length) throws IOException;
+
+    long bucketIndex();
 }

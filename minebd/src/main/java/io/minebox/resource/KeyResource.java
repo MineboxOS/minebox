@@ -3,9 +3,7 @@ package io.minebox.resource;
 import com.google.common.base.Joiner;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.dropwizard.auth.Auth;
 import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
 import org.bitcoinj.crypto.MnemonicCode;
 import org.bitcoinj.crypto.MnemonicException;
 import org.slf4j.Logger;
@@ -28,8 +26,8 @@ import java.util.List;
 @Api(KeyResource.PATH)
 @Singleton
 public class KeyResource {
-    public static final String PATH = "/keys";
-    public static final int BYTES_FOR_SEED = 128 / 8;//16*8 = we request 128 bits of entropy
+    static final String PATH = "/keys";
+    private static final int BYTES_FOR_SEED = 128 / 8;//16*8 = we request 128 bits of entropy
     private static final Logger LOGGER = LoggerFactory.getLogger(KeyResource.class);
 
 
@@ -40,8 +38,8 @@ public class KeyResource {
     @GET
     @Produces("text/plain")
     @PermitAll
-    public String currentKey() {
-        return Joiner.on(" ").join(getSeedWords());
+    public String randomKey() {
+        return Joiner.on(" ").join(getRandomSeedWords());
     }
 
     @GET
@@ -49,11 +47,11 @@ public class KeyResource {
     @Produces("application/json")
     @PermitAll
     public Response jsonKey() {
-        return Response.ok(getSeedWords()).build();
+        return Response.ok(getRandomSeedWords()).build();
 
     }
 
-    private List<String> getSeedWords() {
+    private List<String> getRandomSeedWords() {
         List<String> seedWords;
         try {
             final MnemonicCode mnemonicCode = new MnemonicCode();
@@ -65,7 +63,7 @@ public class KeyResource {
     }
 
 
-    public byte[] getRandomSeed() {
+    private byte[] getRandomSeed() {
         File file = new File("/dev/urandom");
         if (!file.exists()) {
             throw new RuntimeException("/dev/urandom not present");

@@ -2,13 +2,11 @@ Name: minebox-backupservice
 #read Version from git tag
 # we excpect a tag "bkupsvc_vM.m.p"
 
-# *NOTE* M is the Major number and has to be a _single digit_
-
-Version: %(git describe --tags --match 'bkupsvc*'|grep -oP "(?<=bkupsvc_v).")
-Release: %(git describe --tags --match 'bkupsvc*'|grep -oP "(?<=bkupsvc_v..).*" | tr '-' '_')%{?dist}
+Version: %(git describe --tags --match 'bkupsvc*'|grep -oP "(?<=bkupsvc_v)[^-]+")
+Release: %{getenv:BUILD_ID}%(git describe --tags --match 'bkupsvc*'|grep -oP -- "-.*$" | tr '-' '_')%{?dist}
 Summary: Minebox Backup Service
 License: Proprietary
-Requires: minebox-virtualenv minebox-uigateway
+Requires: minebox-virtualenv minebox-uigateway systemd cronie btrfs-progs minebox-sia dmidecode
 
 %description
 The Minebox Backup Service drives the actual generation and upload of backups as well as the setup of the Sia service.
@@ -17,7 +15,7 @@ The Minebox Backup Service drives the actual generation and upload of backups as
 
 # Packaging
 %install
-install -pD --mode 755 "%{_topdir}sia/backup-service.sh" "$RPM_BUILD_ROOT/usr/lib/minebox/backup-service.sh"
+install -pD --mode 755 "%{_topdir}sia/backup-service" "$RPM_BUILD_ROOT/usr/lib/minebox/backup-service"
 install -pD --mode 644 "%{_topdir}sia/systemd/backup-service.service" "$RPM_BUILD_ROOT/etc/systemd/system/backup-service.service"
 install -pD --mode 644 "%{_topdir}sia/cron.d/backup-service" "$RPM_BUILD_ROOT/etc/cron.d/backup-service"
 install -pD --mode 755 "%{_topdir}sia/backup-service.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/backup-service.py"
@@ -50,7 +48,7 @@ systemctl daemon-reload
 
 %files
 
-/usr/lib/minebox/backup-service.sh
+/usr/lib/minebox/backup-service
 /etc/systemd/system/backup-service.service
 /etc/cron.d/backup-service
 /usr/lib/minebox/mbvenv/backup-service.py

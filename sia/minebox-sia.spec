@@ -1,12 +1,12 @@
 Name: minebox-sia
 
-Version: 1.3.0
-Release: %(git describe --tags --match 'minebox*'|grep -oP "(?<=minebox_v).*" | tr '-' '_')%{?dist}
+Version: %{getenv:SIA_VERSION}
+Release: %{getenv:BUILD_ID}%{?dist}
 Summary: Sia - decentralized cloud storage platform
 License: MIT License
-Requires: minebox-virtualenv minebox-uigateway
-Requires(pre): /usr/sbin/useradd, /usr/bin/getent
-Requires(postun): /usr/sbin/userdel
+Requires: minebox-virtualenv minebox-uigateway systemd
+Requires(pre): /usr/sbin/useradd, /usr/sbin/groupadd, /usr/bin/getent
+Requires(postun): /usr/sbin/userdel,  /usr/sbin/groupdel
 
 %description
 Sia is a new decentralized cloud storage platform that radically alters the landscape of cloud storage. By leveraging smart contracts, client-side encryption, and sophisticated redundancy (via Reed-Solomon codes), Sia allows users to safely store their data with hosts that they do not know or trust.
@@ -15,8 +15,8 @@ Sia is a new decentralized cloud storage platform that radically alters the land
 
 # Packaging
 %install
-install -pD --mode 755 "%{_topdir}BUILD/siad" "$RPM_BUILD_ROOT/usr/local/siad"
-install -pD --mode 755 "%{_topdir}BUILD/siac" "$RPM_BUILD_ROOT/usr/local/siac"
+install -pD --mode 755 "%{_topdir}BUILD/siad" "$RPM_BUILD_ROOT/usr/bin/siad"
+install -pD --mode 755 "%{_topdir}BUILD/siac" "$RPM_BUILD_ROOT/usr/bin/siac"
 install -pD --mode 644 "%{_topdir}sia/systemd/sia.service" "$RPM_BUILD_ROOT/etc/systemd/system/sia.service"
 
 # Installation script
@@ -51,6 +51,6 @@ systemctl daemon-reload
 
 %files
 
-/usr/local/siac
-/usr/local/siad
+/usr/bin/siac
+/usr/bin/siad
 /etc/systemd/system/sia.service

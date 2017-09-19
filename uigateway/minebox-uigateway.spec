@@ -2,13 +2,13 @@ Name: minebox-uigateway
 #read Version from git tag
 # we excpect a tag "mug_vM.m.p"
 
-# *NOTE* M is the Major number and has to be a _single digit_
-
-Version: %(git describe --tags --match 'mug*'|grep -oP "(?<=mug_v).")
-Release: %(git describe --tags --match 'mug*'|grep -oP "(?<=mug_v..).*" | tr '-' '_')%{?dist}
+Version: %(git describe --tags --match 'mug*'|grep -oP "(?<=mug_v)[^-]+")
+Release: %{getenv:BUILD_ID}%(git describe --tags --match 'mug*'|grep -oP -- "-.*$" | tr '-' '_')%{?dist}
 Summary: Minebox UI Gateway (MUG)
 License: Proprietary
-Requires: minebox-virtualenv minebox-rockstor
+Requires: minebox-virtualenv minebox-rockstor MineBD sudo systemd
+Requires(pre): /usr/sbin/useradd, /usr/sbin/groupadd, /usr/bin/getent, /usr/sbin/usermod
+Requires(postun): /usr/sbin/userdel,  /usr/sbin/groupdel
 
 %description
 The Minebox UI Gateway (MUG) is a python service that allows the UI to access Minebox system functionality.
@@ -18,6 +18,7 @@ The Minebox UI Gateway (MUG) is a python service that allows the UI to access Mi
 # Packaging
 %install
 install -pD --mode 755 "%{_topdir}uigateway/mug.sh" "$RPM_BUILD_ROOT/usr/lib/minebox/mug.sh"
+install -pD --mode 644 "%{_topdir}uigateway/sudoers.d/mug" "$RPM_BUILD_ROOT/etc/sudoers.d/mug"
 install -pD --mode 644 "%{_topdir}uigateway/systemd/mug.service" "$RPM_BUILD_ROOT/etc/systemd/system/mug.service"
 install -pD --mode 755 "%{_topdir}uigateway/mug.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/mug.py"
 install -pD --mode 644 "%{_topdir}uigateway/backupinfo.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/backupinfo.py"
@@ -26,7 +27,8 @@ install -pD --mode 644 "%{_topdir}uigateway/connecttools.py" "$RPM_BUILD_ROOT/us
 # Installation script
 %pre
 /usr/bin/getent group mug || /usr/sbin/groupadd -r mug
-/usr/bin/getent passwd mug || /usr/sbin/useradd -r -d /usr/lib/minebox/mbvenv -s /sbin/nologin -g mug -G rockstorWEB mug
+/usr/bin/getent passwd mug || /usr/sbin/useradd -r -d /usr/lib/minebox/mbvenv -s /sbin/nologin -g mug mug
+/usr/sbin/usermod mug -a -G minebd
 set +e
 systemctl stop mug
 set -e
@@ -55,6 +57,7 @@ systemctl daemon-reload
 %files
 
 /usr/lib/minebox/mug.sh
+/etc/sudoers.d/mug
 /etc/systemd/system/mug.service
 /usr/lib/minebox/mbvenv/mug.py
 /usr/lib/minebox/mbvenv/mug.pyc

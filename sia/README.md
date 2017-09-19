@@ -18,7 +18,7 @@ tasks.
  
 ![](https://bitbucket.org/mineboxgmbh/minebox-client-tools/downloads/uploader.sequence.png){width=100%}
 
-## backup-service.sh
+## backup-service
 This script has commands to start the backup service as well as to issue a
 "ping" or trigger a new backup "manually" from the command line. Execute it
 without options to get more help.

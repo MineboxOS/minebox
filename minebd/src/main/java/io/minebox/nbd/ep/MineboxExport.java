@@ -120,7 +120,7 @@ public class MineboxExport implements ExportProvider {
         final int dataOffset = Ints.checkedCast(Math.max(0, bucket.getBaseOffset() - offset));
         final ByteBuffer pseudoCopy = bufferForBucket(origMessage, lengthForBucket, dataOffset);
         final long writtenBytes = bucket.putBytes(start, pseudoCopy);
-//        logger.debug("wrote {} bytes to bucket {}", writtenBytes, bucket.bucketNumber);
+//        logger.debug("wrote {} bytes to bucket {}", writtenBytes, bucket.bucketIndex);
     }
 
     private ByteBuffer bufferForBucket(ByteBuffer origMessage, int lengthForBucket, int dataOffset) {
