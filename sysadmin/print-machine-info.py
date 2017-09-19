@@ -24,6 +24,7 @@ def run(*args):
     logger.info("System UUID: %s", machine_info["system_uuid"])
     logger.info("Model (SKU): %s", machine_info["system_sku"])
     logger.info("Serial Number (Chassis): %s", machine_info["chassis_serial"])
+    logger.info("Disks: %s", machine_info["disks"])
     logger.info("IP Address: %s", get_local_ipaddress())
 
 
