@@ -54,7 +54,7 @@ def api_trigger():
 
 
 @app.route("/ip_notify")
-def api_trigger():
+def api_ip_notify():
     mbdata, mb_status_code = get_from_minebd('status')
     if mb_status_code >= 400:
         app.logger.error("Error %s from MineBD: %s",
@@ -62,6 +62,7 @@ def api_trigger():
         jsonify(message=mbdata["message"]), 503
     if mbdata["hasEncryptionKey"]:
         # If we have an encryption key, we don't need to notify any more.
+        app.logger.info("System is set up, not sending an IP notification.")
         return "", 204
     success, errmsg = submit_ip_notification()
     if not success:

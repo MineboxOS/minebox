@@ -34,6 +34,7 @@ set -e
 systemctl daemon-reload
 systemctl enable backup-service
 systemctl start backup-service
+systemctl enable minebox-ip-notify
 
 # Uninstallation script
 %preun
