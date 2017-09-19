@@ -27,6 +27,21 @@ def register_machine():
                        (admin_status_code, admindata["message"]))
     return True, ""
 
+def submit_ip_notification():
+    machine_info = get_machine_info()
+    ipaddress = get_local_ipaddress()
+    if not ipaddress:
+        return False, ("ERROR: No IP address found.")
+
+    admindata, admin_status_code = post_to_adminservice("ipNotification", False,
+        {"uuid": machine_info["system_uuid"],
+         "localIp": ipaddress})
+    if admin_status_code >= 400:
+        return False, ("ERROR: admin error %s: %s" %
+                       (admin_status_code, admindata["message"]))
+
+    return True, ""
+
 def submit_machine_auth():
     machine_info = get_machine_info()
     ipaddress = get_local_ipaddress()

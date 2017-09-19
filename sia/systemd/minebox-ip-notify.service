@@ -1,0 +1,10 @@
+[Unit]
+Description=Minebox IP Notification
+After=backup-service.service rockstor.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/minebox/backup-service ipnotify
+
+[Install]
+WantedBy=multi-user.target

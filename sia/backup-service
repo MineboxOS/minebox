@@ -13,6 +13,9 @@ ping)
 trigger)
   curl --fail --silent --show-error "http://localhost:5100/trigger"
   ;;
+ipnotify)
+  curl --fail --silent --show-error "http://localhost:5100/ip_notify"
+  ;;
 *)
   echo "Script for controlling the Minebox Backup Service"
   echo

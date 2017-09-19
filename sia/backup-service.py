@@ -14,7 +14,7 @@ import threading
 from backuptools import *
 from siatools import *
 from backupinfo import get_backups_to_restart, get_latest, get_list, is_finished
-from systemtools import MACHINE_AUTH_FILE, submit_machine_auth
+from systemtools import MACHINE_AUTH_FILE, submit_machine_auth, submit_ip_notification
 from connecttools import get_from_sia
 
 # Define various constants.
@@ -51,6 +51,24 @@ def api_trigger():
     bthread = start_backup_thread()
     return jsonify(message="Backup started: %s." % bthread.name,
                    name=threadstatus[bthread.name]["snapname"]), 200
+
+
+@app.route("/ip_notify")
+def api_trigger():
+    mbdata, mb_status_code = get_from_minebd('status')
+    if mb_status_code >= 400:
+        app.logger.error("Error %s from MineBD: %s",
+                         mb_status_code, mbdata["message"])
+        jsonify(message=mbdata["message"]), 503
+    if mbdata["hasEncryptionKey"]:
+        # If we have an encryption key, we don't need to notify any more.
+        return "", 204
+    success, errmsg = submit_ip_notification()
+    if not success:
+        app.logger.error("Error submitting IP notification: %s", errmsg)
+        return jsonify(message=errmsg), 503
+    app.logger.info("IP notification sent.")
+    return jsonify(message="IP Notification sent."), 200
 
 
 @app.route("/status")

@@ -17,6 +17,7 @@ The Minebox Backup Service drives the actual generation and upload of backups as
 %install
 install -pD --mode 755 "%{_topdir}sia/backup-service" "$RPM_BUILD_ROOT/usr/lib/minebox/backup-service"
 install -pD --mode 644 "%{_topdir}sia/systemd/backup-service.service" "$RPM_BUILD_ROOT/etc/systemd/system/backup-service.service"
+install -pD --mode 644 "%{_topdir}sia/systemd/minebox-ip-notify.service" "$RPM_BUILD_ROOT/etc/systemd/system/minebox-ip-notify.service"
 install -pD --mode 644 "%{_topdir}sia/cron.d/backup-service" "$RPM_BUILD_ROOT/etc/cron.d/backup-service"
 install -pD --mode 755 "%{_topdir}sia/backup-service.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/backup-service.py"
 install -pD --mode 644 "%{_topdir}sia/backuptools.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/backuptools.py"
@@ -50,6 +51,7 @@ systemctl daemon-reload
 
 /usr/lib/minebox/backup-service
 /etc/systemd/system/backup-service.service
+/etc/systemd/system/minebox-ip-notify.service
 /etc/cron.d/backup-service
 /usr/lib/minebox/mbvenv/backup-service.py
 /usr/lib/minebox/mbvenv/backup-service.pyc
