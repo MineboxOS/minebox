@@ -163,6 +163,8 @@ def initiate_uploads(status):
             status["backupfileinfo"].append({"siapath": sia_fname,
                                              "size": fileinfo.st_size})
 
+    if not status["backupfiles"]:
+        return False, "ERROR: The backup set has no files, that's impossible."
     with open(bfinfo_path, 'w') as outfile:
         json.dump(status["backupfileinfo"], outfile)
     return True, ""
@@ -191,6 +193,14 @@ def wait_for_uploads(status):
                 current_app.logger.info(
                   "Backup is fully available and minimum file redundancy is %.1f, we can finish things up.",
                   upstatus["min_redundancy"])
+                break
+            # Also break if the backup has no files to upload (i.e. all were
+            # finished when we started). In this case, min_redundancy isn't
+            # set, so emit a message that doesn't talk about it.
+            if not status["uploadfiles"]:
+                status["available"] = True
+                current_app.logger.info(
+                  "Backup is fully already fully uploaded, we can finish things up.")
                 break
             # If we are still here, wait some minutes for more upload progress.
             wait_minutes = 5
