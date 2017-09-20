@@ -127,11 +127,15 @@ def initiate_uploads(status):
         fileinfo = stat(filepath)
         # Only use files of non-zero size.
         if fileinfo.st_size:
-            status["backupsize"] += fileinfo.st_size
             filename = path.basename(filepath)
             (froot, fext) = path.splitext(filename)
             sia_fname = '%s.%s%s' % (froot, int(fileinfo.st_mtime), fext)
+            if sia_fname in status["backupfiles"]:
+                # This file is already in the list, and we probably have
+                # multiple lower disks, so omit this file.
+                continue
             status["backupfiles"].append(sia_fname)
+            status["backupsize"] += fileinfo.st_size
             if (siafiles
                 and any(sf["siapath"] == sia_fname
                         and sf["available"]
