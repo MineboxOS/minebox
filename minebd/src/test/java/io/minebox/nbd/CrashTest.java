@@ -35,7 +35,8 @@ public class CrashTest {
                 started.countDown();
             }
         };
-        final NbdServer nbdServer = new NbdServer(10811, mockSystemD, new MineboxExport(cfg, new MetricRegistry(), bucketFactory), keyProvider);
+        cfg.nbdPort = 10811;
+        final NbdServer nbdServer = new NbdServer(cfg, mockSystemD, new MineboxExport(cfg, new MetricRegistry(), bucketFactory), keyProvider);
         new Thread(nbdServer::start).start();
         started.await();
         final long start = System.currentTimeMillis();

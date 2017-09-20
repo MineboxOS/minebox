@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
 
+import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.ep.ExportProvider;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -13,9 +14,11 @@ import org.slf4j.LoggerFactory;
 
 public class HandshakePhase extends ByteToMessageDecoder {
 
+    private final MinebdConfig config;
     private final ExportProvider exportProvider;
 
-    public HandshakePhase(ExportProvider exportProvider) {
+    public HandshakePhase(MinebdConfig config, ExportProvider exportProvider) {
+        this.config = config;
         this.exportProvider = exportProvider;
     }
 
@@ -107,7 +110,7 @@ public class HandshakePhase extends ByteToMessageDecoder {
                 //FIXME: transfer any remaining bytes into the transmission phase!
             /* The NBD protocol has two phases: the handshake (HS_) and the transmission (TM_) */
                 // Handshake complete, switch to transmission phase
-                ctx.pipeline().addLast("transmission", new TransmissionPhase(exportProvider));
+                ctx.pipeline().addLast("transmission", new TransmissionPhase(config.maxUnflushed.toBytes(), exportProvider));
                 ctx.pipeline().remove(this);
                 return exportName.toString();
 

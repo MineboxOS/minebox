@@ -1,10 +1,5 @@
 package io.minebox.nbd;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import com.google.common.primitives.Ints;
 import io.minebox.nbd.ep.ExportProvider;
 import io.netty.buffer.ByteBuf;
@@ -15,7 +10,15 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
 public class TransmissionPhase extends ByteToMessageDecoder {
+
+    private final long maxUnflushedBytes;
 
     private enum State {TM_RECEIVE_CMD, TM_RECEIVE_CMD_DATA}
 
@@ -30,8 +33,9 @@ public class TransmissionPhase extends ByteToMessageDecoder {
         public final static int EIO = 5;
     }
 
-    public TransmissionPhase(ExportProvider exportProvider) {
+    public TransmissionPhase(long maxUnflushedBytes, ExportProvider exportProvider) {
         super();
+        this.maxUnflushedBytes = maxUnflushedBytes;
         this.exportProvider = exportProvider;
     }
 
@@ -40,6 +44,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
     private long cmdHandle;
     private long cmdOffset;
     private long cmdLength;
+    private AtomicLong unflushedBytes = new AtomicLong(0);
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
@@ -118,6 +123,13 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 final long cmdLength = this.cmdLength;
                 final long cmdHandle = this.cmdHandle;
                 LOGGER.debug("writing to {} length {}", cmdOffset, cmdLength);
+                final long sum = unflushedBytes.addAndGet(cmdLength);
+                if (sum > maxUnflushedBytes) {
+                    LOGGER.debug("Rohr voll, ZWISCHENSPÜLUNG!");
+                    exportProvider.flush(); //this hopefully flushes all and blocks until it is fully done
+                    unflushedBytes.set(0);
+                    unflushedBytes.addAndGet(cmdLength); //i just flushed, but this write counts already for the next
+                }
 
                 final ByteBuf buf;
                 try {
@@ -160,6 +172,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
 			 */
                 int err = 0;
                 try {
+                    unflushedBytes.set(0);
                     exportProvider.flush();
                 } catch (Exception e) {
                     LOGGER.error("error during flush", e);
