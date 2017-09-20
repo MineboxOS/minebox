@@ -45,6 +45,10 @@ public class SiaUtil {
         return checkErrorFragment(unlockReply, "another wallet rescan is already underway");
     }
 
+    private static boolean wrongKey(HttpResponse<String> unlockReply) {
+        return checkErrorFragment(unlockReply, "provided encryption key is incorrect");
+    }
+
     private static boolean notSynced(HttpResponse<String> unlockReply) {
         return checkErrorFragment(unlockReply, "cannot init from seed until blockchain is synced");
     }
@@ -194,6 +198,10 @@ public class SiaUtil {
 
     public boolean unlockWallet(String seed) {
         HttpResponse<String> unlockReply = siaCommand(SiaCommand.UNLOCK, ImmutableMap.of("encryptionpassword", seed));
+        if (wrongKey(unlockReply)) {
+            LOGGER.error("we are misconfigured, this was the wrong key to unlock!");
+            return false;
+        }
         if (alreadyUnderway(unlockReply)) {
             LOGGER.info("unable to unlock, operation was already started..");
             return false;
@@ -218,6 +226,9 @@ public class SiaUtil {
 
     public String myAddress() {
         final HttpResponse<String> string = siaCommand(SiaCommand.ADDRESS, ImmutableMap.of());
+        if (walletIsLocked(string)) {
+            return null;
+        }
         final JSONObject jsonObject = new JSONObject(string.getBody());
         return jsonObject.getString("address");
     }
@@ -243,7 +254,16 @@ public class SiaUtil {
 //        return types.BlockHeight(estimatedHeight + 0.5) // round to the nearest block
     }
 
-    private static class NoConnectException extends RuntimeException {
+    public void unlockInBackground(String seed) {
+        new Thread(() -> {
+            final boolean unlockResult = unlockWallet(seed);
+            if (!unlockResult) {
+                LOGGER.info("failed to unlock wallet");
+            }
+        }).start();
+    }
+
+    public static class NoConnectException extends RuntimeException {
         NoConnectException(UnirestException e) {
             super(e);
         }
