@@ -4,7 +4,7 @@ nbdevice="/dev/nbd0"
 mountpath="/mnt/storage"
 
 if [ "`file -s $nbdevice`" == "$nbdevice: data" ]; then
-  mkfs.btrfs --label Minebox-storage $nbdevice
+  mkfs.btrfs -K --label Minebox-storage $nbdevice
 fi
 mkdir -p $mountpath
 mount $nbdevice $mountpath
