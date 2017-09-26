@@ -24,7 +24,7 @@ class SingleFileBucket implements Bucket {
      */
     private final long upperBound;
     private final long bucketNumber;
-    private final long size;
+    private final long bucketSize;
     private volatile boolean fileWasZero;
     //right now we try to keep track of the empty ranges but dont use them anywhere. there is a big optimisation opportunity here to minimize the amount of
     private RandomAccessFile randomAccessFile;
@@ -33,12 +33,12 @@ class SingleFileBucket implements Bucket {
 
     private final Encryption encryption;
 
-    SingleFileBucket(long bucketNumber, long size, Encryption encryption, File file) {
-        this.size = size;
+    SingleFileBucket(long bucketNumber, long bucketSize, Encryption encryption, File file) {
+        this.bucketSize = bucketSize;
         this.bucketNumber = bucketNumber;
         this.encryption = encryption;
-        baseOffset = bucketNumber * size;
-        upperBound = baseOffset + size - 1;
+        baseOffset = bucketNumber * this.bucketSize;
+        upperBound = baseOffset + this.bucketSize - 1;
         LOGGER.debug("starting to monitor bucket {} with file {}", bucketNumber, file.getAbsolutePath());
         try {
             randomAccessFile = new RandomAccessFile(file, "rw");
@@ -108,7 +108,7 @@ class SingleFileBucket implements Bucket {
         } else if (offsetInThisBucket < 0) {
             throw new UnsupportedOperationException("unable to get offset " + offsetInThisBucket + " smaller than my base " + baseOffset);
         } else {
-            final long consumableBytes = size - offsetInThisBucket;
+            final long consumableBytes = bucketSize - offsetInThisBucket;
             final long lenghtThisBucket = Math.min(consumableBytes, length);
             if (lenghtThisBucket < 0) {
                 throw new UnsupportedOperationException("unable to get offset " + offsetInThisBucket + " length is negative: " + lenghtThisBucket);
@@ -142,7 +142,7 @@ class SingleFileBucket implements Bucket {
     }
 
     private long putBytesInternal(long offset, ByteBuffer message, boolean needsMetadataUpdate) throws IOException {
-        if (needsMetadataUpdate){
+        if (needsMetadataUpdate) {
             needsTimestampUpdate = true;
         }
         if (stillAllZeroes(message)) {
@@ -184,21 +184,22 @@ class SingleFileBucket implements Bucket {
         needsFlush = true;
         final long offsetInThisBucket = offsetInThisBucket(offset);
         final long lengthInThisBucket = calcLengthInThisBucket(offsetInThisBucket, length); //should be always equal to length since it is normalized in MineboxEport
-        if (channel.size() == 0) {
+        final long fileSize = channel.size();
+        if (fileSize == 0 || offsetInThisBucket >= fileSize) {
             //if the file is empty, there is nothing to trim
-        } else if (lengthInThisBucket == size) {
+        } else if (lengthInThisBucket == this.bucketSize) {
             //if we are trimming the whole bucket we can truncate to 0
             synchronized (this) {
                 channel.truncate(0);
                 channel.force(true);
             }
-        } else if (offsetInThisBucket == 0 && lengthInThisBucket == channel.size()) {
+        } else if (offsetInThisBucket == 0 && lengthInThisBucket >= fileSize) {
             //we are trimming the whole file, so we can truncate it.
             synchronized (this) {
                 channel.truncate(0);
                 channel.force(true);
             }
-        } else if (offsetInThisBucket + lengthInThisBucket == this.size) {
+        } else if (offsetInThisBucket + lengthInThisBucket == this.bucketSize) {
             //truncating from index until end, we can shorten the file now
             synchronized (this) {
                 channel.truncate(offsetInThisBucket);
