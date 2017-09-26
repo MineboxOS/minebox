@@ -19,12 +19,14 @@ MINEBD_STORAGE_PATH="/mnt/storage"
 INFO_FILENAME="fileinfo"
 
 
-def get_status(backupname, allow_old=False):
+def get_status(backupname, allow_old=False, use_cache=True):
     status_code = 0
 
-    # If we do not have a status from backupservice or timestamp is older than
-    # 60 seconds, fetch a new one, else use the cached status.
-    if (not hasattr(get_status, "bsdata") or get_status.bsdata is None
+    # If use of cache was refused, or we do not have a status from
+    # backupservice yet or timestamp is older than 60 seconds, fetch a new one,
+    # else use the cached status.
+    if (not use_cache
+        or not hasattr(get_status, "bsdata") or get_status.bsdata is None
         or get_status.bstimestamp < time.time() - 60):
         # Always set the timestamp so we do not have to test above if it's set,
         #  as it's only unset when token is also unset
