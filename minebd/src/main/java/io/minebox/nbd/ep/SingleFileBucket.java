@@ -14,6 +14,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
+import java.time.Instant;
 
 class SingleFileBucket implements Bucket {
 
@@ -31,9 +33,10 @@ class SingleFileBucket implements Bucket {
     //right now we try to keep track of the empty ranges but dont use them anywhere. there is a big optimisation opportunity here to minimize the amount of
     private RandomAccessFile randomAccessFile;
     private volatile boolean needsFlush = false;
-    private volatile boolean needsTimestampUpdate = false;
+    private volatile boolean wantsTimestampUpdate = false;
 
     private final Encryption encryption;
+    private volatile FileTime lastModifiedTime;
 
     SingleFileBucket(long bucketNumber, long bucketSize, Encryption encryption, File file) {
         this.bucketSize = bucketSize;
@@ -51,6 +54,7 @@ class SingleFileBucket implements Bucket {
             filePath = file.toPath();
             final long existingFileSize = Files.size(filePath);
             this.fileWasZero = existingFileSize == 0;
+            lastModifiedTime = Files.getLastModifiedTime(filePath);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
@@ -128,8 +132,13 @@ class SingleFileBucket implements Bucket {
         try {
             synchronized (this) {
                 if (channel.isOpen()) {
-                    channel.force(needsTimestampUpdate);
-                    needsTimestampUpdate = false;
+                    channel.force(wantsTimestampUpdate);
+                    if (!wantsTimestampUpdate) {
+                        Files.setLastModifiedTime(filePath, lastModifiedTime);
+                    } else {
+                        lastModifiedTime = FileTime.from(Instant.now());
+                    }
+                    wantsTimestampUpdate = false;
                 }
             }
         } catch (IOException e) {
@@ -144,7 +153,7 @@ class SingleFileBucket implements Bucket {
 
     private long putBytesInternal(long offset, ByteBuffer message, boolean needsMetadataUpdate) throws IOException {
         if (needsMetadataUpdate) {
-            needsTimestampUpdate = true;
+            wantsTimestampUpdate = true;
         }
         if (stillAllZeroes(message)) {
             return message.remaining();
