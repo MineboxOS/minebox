@@ -29,6 +29,7 @@ class SingleFileBucket implements Bucket {
     //right now we try to keep track of the empty ranges but dont use them anywhere. there is a big optimisation opportunity here to minimize the amount of
     private RandomAccessFile randomAccessFile;
     private volatile boolean needsFlush = false;
+    private volatile boolean needsTimestampUpdate = false;
 
     private final Encryption encryption;
 
@@ -126,7 +127,8 @@ class SingleFileBucket implements Bucket {
             //todo make sure this triggers after potentially different pending writes have their lock
             synchronized (this) {
                 if (channel.isOpen()) {
-                    channel.force(true);
+                    channel.force(needsTimestampUpdate);
+                    needsTimestampUpdate = false;
                 }
             }
         } catch (IOException e) {
@@ -136,6 +138,13 @@ class SingleFileBucket implements Bucket {
 
     @Override
     public long putBytes(long offset, ByteBuffer message) throws IOException {
+        return putBytesInternal(offset, message, true);
+    }
+
+    private long putBytesInternal(long offset, ByteBuffer message, boolean needsMetadataUpdate) throws IOException {
+        if (needsMetadataUpdate){
+            needsTimestampUpdate = true;
+        }
         if (stillAllZeroes(message)) {
             return message.remaining();
         }
@@ -183,7 +192,7 @@ class SingleFileBucket implements Bucket {
                 channel.truncate(0);
                 channel.force(true);
             }
-        } else if (offsetInThisBucket ==0  && lengthInThisBucket == channel.size()) {
+        } else if (offsetInThisBucket == 0 && lengthInThisBucket == channel.size()) {
             //we are trimming the whole file, so we can truncate it.
             synchronized (this) {
                 channel.truncate(0);
@@ -200,7 +209,7 @@ class SingleFileBucket implements Bucket {
             final ByteBuffer bb = ByteBuffer.allocate(intLen);
             bb.put(new byte[intLen]);
             bb.flip();
-            putBytes(offset, bb); //sadly, this will encrypt zeroes. we need a workaround
+            putBytesInternal(offset, bb, false); //sadly, this will encrypt zeroes. we need a workaround
         }
     }
 
