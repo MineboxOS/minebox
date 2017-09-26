@@ -124,6 +124,10 @@ def api_backup_start():
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     bsdata, bs_status_code = get_from_backupservice('trigger')
+    if bs_status_code == 200:
+        # Call into get_status with use_cache=False so that we guarantee to
+        # re-fetch info from backup-service and know about this new backup.
+        backupinfo.get_status(bsdata["name"], False, False)
     return jsonify(bsdata), bs_status_code
 
 
