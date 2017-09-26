@@ -23,7 +23,7 @@ class SingleFileBucket implements Bucket {
      * highest valid offset, given minimum length of 1
      */
     private final long upperBound;
-    public final long bucketNumber;
+    private final long bucketNumber;
     private final long size;
     private volatile boolean fileWasZero;
     //right now we try to keep track of the empty ranges but dont use them anywhere. there is a big optimisation opportunity here to minimize the amount of
@@ -56,6 +56,7 @@ class SingleFileBucket implements Bucket {
 
     public void close() throws IOException {
         if (channel.isOpen()) {
+            //todo consider iterating the file and check if its all zeroes now, then truncate it to 0.
             channel.force(true);
             channel.close();
         } else {
@@ -174,9 +175,24 @@ class SingleFileBucket implements Bucket {
         needsFlush = true;
         final long offsetInThisBucket = offsetInThisBucket(offset);
         final long lengthInThisBucket = calcLengthInThisBucket(offsetInThisBucket, length); //should be always equal to length since it is normalized in MineboxEport
-        if (lengthInThisBucket == size) {
+        if (channel.size() == 0) {
+            //if the file is empty, there is nothing to trim
+        } else if (lengthInThisBucket == size) {
+            //if we are trimming the whole bucket we can truncate to 0
             synchronized (this) {
                 channel.truncate(0);
+                channel.force(true);
+            }
+        } else if (offsetInThisBucket ==0  && lengthInThisBucket == channel.size()) {
+            //we are trimming the whole file, so we can truncate it.
+            synchronized (this) {
+                channel.truncate(0);
+                channel.force(true);
+            }
+        } else if (offsetInThisBucket + lengthInThisBucket == this.size) {
+            //truncating from index until end, we can shorten the file now
+            synchronized (this) {
+                channel.truncate(offsetInThisBucket);
                 channel.force(true);
             }
         } else {
