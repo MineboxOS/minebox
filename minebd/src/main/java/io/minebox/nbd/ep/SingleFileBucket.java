@@ -191,7 +191,6 @@ class SingleFileBucket implements Bucket {
 
     @Override
     public void trim(long offset, long length) throws IOException {
-        needsFlush = true;
         final long offsetInThisBucket = offsetInThisBucket(offset);
         final long lengthInThisBucket = calcLengthInThisBucket(offsetInThisBucket, length); //should be always equal to length since it is normalized in MineboxEport
         final long fileSize = channel.size();
@@ -203,18 +202,21 @@ class SingleFileBucket implements Bucket {
                 channel.truncate(0);
                 channel.force(true);
             }
+            needsFlush = true;
         } else if (offsetInThisBucket == 0 && lengthInThisBucket >= fileSize) {
             //we are trimming the whole file, so we can truncate it.
             synchronized (this) {
                 channel.truncate(0);
                 channel.force(true);
             }
+            needsFlush = true;
         } else if (offsetInThisBucket + lengthInThisBucket == this.bucketSize) {
             //truncating from index until end, we can shorten the file now
             synchronized (this) {
                 channel.truncate(offsetInThisBucket);
                 channel.force(false); //since we assume the un-truncated file was actually backed up, we don't care if this shortened file is not the one uploaded, since truncate is a "best effort" operations btrfs should tolerate those data being non-zero
             }
+            needsFlush = true;
         } else {
             final int intLen = Ints.checkedCast(length); //buckets can not be bigger than 2GB right now, could be fixed
             final ByteBuffer bb = ByteBuffer.allocate(intLen);
