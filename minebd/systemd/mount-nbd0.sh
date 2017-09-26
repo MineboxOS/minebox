@@ -4,7 +4,8 @@ nbdevice="/dev/nbd0"
 mountpath="/mnt/storage"
 
 if [ "`file -s $nbdevice`" == "$nbdevice: data" ]; then
-  mkfs.btrfs --label Minebox-storage $nbdevice
+  # Use --nodiscard to not do a whole-device trim as nbd is pristine anyhow.
+  mkfs.btrfs --nodiscard --label Minebox-storage $nbdevice
 fi
 mkdir -p $mountpath
 mount $nbdevice $mountpath

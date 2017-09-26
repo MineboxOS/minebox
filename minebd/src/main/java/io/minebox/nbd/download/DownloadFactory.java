@@ -17,6 +17,7 @@ import io.minebox.nbd.RemoteTokenService;
 import io.minebox.nbd.SerialNumberService;
 import io.minebox.nbd.SiaSeedService;
 import io.minebox.nbd.encryption.EncyptionKeyProvider;
+import io.minebox.util.FileUtil;
 import org.apache.commons.lang3.tuple.Pair;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -162,6 +163,7 @@ public class DownloadFactory implements Provider<DownloadService> {
             siaProcessController.stopProcess();
             filenameLookup = extractSiaLookupMap(siaPaths);
             siaProcessController.startProcess();
+            siaUtil.waitForConsensus();
             siaUtil.unlockWallet(siaSeedService.getSiaSeed());
             //todo init the seed. this will take a while. nevertheless we don't want to assign initializedDownloadService just yet, because it would not be ready.
             initializedDownloadService = buildSiaDownload(filenameLookup);
@@ -280,6 +282,7 @@ public class DownloadFactory implements Provider<DownloadService> {
                 LOGGER.info("deleted file {}, recreating from metadata", dest);
             }
             Files.copy(zis, dest);
+            FileUtil.setOwnership(dest, "sia", "sia", true);
         } catch (IOException e) {
             throw new RuntimeException("unable to create renter file", e);
 //            }

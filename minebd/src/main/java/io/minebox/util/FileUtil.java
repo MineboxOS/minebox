@@ -53,24 +53,29 @@ public class FileUtil {
         FileAttribute<Set<PosixFilePermission>> noPermissions
                 = PosixFilePermissions.asFileAttribute(Collections.emptySet());
         Files.createFile(path, noPermissions);
+        String myusername = System.getProperty("user.name");
+        LOGGER.info("creating auth file with user {}", myusername);
+        setOwnership(path, myusername, "minebd", true);
+    }
+
+    public static void setOwnership(Path path, String username, String groupName, boolean fallbackOnGroup) throws IOException {
         final PosixFileAttributeView attrs = Files.getFileAttributeView(path, PosixFileAttributeView.class);
         FileSystem fs = FileSystems.getDefault();
         UserPrincipalLookupService gLS = fs.getUserPrincipalLookupService();
-
-        String myusername = System.getProperty("user.name"  );
-        LOGGER.info("creating auth file with user {}", myusername);
-        attrs.setOwner(gLS.lookupPrincipalByName(myusername));
+        attrs.setOwner(gLS.lookupPrincipalByName(username));
         try {
-            attrs.setGroup(gLS.lookupPrincipalByGroupName("minebd"));
+            attrs.setGroup(gLS.lookupPrincipalByGroupName(groupName));
             final EnumSet<PosixFilePermission> ownerGroupPermissions = EnumSet.of(PosixFilePermission.GROUP_READ, PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ);
             attrs.setPermissions(ownerGroupPermissions);
         } catch (UserPrincipalNotFoundException e) {
-            LOGGER.warn("local auth key could not be set to group minebd. falling back to username");
-            attrs.setGroup(gLS.lookupPrincipalByGroupName(myusername));
-            final EnumSet<PosixFilePermission> ownerPermissions = EnumSet.of(PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ);
-            attrs.setPermissions(ownerPermissions);
+            if (fallbackOnGroup) {
+                LOGGER.warn("local auth key could not be set to group minebd. falling back to username");
+                attrs.setGroup(gLS.lookupPrincipalByGroupName(System.getProperty("user.name")));
+                final EnumSet<PosixFilePermission> ownerPermissions = EnumSet.of(PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ);
+                attrs.setPermissions(ownerPermissions);
+            }else{
+                throw e;
+            }
         }
-
     }
-
 }

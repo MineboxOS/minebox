@@ -59,7 +59,7 @@ def api_ip_notify():
     if mb_status_code >= 400:
         app.logger.error("Error %s from MineBD: %s",
                          mb_status_code, mbdata["message"])
-        jsonify(message=mbdata["message"]), 503
+        return jsonify(message=mbdata["message"]), 503
     if mbdata["hasEncryptionKey"]:
         # If we have an encryption key, we don't need to notify any more.
         app.logger.info("System is set up, not sending an IP notification.")

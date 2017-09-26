@@ -1,13 +1,10 @@
 package io.minebox.nbd;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import io.dropwizard.lifecycle.Managed;
+import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.encryption.EncyptionKeyProvider;
 import io.minebox.nbd.ep.ExportProvider;
 import io.netty.bootstrap.ServerBootstrap;
@@ -21,6 +18,9 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+
 import static io.minebox.nbd.NbdServer.State.*;
 import static io.netty.util.NetUtil.*;
 
@@ -33,13 +33,15 @@ public class NbdServer implements Managed {
     private final SystemdUtil systemdUtil;
     private final ExportProvider exportProvider;
     private final EncyptionKeyProvider encyptionKeyProvider;
+    private final MinebdConfig config;
     private EventLoopGroup eventLoopGroup;
     private volatile State state = IDLE;
 
     @VisibleForTesting
     @Inject
-    public NbdServer(@Named("nbdPort") Integer nbdPort, SystemdUtil systemdUtil, ExportProvider exportProvider, EncyptionKeyProvider encyptionKeyProvider) {
-        this.port = nbdPort;
+    public NbdServer(MinebdConfig config, SystemdUtil systemdUtil, ExportProvider exportProvider, EncyptionKeyProvider encyptionKeyProvider) {
+        this.port = config.nbdPort;
+        this.config = config;
         this.systemdUtil = systemdUtil;
         this.exportProvider = exportProvider;
         this.encyptionKeyProvider = encyptionKeyProvider;
@@ -100,7 +102,7 @@ public class NbdServer implements Managed {
             serverBootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 protected void initChannel(SocketChannel ch) throws Exception {
-                    ch.pipeline().addLast(new HandshakePhase(exportProvider));
+                    ch.pipeline().addLast(new HandshakePhase(config,exportProvider));
                 }
             });
             initializeBlockZero();

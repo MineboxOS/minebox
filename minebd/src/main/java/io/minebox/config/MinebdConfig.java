@@ -16,6 +16,7 @@ public class MinebdConfig {
     public String encryptionKeyPath;
     public String authFile;
     public Size bucketSize = Size.megabytes(40);
+    public Size maxUnflushed = Size.megabytes(100);
     public String httpMetadata;
     public Boolean ignoreMissingPaths = false;
     public String siaDataDirectory;
