@@ -13,6 +13,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
+import java.nio.file.Path;
 
 class SingleFileBucket implements Bucket {
 
@@ -25,6 +26,7 @@ class SingleFileBucket implements Bucket {
     private final long upperBound;
     private final long bucketNumber;
     private final long bucketSize;
+    private final Path filePath;
     private volatile boolean fileWasZero;
     //right now we try to keep track of the empty ranges but dont use them anywhere. there is a big optimisation opportunity here to minimize the amount of
     private RandomAccessFile randomAccessFile;
@@ -46,7 +48,8 @@ class SingleFileBucket implements Bucket {
             throw new IllegalStateException(e);
         }
         try {
-            final long existingFileSize = Files.size(file.toPath());
+            filePath = file.toPath();
+            final long existingFileSize = Files.size(filePath);
             this.fileWasZero = existingFileSize == 0;
         } catch (IOException e) {
             throw new IllegalStateException(e);
@@ -57,8 +60,7 @@ class SingleFileBucket implements Bucket {
 
     public void close() throws IOException {
         if (channel.isOpen()) {
-            //todo consider iterating the file and check if its all zeroes now, then truncate it to 0.
-            channel.force(true);
+            flush();
             channel.close();
         } else {
             LOGGER.warn("closing bucket {} without an open channel.", bucketNumber);
@@ -124,7 +126,6 @@ class SingleFileBucket implements Bucket {
         needsFlush = false;
         LOGGER.info("flushing bucket {}", bucketNumber);
         try {
-            //todo make sure this triggers after potentially different pending writes have their lock
             synchronized (this) {
                 if (channel.isOpen()) {
                     channel.force(needsTimestampUpdate);
@@ -203,7 +204,7 @@ class SingleFileBucket implements Bucket {
             //truncating from index until end, we can shorten the file now
             synchronized (this) {
                 channel.truncate(offsetInThisBucket);
-                channel.force(true);
+                channel.force(false); //since we assume the un-truncated file was actually backed up, we don't care if this shortened file is not the one uploaded, since truncate is a "best effort" operations btrfs should tolerate those data being non-zero
             }
         } else {
             final int intLen = Ints.checkedCast(length); //buckets can not be bigger than 2GB right now, could be fixed
