@@ -335,6 +335,7 @@ def get_upload_status(backupfileinfo, uploadfiles, is_archived=False):
                 upstatus["uploaded_size"] += (fdata["filesize"] *
                                               fdata["uploadprogress"] /
                                               100.0)
+            redundancy.append(fdata["redundancy"])
             if not fdata["available"]:
                 upstatus["fully_available"] = False
         elif re.match(r".*\.dat$", finfo["siapath"]):
