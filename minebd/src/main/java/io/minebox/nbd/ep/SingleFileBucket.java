@@ -197,12 +197,15 @@ class SingleFileBucket implements Bucket {
         if (fileSize == 0 || offsetInThisBucket >= fileSize) {
             //if the file is empty, there is nothing to trim
         } else if (lengthInThisBucket == this.bucketSize) {
+            if (fileSize > 0)
             //if we are trimming the whole bucket we can truncate to 0
-            synchronized (this) {
-                channel.truncate(0);
-                channel.force(true);
+            {
+                synchronized (this) {
+                    channel.truncate(0);
+                    channel.force(true);
+                }
+                needsFlush = true;
             }
-            needsFlush = true;
         } else if (offsetInThisBucket == 0 && lengthInThisBucket >= fileSize) {
             //we are trimming the whole file, so we can truncate it.
             synchronized (this) {
