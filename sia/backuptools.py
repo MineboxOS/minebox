@@ -221,6 +221,9 @@ def save_metadata(status):
     metadir = path.join(METADATA_BASE, backupname)
     # Copy renter, gateway and wallet folders to metadata directory.
     for siafolder in ["renter", "gateway", "wallet"]:
+        # Make sure the directory does not exist.
+        if path.isdir(path.join(metadir, siafolder)):
+            shutil.rmtree(path.join(metadir, siafolder))
         # The copytree target needs to be the not-yet-existing target directory.
         shutil.copytree(path.join(SIA_DIR, siafolder),
                         path.join(metadir, siafolder))
