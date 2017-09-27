@@ -30,7 +30,7 @@ minebd:
    - /mnt/lower1/data/
    - /mnt/lower2/data/
   reportedSize : 1TB
-  maxUnflushed : 4MB
+  maxUnflushed : 80MB
   encryptionKeyPath: /etc/minebox/minebox.key
   authFile: /etc/minebox/local-auth.key
   bucketSize : 40M
