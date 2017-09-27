@@ -6,19 +6,20 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
-import io.netty.util.concurrent.GlobalEventExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class TransmissionPhase extends ByteToMessageDecoder {
 
-    private final long maxUnflushedBytes;
+    private long maxUnflushedBytes;
+    private final ExecutorService executor;
 
     private enum State {TM_RECEIVE_CMD, TM_RECEIVE_CMD_DATA}
 
@@ -37,6 +38,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
         super();
         this.maxUnflushedBytes = maxUnflushedBytes;
         this.exportProvider = exportProvider;
+        executor = new BlockingExecutor(10, 20);
     }
 
     private short cmdFlags;
@@ -82,6 +84,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
         return in.readableBytes() >= wanted;
     }
 
+
     private void processOperation(ChannelHandlerContext ctx, ByteBuf in) throws IOException {
         pendingOperations.incrementAndGet();
         switch (cmdType) {
@@ -115,7 +118,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                         sendTransmissionSimpleReply(ctx, err, cmdHandle, data);
                     }
                 };
-                GlobalEventExecutor.INSTANCE.execute(operation);
+                executor.execute(operation);
                 break;
             }
             case Protocol.NBD_CMD_WRITE: {
@@ -124,7 +127,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 final long cmdHandle = this.cmdHandle;
                 LOGGER.debug("writing to {} length {}", cmdOffset, cmdLength);
                 final long sum = unflushedBytes.addAndGet(cmdLength);
-                if (sum > maxUnflushedBytes) {
+                if (sum > maxUnflushedBytes) { //tune this number
                     LOGGER.debug("Rohr voll, ZWISCHENSPÜLUNG!");
                     exportProvider.flush(); //this hopefully flushes all and blocks until it is fully done
                     unflushedBytes.set(0);
@@ -152,7 +155,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                         buf.release();
                     }
                 };
-                GlobalEventExecutor.INSTANCE.execute(operation);
+                executor.execute(operation);
                 break;
             }
             case Protocol.NBD_CMD_DISC: {
