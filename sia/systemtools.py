@@ -23,7 +23,7 @@ def register_machine():
     admindata, admin_status_code = post_to_adminservice("registerMachine", False,
       {
         "uuid": machine_info["system_uuid"],
-        "serialNumber": machine_info["chassis_serial"],
+        "serialNumber": machine_info["system_serial"],
         "model": machine_info["system_sku"],
         "peripherals": {"disks": machine_info["disks"]},
       }
@@ -70,9 +70,9 @@ def get_machine_info():
       "system_uuid": subprocess
                      .check_output([DMIDECODE, "-s", "system-uuid"])
                      .strip(),
-      "chassis_serial": subprocess
-                        .check_output([DMIDECODE, "-s", "chassis-serial-number"])
-                        .strip(),
+      "system_serial": subprocess
+                       .check_output([DMIDECODE, "-s", "system-serial-number"])
+                       .strip(),
       "system_sku": None,
     }
     outlines = subprocess.check_output([DMIDECODE, "-t", "system"]).splitlines()
