@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 import static io.minebox.nbd.download.RecoverableFile.from;
 
 public class BucketFactory {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SingleFileBucket.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BucketFactory.class);
     private final SerialNumberService serialNumberService;
     private final List<String> parentDirs;
     private final long size;

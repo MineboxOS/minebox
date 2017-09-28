@@ -1,5 +1,6 @@
 package io.minebox.nbd;
 
+import com.google.common.base.Charsets;
 import com.google.common.primitives.Ints;
 import io.minebox.nbd.ep.ExportProvider;
 import io.netty.buffer.ByteBuf;
@@ -11,6 +12,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -129,6 +132,8 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 final long sum = unflushedBytes.addAndGet(cmdLength);
                 if (sum > maxUnflushedBytes) { //tune this number
                     LOGGER.debug("Rohr voll, ZWISCHENSPÜLUNG!");
+                    final byte[] bytes = "3".getBytes(Charsets.UTF_8);
+                    Files.write(Paths.get("/proc/sys/vm/drop_caches"), bytes);
                     exportProvider.flush(); //this hopefully flushes all and blocks until it is fully done
                     unflushedBytes.set(0);
                     unflushedBytes.addAndGet(cmdLength); //i just flushed, but this write counts already for the next
