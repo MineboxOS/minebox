@@ -12,19 +12,19 @@
 
 	    		<form>
 	    			<fieldset>
-	    				<input type="checkbox" id="bandwidth-limit" name="bandwidth-limit" />
 	    				<label for="bandwidth-limit">Limit bandwidth</label>
 	    			</fieldset>
 
 	    			<fieldset class="disable-this">
-	    				<p><span class="limit-text">* Upload limit</span> <input type="number" id="upload-limit" name="upload-limit" />KB/s</p>
-	    				<p><span class="limit-text">* Download limit</span> <input type="number" id="download-limit" name="download-limit" />KB/s</p>
+	    				<p><span class="limit-text" for="sia-upload-limit">* Upload limit for backups</span>
+	    					<input type="number" id="sia-upload-limit" name="sia_upload_limit_kbps" />KB/s</p>
+	    				<!-- p><span class="limit-text">* Download limit</span> <input type="number" id="download-limit" name="download-limit" />KB/s</p -->
 	    				<p class="note">* Leave it blank or set it to 0 for unlimited</p>
 	    			</fieldset>
 	    		</form>
 
 	    	</div>
-	    	<div class="col-xs-12 col-sm-6 notifications-box settings-box">
+	    	<!-- div class="col-xs-12 col-sm-6 notifications-box settings-box">
 	    		
 	    		<div class="settings-title-box">
 		    		<h4>Receive Minebox notifications</h4>
@@ -43,7 +43,7 @@
 	    			</fieldset>
 	    		</form>
 
-	    	</div>
+	    	</div -->
     	</div>
 
     	<div id="save-settings-box" class="row">

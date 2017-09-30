@@ -20,6 +20,7 @@ The Minebox UI Gateway (MUG) is a python service that allows the UI to access Mi
 install -pD --mode 755 "%{_topdir}uigateway/mug.sh" "$RPM_BUILD_ROOT/usr/lib/minebox/mug.sh"
 install -pD --mode 644 "%{_topdir}uigateway/sudoers.d/mug" "$RPM_BUILD_ROOT/etc/sudoers.d/mug"
 install -pD --mode 644 "%{_topdir}uigateway/systemd/mug.service" "$RPM_BUILD_ROOT/etc/systemd/system/mug.service"
+install -pD --mode 644 "%{_topdir}uigateway/minebox_settings.json" "$RPM_BUILD_ROOT/etc/minebox/minebox_settings.json"
 install -pD --mode 755 "%{_topdir}uigateway/mug.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/mug.py"
 install -pD --mode 644 "%{_topdir}uigateway/backupinfo.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/backupinfo.py"
 install -pD --mode 644 "%{_topdir}uigateway/connecttools.py" "$RPM_BUILD_ROOT/usr/lib/minebox/mbvenv/connecttools.py"
@@ -37,6 +38,7 @@ set -e
 systemctl daemon-reload
 systemctl enable mug
 systemctl start mug
+chown mug:mug /etc/minebox/minebox_settings.json
 
 # Uninstallation script
 %preun
@@ -59,6 +61,7 @@ systemctl daemon-reload
 /usr/lib/minebox/mug.sh
 /etc/sudoers.d/mug
 /etc/systemd/system/mug.service
+/etc/minebox/minebox_settings.json
 /usr/lib/minebox/mbvenv/mug.py
 /usr/lib/minebox/mbvenv/mug.pyc
 /usr/lib/minebox/mbvenv/mug.pyo

@@ -28,7 +28,8 @@ REST_HOST="127.0.0.1"
 REST_HOST_DEBUG="0.0.0.0"
 REST_HOST_TLS="0.0.0.0"
 REST_PORT=5000
-CONFIG_JSON_PATH="/etc/minebox/mug_config.json"
+MUG_CONFIG_JSON_PATH="/etc/minebox/mug_config.json"
+MBOX_SETTINGS_JSON_PATH="/etc/minebox/minebox_settings.json"
 SSL_CERT="/opt/rockstor/certs/rockstor.cert"
 SSL_KEY="/opt/rockstor/certs/rockstor.key"
 MINEBD_STORAGE_PATH="/mnt/storage"
@@ -45,8 +46,8 @@ app = Flask(__name__)
 def before_first_request():
     global config
     # Read configuration from JSON file.
-    if isfile(CONFIG_JSON_PATH):
-        with open(CONFIG_JSON_PATH) as json_file:
+    if isfile(MUG_CONFIG_JSON_PATH):
+        with open(MUG_CONFIG_JSON_PATH) as json_file:
             config = json.load(json_file)
     # Set default values.
     if not "allowed_cors_hosts" in config:
@@ -421,6 +422,54 @@ def api_sia_status():
     return jsonify(outdata), 200
 
 
+def get_mbsettings_from_disk():
+    mbsettings = {}
+    try:
+        if isfile(MBOX_SETTINGS_JSON_PATH):
+            with open(MBOX_SETTINGS_JSON_PATH) as json_file:
+                mbsettings = json.load(json_file)
+    except:
+        # If anything fails here, we'll just deliver the defaults set below.
+        app.logger.warn("Settings file could not be read: %s"
+                        % MBOX_SETTINGS_JSON_PATH)
+    # Set default values.
+    if not "sia_upload_limit_kbps" in mbsettings:
+        mbsettings["sia_upload_limit_kbps"] = 0
+    return mbsettings
+
+
+@app.route("/settings", methods=['GET'])
+@set_origin()
+def api_settings_get():
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-settings
+    if not check_login():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+    mbsettings = get_mbsettings_from_disk()
+    return jsonify(mbsettings), 200
+
+
+@app.route("/settings", methods=['POST'])
+@set_origin()
+def api_settings_post():
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-post-settings
+    if not check_login():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+    # Read current settings from disk.
+    mbsettings = get_mbsettings_from_disk()
+    # Put any entries from the post into mbsettings.
+    if "sia_upload_limit_kbps" in request.form:
+        mbsettings["sia_upload_limit_kbps"] = int(request.form["sia_upload_limit_kbps"])
+    # Write settings to disk.
+    try:
+        with open(MBOX_SETTINGS_JSON_PATH, 'w') as outfile:
+            json.dump(mbsettings, outfile)
+    except:
+        app.logger.warn("Error writing settings to file: %s"
+                        % MBOX_SETTINGS_JSON_PATH)
+        return jsonify(message="Error writing settings to disk."), 503
+    return jsonify(message="Settings saved and applied successfully."), 200
+
+
 @app.route("/wallet/status", methods=['GET'])
 @set_origin()
 def api_wallet_status():
@@ -494,13 +543,13 @@ def api_wallet_send():
 @set_origin()
 def page_not_found(error):
     app.logger.error('Method not found: %s' % request.url)
-    return jsonify(error="Method not supported: "+ str(error)), 404
+    return jsonify(message="Method not supported: %s" % str(error)), 404
 
 @app.errorhandler(500)
 @set_origin()
 def page_not_found(error):
     app.logger.error('Internal server error @ %s %s' % (request.url , str(error)))
-    return jsonify(error="Internal server error: "+ str(error)), 500
+    return jsonify(message="Internal server error: %s" % str(error)), 500
 
 
 if __name__ == "__main__":
