@@ -1,0 +1,12 @@
+[Unit]
+Description=Minebox traffic shaper
+Requires=network.target
+
+[Service]
+ExecStart=/usr/lib/minebox/trafficshaper.sh start
+ExecStop=/usr/lib/minebox/trafficshaper.sh stop
+Type=oneshot
+RemainAfterExit=yes
+
+[Install]
+WantedBy=sia.service

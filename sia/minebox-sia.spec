@@ -17,6 +17,8 @@ Sia is a new decentralized cloud storage platform that radically alters the land
 %install
 install -pD --mode 755 "%{_topdir}BUILD/siad" "$RPM_BUILD_ROOT/usr/bin/siad"
 install -pD --mode 755 "%{_topdir}BUILD/siac" "$RPM_BUILD_ROOT/usr/bin/siac"
+install -pD --mode 755 "%{_topdir}sia/trafficshaper.sh" "$RPM_BUILD_ROOT/usr/lib/minebox/trafficshaper.sh"
+install -pD --mode 644 "%{_topdir}sia/systemd/minebox-trafficshaper.service" "$RPM_BUILD_ROOT/etc/systemd/system/minebox-trafficshaper.service"
 install -pD --mode 644 "%{_topdir}sia/systemd/sia.service" "$RPM_BUILD_ROOT/etc/systemd/system/sia.service"
 
 # Installation script
@@ -25,11 +27,14 @@ install -pD --mode 644 "%{_topdir}sia/systemd/sia.service" "$RPM_BUILD_ROOT/etc/
 /usr/bin/getent passwd sia || /usr/sbin/useradd -r -d /mnt/lower1/sia -s /sbin/nologin -g sia sia
 set +e
 systemctl stop sia
+systemctl stop minebox-trafficshaper
 set -e
 
 %post
 /usr/bin/chown -R sia:sia /mnt/lower*/sia/
 systemctl daemon-reload
+systemctl enable minebox-trafficshaper
+systemctl start minebox-trafficshaper
 systemctl enable sia
 systemctl start sia
 
@@ -39,6 +44,8 @@ if [ "$1" = 0 ] ; then
 set +e
 systemctl stop sia
 systemctl disable sia
+systemctl stop minebox-trafficshaper
+systemctl disable minebox-trafficshaper
 set -e
 fi
 
@@ -53,4 +60,6 @@ systemctl daemon-reload
 
 /usr/bin/siac
 /usr/bin/siad
+/usr/lib/minebox/trafficshaper.sh
+/etc/systemd/system/minebox-trafficshaper.service
 /etc/systemd/system/sia.service

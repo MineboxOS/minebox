@@ -36,6 +36,7 @@ MINEBD_STORAGE_PATH="/mnt/storage"
 DEMOSIAC_CMD="/root/minebox-client-tools_vm/sia/demosiac.sh"
 SUDO="/usr/bin/sudo"
 MBKEY_CMD="/usr/lib/minebox/mbkey.sh"
+TRAFFICSHAPER_CMD="/usr/lib/minebox/trafficshaper.sh"
 
 config = {}
 
@@ -463,6 +464,9 @@ def api_settings_post():
     try:
         with open(MBOX_SETTINGS_JSON_PATH, 'w') as outfile:
             json.dump(mbsettings, outfile)
+        retcode = subprocess.call([SUDO, TRAFFICSHAPER_CMD, "restart"])
+        if retcode != 0:
+            app.logger.error("Restarting traffic shaper failed, return code: %s" % retcode)
     except:
         app.logger.warn("Error writing settings to file: %s"
                         % MBOX_SETTINGS_JSON_PATH)

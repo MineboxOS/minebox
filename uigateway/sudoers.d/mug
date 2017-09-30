@@ -1,2 +1,2 @@
-mug ALL=(ALL) NOPASSWD: /usr/lib/minebox/mbkey.sh
+mug ALL=(ALL) NOPASSWD: /usr/lib/minebox/mbkey.sh, /usr/lib/minebox/trafficshaper.sh
 
