@@ -61,7 +61,7 @@ systemctl daemon-reload
 /usr/lib/minebox/mug.sh
 /etc/sudoers.d/mug
 /etc/systemd/system/mug.service
-/etc/minebox/minebox_settings.json
+%config(noreplace) /etc/minebox/minebox_settings.json
 /usr/lib/minebox/mbvenv/mug.py
 /usr/lib/minebox/mbvenv/mug.pyc
 /usr/lib/minebox/mbvenv/mug.pyo
