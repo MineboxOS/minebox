@@ -17,6 +17,7 @@ public class MinebdConfig {
     public String authFile;
     public Size bucketSize = Size.megabytes(40);
     public Size maxUnflushed = Size.megabytes(100);
+    public Size minFreeSystemMem = Size.megabytes(400);
     public String httpMetadata;
     public Boolean ignoreMissingPaths = false;
     public String siaDataDirectory;

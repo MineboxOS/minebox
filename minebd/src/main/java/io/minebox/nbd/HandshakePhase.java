@@ -110,7 +110,7 @@ public class HandshakePhase extends ByteToMessageDecoder {
                 //FIXME: transfer any remaining bytes into the transmission phase!
             /* The NBD protocol has two phases: the handshake (HS_) and the transmission (TM_) */
                 // Handshake complete, switch to transmission phase
-                ctx.pipeline().addLast("transmission", new TransmissionPhase(config.maxUnflushed.toBytes(), exportProvider));
+                ctx.pipeline().addLast("transmission", new TransmissionPhase(config, exportProvider));
                 ctx.pipeline().remove(this);
                 return exportName.toString();
 

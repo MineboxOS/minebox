@@ -2,6 +2,8 @@ package io.minebox.nbd;
 
 import com.google.common.base.Charsets;
 import com.google.common.primitives.Ints;
+import com.sun.management.OperatingSystemMXBean;
+import io.minebox.config.MinebdConfig;
 import io.minebox.nbd.ep.ExportProvider;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -11,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -21,8 +24,12 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class TransmissionPhase extends ByteToMessageDecoder {
 
+    private Thread cleanupThread;
+    private final long minFreeSystemMem;
     private long maxUnflushedBytes;
     private final ExecutorService executor;
+    private volatile boolean cleanupRunning;
+    private final OperatingSystemMXBean osBean;
 
     private enum State {TM_RECEIVE_CMD, TM_RECEIVE_CMD_DATA}
 
@@ -37,11 +44,45 @@ public class TransmissionPhase extends ByteToMessageDecoder {
         public final static int EIO = 5;
     }
 
-    public TransmissionPhase(long maxUnflushedBytes, ExportProvider exportProvider) {
+    public TransmissionPhase(MinebdConfig config, ExportProvider exportProvider) {
         super();
-        this.maxUnflushedBytes = maxUnflushedBytes;
+        this.maxUnflushedBytes = config.maxUnflushed.toBytes();
+        this.minFreeSystemMem = config.minFreeSystemMem.toBytes();
         this.exportProvider = exportProvider;
         executor = new BlockingExecutor(10, 20);
+        cleanupRunning = true;
+        osBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+
+/*        cleanupThread = new Thread("cleanup") {
+            @Override
+            public void run() {
+                while (cleanupRunning) { //todo check if needed
+                    checkFreeMem();
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException e) {
+                        //nothing
+                    }
+
+                }
+
+            }
+        }*/
+        ;
+//        cleanupThread.start();
+    }
+
+    private void checkFreeMem() {
+        final long freeMem = osBean.getFreePhysicalMemorySize();
+        if (freeMem < minFreeSystemMem) {
+            LOGGER.info("free mem {} too small, dropping caches", freeMem);
+            final byte[] bytes = "3".getBytes(Charsets.UTF_8);
+            try {
+                Files.write(Paths.get("/proc/sys/vm/drop_caches"), bytes);
+            } catch (IOException e) {
+                LOGGER.error("unable to free memory", e);
+            }
+        }
     }
 
     private short cmdFlags;
@@ -132,8 +173,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 final long sum = unflushedBytes.addAndGet(cmdLength);
                 if (sum > maxUnflushedBytes) { //tune this number
                     LOGGER.debug("Rohr voll, ZWISCHENSPÜLUNG!");
-                    final byte[] bytes = "3".getBytes(Charsets.UTF_8);
-                    Files.write(Paths.get("/proc/sys/vm/drop_caches"), bytes);
+                    checkFreeMem();
                     exportProvider.flush(); //this hopefully flushes all and blocks until it is fully done
                     unflushedBytes.set(0);
                     unflushedBytes.addAndGet(cmdLength); //i just flushed, but this write counts already for the next
@@ -175,6 +215,8 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 final long cmdHandle = this.cmdHandle;
 
                 LOGGER.debug("got flush..");
+                checkFreeMem();
+
             /* we must drain all NBD_CMD_WRITE and NBD_WRITE_TRIM from the queue
              * before processing NBD_CMD_FLUSH
 			 */
