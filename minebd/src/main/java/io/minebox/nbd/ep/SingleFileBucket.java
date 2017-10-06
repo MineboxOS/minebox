@@ -1,6 +1,7 @@
 package io.minebox.nbd.ep;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import com.google.common.primitives.Ints;
 import io.minebox.nbd.Encryption;
 import org.slf4j.Logger;
@@ -20,7 +21,8 @@ import java.time.Instant;
 class SingleFileBucket implements Bucket {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleFileBucket.class);
-    private final FileChannel channel;
+    private final File file;
+    private FileChannel channel;
     private final long baseOffset;
     /**
      * highest valid offset, given minimum length of 1
@@ -45,11 +47,7 @@ class SingleFileBucket implements Bucket {
         baseOffset = bucketNumber * this.bucketSize;
         upperBound = baseOffset + this.bucketSize - 1;
         LOGGER.debug("starting to monitor bucket {} with file {}", bucketNumber, file.getAbsolutePath());
-        try {
-            randomAccessFile = new RandomAccessFile(file, "rw");
-        } catch (FileNotFoundException e) {
-            throw new IllegalStateException(e);
-        }
+        this.file = file;
         try {
             filePath = file.toPath();
             final long existingFileSize = Files.size(filePath);
@@ -58,14 +56,14 @@ class SingleFileBucket implements Bucket {
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
-
-        channel = randomAccessFile.getChannel();
     }
 
     public void close() throws IOException {
-        if (channel.isOpen()) {
+        LOGGER.debug("closing bucket {} ", bucketNumber);
+        final FileChannel openChannel = getOpenChannel();
+        if (openChannel.isOpen()) {
             flush();
-            channel.close();
+            openChannel.close();
         } else {
             LOGGER.warn("closing bucket {} without an open channel.", bucketNumber);
         }
@@ -78,8 +76,9 @@ class SingleFileBucket implements Bucket {
         final int read;
         ByteBuffer encrypted = ByteBuffer.allocate(length);
         synchronized (this) {
-            channel.position(offsetInThisBucket);
-            read = channel.read(encrypted);
+            final FileChannel openChannel = getOpenChannel();
+            openChannel.position(offsetInThisBucket);
+            read = openChannel.read(encrypted);
             if (read > 0) {
                 encrypted.flip();
                 encrypted.limit(read);
@@ -131,8 +130,9 @@ class SingleFileBucket implements Bucket {
         LOGGER.info("flushing bucket {}", bucketNumber);
         try {
             synchronized (this) {
-                if (channel.isOpen()) {
-                    channel.force(wantsTimestampUpdate);
+                final FileChannel openChannel = getOpenChannel();
+                if (openChannel.isOpen()) {
+                    openChannel.force(wantsTimestampUpdate);
                     if (!wantsTimestampUpdate) {
                         Files.setLastModifiedTime(filePath, lastModifiedTime);
                     } else {
@@ -161,11 +161,13 @@ class SingleFileBucket implements Bucket {
         synchronized (this) {
             needsFlush = true;
             final long offsetInThisBucket = offsetInThisBucket(offset);
-            channel.position(offsetInThisBucket);
+            final FileChannel openChannel = getOpenChannel();
+            openChannel.position(offsetInThisBucket);
             final ByteBuffer encrypted = encryption.encrypt(offset, message);
-            return channel.write(encrypted);
+            return openChannel.write(encrypted);
         }
     }
+
 
     private boolean stillAllZeroes(ByteBuffer message) {
         if (fileWasZero) {
@@ -193,6 +195,7 @@ class SingleFileBucket implements Bucket {
     public void trim(long offset, long length) throws IOException {
         final long offsetInThisBucket = offsetInThisBucket(offset);
         final long lengthInThisBucket = calcLengthInThisBucket(offsetInThisBucket, length); //should be always equal to length since it is normalized in MineboxEport
+        final FileChannel channel = getOpenChannel();
         final long fileSize = channel.size();
         if (fileSize == 0 || offsetInThisBucket >= fileSize) {
             //if the file is empty, there is nothing to trim
@@ -239,4 +242,19 @@ class SingleFileBucket implements Bucket {
         return upperBound;
     }
 
+    private FileChannel getOpenChannel() {
+        if (channel == null || !channel.isOpen()) {
+            LOGGER.debug("opening channel in bucket {} ", bucketNumber);
+            try {
+                randomAccessFile = new RandomAccessFile(file, "rw");
+            } catch (FileNotFoundException e) {
+                throw new IllegalStateException(e);
+            }
+            channel = randomAccessFile.getChannel();
+            Preconditions.checkState(channel.isOpen());
+            return channel;
+        } else {
+            return channel;
+        }
+    }
 }
