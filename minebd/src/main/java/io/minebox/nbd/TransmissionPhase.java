@@ -38,7 +38,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
     private final AtomicLong unflushedBytes = new AtomicLong(0);
     private final AtomicLong checkReadCacheBytes = new AtomicLong(0);
     private final long maxUnflushedBytes;
-
+    private final AtomicReference<OperationParameters> operationParameters = new AtomicReference<>(OperationParameters.RECEIVE_STATE);
     private volatile boolean loggedHighPending = false;
     private volatile long lastLog;
 
@@ -89,8 +89,6 @@ public class TransmissionPhase extends ByteToMessageDecoder {
             }
         }
     }
-
-    private final AtomicReference<OperationParameters> operationParameters = new AtomicReference<>(OperationParameters.RECEIVE_STATE);
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
