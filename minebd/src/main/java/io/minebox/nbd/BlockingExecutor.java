@@ -5,6 +5,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +39,8 @@ public class BlockingExecutor extends ThreadPoolExecutor {
         semaphore = new Semaphore(poolSize + queueSize);
     }
 
+    AtomicLong taskCount = new AtomicLong(0);
+
     /**
      * Executes the given task.
      * This method will block when the semaphore has no permits
@@ -45,6 +48,17 @@ public class BlockingExecutor extends ThreadPoolExecutor {
      */
     @Override
     public void execute(final Runnable task) {
+        final Runnable wrappedTask;
+        if (LOGGER.isDebugEnabled()) {
+            wrappedTask = () -> {
+                final long taskNumber = taskCount.incrementAndGet();
+                LOGGER.debug("starting {}", taskNumber);
+                task.run();
+                LOGGER.debug("ended    {}", taskNumber);
+            };
+        } else {
+            wrappedTask = task;
+        }
         boolean acquired = false;
         do {
             try {
@@ -56,7 +70,7 @@ public class BlockingExecutor extends ThreadPoolExecutor {
         } while (!acquired);
 
         try {
-            super.execute(task);
+            super.execute(wrappedTask);
         } catch (final RejectedExecutionException e) {
             semaphore.release();
             throw e;

@@ -14,35 +14,33 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class TransmissionPhase extends ByteToMessageDecoder {
 
-    private Thread cleanupThread;
-    private final long minFreeSystemMem;
-    private long maxUnflushedBytes;
-    private final ExecutorService executor;
-    private volatile boolean cleanupRunning;
-    private final OperatingSystemMXBean osBean;
-
-    private enum State {TM_RECEIVE_CMD, TM_RECEIVE_CMD_DATA}
-
     private static final Logger LOGGER = LoggerFactory.getLogger(TransmissionPhase.class);
-    private State state = State.TM_RECEIVE_CMD;
 
+    private final long minFreeSystemMem;
+    private final ExecutorService executor;
+    private final OperatingSystemMXBean osBean;
     private final ExportProvider exportProvider;
     private final AtomicInteger numOperations = new AtomicInteger(0);
     private final AtomicInteger pendingOperations = new AtomicInteger(0);
+    private final AtomicLong unflushedBytes = new AtomicLong(0);
+    private final AtomicLong checkReadCacheBytes = new AtomicLong(0);
+    private final long maxUnflushedBytes;
 
-    private static class Error {
-        public final static int EIO = 5;
-    }
+    private volatile boolean loggedHighPending = false;
+    private volatile long lastLog;
 
     public TransmissionPhase(MinebdConfig config, ExportProvider exportProvider) {
         super();
@@ -50,7 +48,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
         this.minFreeSystemMem = config.minFreeSystemMem.toBytes();
         this.exportProvider = exportProvider;
         executor = new BlockingExecutor(10, 20);
-        cleanupRunning = true;
+//        cleanupRunning = true;
         osBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
 
 /*        cleanupThread = new Thread("cleanup") {
@@ -72,6 +70,11 @@ public class TransmissionPhase extends ByteToMessageDecoder {
 //        cleanupThread.start();
     }
 
+    private static boolean hasMin(ByteBuf in, long wanted) {
+        final int readableBytes = in.readableBytes();
+        return readableBytes >= wanted;
+    }
+
     private void checkFreeMem() {
         final long freeMem = osBean.getFreePhysicalMemorySize();
         if (freeMem < minFreeSystemMem) {
@@ -79,44 +82,72 @@ public class TransmissionPhase extends ByteToMessageDecoder {
             final byte[] bytes = "3".getBytes(Charsets.UTF_8);
             try {
                 Files.write(Paths.get("/proc/sys/vm/drop_caches"), bytes);
+            } catch (AccessDeniedException e) {
+                LOGGER.debug("was worth a try ;)");
             } catch (IOException e) {
                 LOGGER.error("unable to free memory", e);
             }
         }
     }
 
-    private short cmdFlags;
-    private short cmdType;
-    private long cmdHandle;
-    private long cmdOffset;
-    private long cmdLength;
-    private AtomicLong unflushedBytes = new AtomicLong(0);
+    private final AtomicReference<OperationParameters> operationParameters = new AtomicReference<>(OperationParameters.RECEIVE_STATE);
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+        LOGGER.debug("decode again...");
         for (; ; ) {
             final int i = numOperations.incrementAndGet();
             if (i != 1) {
                 LOGGER.warn("parallel action {}", i);
             }
             try {
-                switch (state) {
+                switch (operationParameters.get().state) {
                     case TM_RECEIVE_CMD:
-                        if (!hasMin(in, 28))
+                        LOGGER.debug("getting new cmd");
+                        if (!hasMin(in, 28)) {//28 = magic 4, flags 2, type 2, handle 8, offset 8, length 4
+                            //not enough data to read yet, try again later?
                             return;
+                        }
 
-                        readOperationParameters(ctx, in);
-                        state = State.TM_RECEIVE_CMD_DATA;
+                        final int magic = in.readInt();
+                        if (magic != Protocol.NBD_REQUEST_MAGIC) {
+                            throw new IllegalArgumentException("Invalid request magic! 0x" + BigInteger.valueOf(magic).toString(16));
+                        }
+                        operationParameters.set(OperationParameters.readFromMessage(in));
                         break;
 
                     //FIXME: this will buffer maybe a lot of bytes?!
                     case TM_RECEIVE_CMD_DATA:
-                        if (cmdType == Protocol.NBD_CMD_WRITE && !hasMin(in, cmdLength))
-                            return;
+                        final OperationParameters op = this.operationParameters.getAndSet(OperationParameters.LIMBO_STATE);
+                        if (op == null) {
+                            throw new IllegalStateException("unexpected null state");
+                        }
+                        LOGGER.debug("preparing {}, handle {}", op.cmdType, op.cmdHandle);
+                        ByteBuf buf = null;
+                        if (op.cmdType == Protocol.NBD_CMD_WRITE) {
+                            if (!hasMin(in, op.cmdLength)) {
+                                operationParameters.set(op); //restore from limbo to "try again when buffer is filled"
+                                return;
+                            } else {
+                                //enough data in buffer to get the full write operation, lets read it into a separate buffer so we can parse the next param
+                                try {
+                                    buf = in.readBytes(Ints.checkedCast(op.cmdLength));
+                                } catch (Exception e) {
+                                    LOGGER.error("error during preparation of write", e);
+                                    sendTransmissionSimpleReply(ctx, Error.EIO, op.cmdHandle, null);
+                                    break;
+                                }
+                            }
+                        }
 
-                        processOperation(ctx, in);
-                        state = State.TM_RECEIVE_CMD;
+                        processOperation(ctx, buf, op);
+                        LOGGER.debug("put {}, handle {} in queue", op.cmdType, op.cmdHandle);
+                        operationParameters.set(OperationParameters.RECEIVE_STATE);
                         break;
+                    case LIMBO:
+                        LOGGER.debug("not sure what to do, im in limbo");
+                        return;
+
                 }
             } finally {
                 numOperations.decrementAndGet();
@@ -124,82 +155,20 @@ public class TransmissionPhase extends ByteToMessageDecoder {
         }
     }
 
-    private static boolean hasMin(ByteBuf in, long wanted) {
-        return in.readableBytes() >= wanted;
-    }
-
-
-    private void processOperation(ChannelHandlerContext ctx, ByteBuf in) throws IOException {
+    private void processOperation(ChannelHandlerContext ctx, ByteBuf dataToWrite, OperationParameters opParams)
+            throws IOException {
         pendingOperations.incrementAndGet();
-        switch (cmdType) {
+        switch (opParams.cmdType) {
             case Protocol.NBD_CMD_READ: {
-                final long cmdOffset = this.cmdOffset;
-                final long cmdLength = this.cmdLength;
-                final long cmdHandle = this.cmdHandle;
-//                LOGGER.debug("reading from {} length {} handle {}", cmdOffset, cmdLength, cmdHandle);
-                Runnable operation = () -> {
-                    ByteBuf data = null;
-                    int err = 0;
-                    try {
-                        //FIXME: use FUA/sync flag correctly
-                        ByteBuffer bb = exportProvider.read(cmdOffset, Ints.checkedCast(cmdLength));
-                        data = Unpooled.wrappedBuffer(bb);
-                        final int actuallyRead = data.writerIndex() - data.readerIndex();
-                        if (actuallyRead != cmdLength) {
-
-                            LOGGER.error("responding to from {} length {} handle {}", cmdOffset, actuallyRead, cmdHandle);
-                            final String msg = "i messed up and tried to return the wrong about of read data.. " +
-                                    "from " + cmdOffset +
-                                    " length " + actuallyRead +
-                                    " requested " + cmdLength +
-                                    " handle " + cmdHandle;
-                            throw new IllegalStateException(msg);
-                        }
-                    } catch (Exception e) {
-                        LOGGER.error("error during read", e);
-                        err = Error.EIO;
-                    } finally {
-                        sendTransmissionSimpleReply(ctx, err, cmdHandle, data);
-                    }
-                };
+                freeIfNeeded(opParams);
+                Runnable operation = createReadOperation(ctx, opParams);
                 executor.execute(operation);
                 break;
             }
             case Protocol.NBD_CMD_WRITE: {
-                final long cmdOffset = this.cmdOffset;
-                final long cmdLength = this.cmdLength;
-                final long cmdHandle = this.cmdHandle;
-                LOGGER.debug("writing to {} length {}", cmdOffset, cmdLength);
-                final long sum = unflushedBytes.addAndGet(cmdLength);
-                if (sum > maxUnflushedBytes) { //tune this number
-                    LOGGER.debug("Rohr voll, ZWISCHENSPÜLUNG!");
-                    checkFreeMem();
-                    exportProvider.flush(); //this hopefully flushes all and blocks until it is fully done
-                    unflushedBytes.set(0);
-                    unflushedBytes.addAndGet(cmdLength); //i just flushed, but this write counts already for the next
-                }
-
-                final ByteBuf buf;
-                try {
-                    buf = in.readBytes(Ints.checkedCast(cmdLength));
-                } catch (Exception e) {
-                    LOGGER.error("error during preparation of write", e);
-                    sendTransmissionSimpleReply(ctx, Error.EIO, cmdHandle, null);
-                    break;
-                }
-                Runnable operation = () -> {
-                    int err = 0;
-                    try {
-                        //FIXME: use FUA/sync flag correctly
-                        exportProvider.write(cmdOffset, buf.nioBuffer(), false);
-                    } catch (Exception e) {
-                        LOGGER.error("error during write", e);
-                        err = Error.EIO;
-                    } finally {
-                        sendTransmissionSimpleReply(ctx, err, cmdHandle, null);
-                        buf.release();
-                    }
-                };
+                LOGGER.debug("writing to {} length {}", opParams.cmdOffset, opParams.cmdLength);
+                freeAndFlushIfNeeded(opParams);
+                Runnable operation = createWriteOperation(ctx, opParams, dataToWrite);
                 executor.execute(operation);
                 break;
             }
@@ -209,61 +178,117 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 break;
             }
             case Protocol.NBD_CMD_FLUSH: {
-                final long cmdOffset = this.cmdOffset;
-                final long cmdLength = this.cmdLength;
-                //offset + length must be zero
-                final long cmdHandle = this.cmdHandle;
-
                 LOGGER.debug("got flush..");
                 checkFreeMem();
-
-            /* we must drain all NBD_CMD_WRITE and NBD_WRITE_TRIM from the queue
-             * before processing NBD_CMD_FLUSH
-			 */
-                int err = 0;
-                try {
-                    unflushedBytes.set(0);
-                    exportProvider.flush();
-                } catch (Exception e) {
-                    LOGGER.error("error during flush", e);
-                    err = Error.EIO;
-                } finally {
-                    sendTransmissionSimpleReply(ctx, err, cmdHandle, null);
-                }
+                Runnable flushOperation = createFlushOperation(ctx, opParams.cmdHandle);
+                executor.execute(flushOperation);
                 break;
             }
             case Protocol.NBD_CMD_TRIM: {
-                final long cmdOffset = this.cmdOffset;
-                final long cmdLength = this.cmdLength;
-                final long cmdHandle = this.cmdHandle;
-                LOGGER.debug("trimming from {} length {}", cmdOffset, cmdLength);
+                LOGGER.debug("trimming from {} length {}", opParams.cmdOffset, opParams.cmdLength);
 
-                int err = 0;
-                try {
-                    exportProvider.trim(cmdOffset, cmdLength);
-                } catch (Exception e) {
-                    LOGGER.error("error during trim", e);
-                    err = Error.EIO;
-                } finally {
-                    sendTransmissionSimpleReply(ctx, err, cmdHandle, null);
-                }
+                Runnable trimOperation = () -> {
+                    int err = 0;
+                    try {
+                        exportProvider.trim(opParams.cmdOffset, opParams.cmdLength);
+                    } catch (Exception e) {
+                        LOGGER.error("error during trim", e);
+                        err = Error.EIO;
+                    } finally {
+                        sendTransmissionSimpleReply(ctx, err, opParams.cmdHandle, null);
+                    }
+                };
+                executor.execute(trimOperation);
                 break;
             }
             default:
-                sendTransmissionSimpleReply(ctx, Protocol.NBD_REP_ERR_INVALID, cmdHandle, null);
+                sendTransmissionSimpleReply(ctx, Protocol.NBD_REP_ERR_INVALID, opParams.cmdHandle, null);
         }
     }
 
-    private void readOperationParameters(ChannelHandlerContext ctx, ByteBuf message) throws IOException {
-        if (message.readInt() != Protocol.NBD_REQUEST_MAGIC) {
-            throw new IllegalArgumentException("Invalid request magic!");
+    private void freeIfNeeded(OperationParameters operationParameters) {
+        final long l = checkReadCacheBytes.addAndGet(operationParameters.cmdLength);
+        if (l > maxUnflushedBytes) {
+            checkFreeMem();
+            checkReadCacheBytes.set(0);
         }
+    }
 
-        cmdFlags = message.readShort();
-        cmdType = message.readShort();
-        cmdHandle = message.readLong();
-        cmdOffset = message.readLong();
-        cmdLength = message.readUnsignedInt(); //needs to be treated as long
+    void freeAndFlushIfNeeded(OperationParameters operationParameters) throws IOException {
+        final long sum = unflushedBytes.addAndGet(operationParameters.cmdLength);
+        if (sum > maxUnflushedBytes) { //tune this number
+            LOGGER.debug("Rohr voll, ZWISCHENSPÜLUNG!");
+            checkFreeMem();
+            exportProvider.flush(); //this hopefully flushes all and blocks until it is fully done
+            unflushedBytes.set(0);
+            unflushedBytes.addAndGet(operationParameters.cmdLength); //i just flushed, but this write counts already for the next
+        }
+    }
+
+    private Runnable createWriteOperation(ChannelHandlerContext ctx, OperationParameters operationParameters, ByteBuf buf) {
+        return () -> {
+            int err = 0;
+            try {
+                //FIXME: use FUA/sync flag correctly
+                exportProvider.write(operationParameters.cmdOffset, buf.nioBuffer(), false);
+            } catch (Exception e) {
+                LOGGER.error("error during write", e);
+                err = Error.EIO;
+            } finally {
+                sendTransmissionSimpleReply(ctx, err, operationParameters.cmdHandle, null);
+                buf.release();
+            }
+        };
+    }
+
+    private Runnable createFlushOperation(ChannelHandlerContext ctx, long cmdHandle) {
+    /* todo  we must drain all NBD_CMD_WRITE and NBD_WRITE_TRIM from the queue
+     * before processing NBD_CMD_FLUSH
+     */
+        return () -> {
+            int err = 0;
+            try {
+                unflushedBytes.set(0);
+                exportProvider.flush();
+            } catch (Exception e) {
+                LOGGER.error("error during flush", e);
+                err = Error.EIO;
+            } finally {
+                sendTransmissionSimpleReply(ctx, err, cmdHandle, null);
+            }
+        };
+    }
+
+    private Runnable createReadOperation(ChannelHandlerContext ctx, OperationParameters operationParameters) {
+        return () -> {
+            ByteBuf data = null;
+            int err = 0;
+            try {
+                //FIXME: use FUA/sync flag correctly
+                ByteBuffer bb = exportProvider.read(operationParameters.cmdOffset, Ints.checkedCast(operationParameters.cmdLength));
+                data = Unpooled.wrappedBuffer(bb);
+                checkReadLength(operationParameters, data);
+            } catch (Exception e) {
+                LOGGER.error("error during read", e);
+                err = Error.EIO;
+            } finally {
+                sendTransmissionSimpleReply(ctx, err, operationParameters.cmdHandle, data);
+            }
+        };
+    }
+
+    private void checkReadLength(OperationParameters operationParameters, ByteBuf data) {
+        final int actuallyRead = data.writerIndex() - data.readerIndex();
+        if (actuallyRead != operationParameters.cmdLength) {
+
+            LOGGER.error("responding to from {} length {} handle {}", operationParameters.cmdOffset, actuallyRead, operationParameters.cmdHandle);
+            final String msg = "i messed up and tried to return the wrong about of read data.. " +
+                    "from " + operationParameters.cmdOffset +
+                    " length " + actuallyRead +
+                    " requested " + operationParameters.cmdLength +
+                    " handle " + operationParameters.cmdHandle;
+            throw new IllegalStateException(msg);
+        }
     }
 
     private void sendTransmissionSimpleReply(ChannelHandlerContext ctx, int error, long handle, ByteBuf data) {
@@ -281,9 +306,6 @@ public class TransmissionPhase extends ByteToMessageDecoder {
         logPendingOperations();
     }
 
-    private volatile boolean loggedHighPending = false;
-    private volatile long lastLog;
-
     private void logPendingOperations() {
         final int pendingOperations = this.pendingOperations.decrementAndGet();
         if (pendingOperations == 0 && loggedHighPending) {
@@ -296,6 +318,47 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 loggedHighPending = true;
                 LOGGER.debug("pending operations: {}", pendingOperations);
             }
+        }
+    }
+
+    private enum State {TM_RECEIVE_CMD, TM_RECEIVE_CMD_DATA, LIMBO}
+
+    private static class Error {
+        public final static int EIO = 5;
+    }
+
+    private static class OperationParameters {
+
+        private static final OperationParameters LIMBO_STATE = new OperationParameters(State.LIMBO);
+        private static final OperationParameters RECEIVE_STATE = new OperationParameters(State.TM_RECEIVE_CMD);
+
+        final short cmdFlags;
+        final short cmdType;
+        final long cmdHandle;
+        final long cmdOffset;
+        final long cmdLength;
+        final State state;
+
+        private OperationParameters(ByteBuf message) {
+            cmdFlags = message.readShort();
+            cmdType = message.readShort();
+            cmdHandle = message.readLong();
+            cmdOffset = message.readLong();
+            cmdLength = message.readUnsignedInt();
+            state = State.TM_RECEIVE_CMD_DATA;
+        }
+
+        private OperationParameters(State state) {
+            this.state = state;
+            cmdFlags = -1;
+            cmdType = -1;
+            cmdHandle = -1;
+            cmdOffset = -1;
+            cmdLength = -1;
+        }
+
+        public static OperationParameters readFromMessage(ByteBuf message) {
+            return new OperationParameters(message);
         }
     }
 }
