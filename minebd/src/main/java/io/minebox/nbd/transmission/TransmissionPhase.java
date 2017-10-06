@@ -1,9 +1,11 @@
-package io.minebox.nbd;
+package io.minebox.nbd.transmission;
 
 import com.google.common.base.Charsets;
 import com.google.common.primitives.Ints;
 import com.sun.management.OperatingSystemMXBean;
 import io.minebox.config.MinebdConfig;
+import io.minebox.nbd.BlockingExecutor;
+import io.minebox.nbd.Protocol;
 import io.minebox.nbd.ep.ExportProvider;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -48,46 +50,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
         this.minFreeSystemMem = config.minFreeSystemMem.toBytes();
         this.exportProvider = exportProvider;
         executor = new BlockingExecutor(10, 20);
-//        cleanupRunning = true;
         osBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
-
-/*        cleanupThread = new Thread("cleanup") {
-            @Override
-            public void run() {
-                while (cleanupRunning) { //todo check if needed
-                    checkFreeMem();
-                    try {
-                        Thread.sleep(5000);
-                    } catch (InterruptedException e) {
-                        //nothing
-                    }
-
-                }
-
-            }
-        }*/
-        ;
-//        cleanupThread.start();
-    }
-
-    private static boolean hasMin(ByteBuf in, long wanted) {
-        final int readableBytes = in.readableBytes();
-        return readableBytes >= wanted;
-    }
-
-    private void checkFreeMem() {
-        final long freeMem = osBean.getFreePhysicalMemorySize();
-        if (freeMem < minFreeSystemMem) {
-            LOGGER.info("free mem {} too small, dropping caches", freeMem);
-            final byte[] bytes = "3".getBytes(Charsets.UTF_8);
-            try {
-                Files.write(Paths.get("/proc/sys/vm/drop_caches"), bytes);
-            } catch (AccessDeniedException e) {
-                LOGGER.debug("was worth a try ;)");
-            } catch (IOException e) {
-                LOGGER.error("unable to free memory", e);
-            }
-        }
     }
 
     @Override
@@ -132,7 +95,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                                     buf = in.readBytes(Ints.checkedCast(op.cmdLength));
                                 } catch (Exception e) {
                                     LOGGER.error("error during preparation of write", e);
-                                    sendTransmissionSimpleReply(ctx, Error.EIO, op.cmdHandle, null);
+                                    sendTransmissionSimpleReply(ctx, Protocol.EIO_ERROR, op.cmdHandle, null);
                                     break;
                                 }
                             }
@@ -184,24 +147,19 @@ public class TransmissionPhase extends ByteToMessageDecoder {
             }
             case Protocol.NBD_CMD_TRIM: {
                 LOGGER.debug("trimming from {} length {}", opParams.cmdOffset, opParams.cmdLength);
-
-                Runnable trimOperation = () -> {
-                    int err = 0;
-                    try {
-                        exportProvider.trim(opParams.cmdOffset, opParams.cmdLength);
-                    } catch (Exception e) {
-                        LOGGER.error("error during trim", e);
-                        err = Error.EIO;
-                    } finally {
-                        sendTransmissionSimpleReply(ctx, err, opParams.cmdHandle, null);
-                    }
-                };
+                Runnable trimOperation = createTrimOperation(ctx, opParams);
                 executor.execute(trimOperation);
                 break;
             }
             default:
                 sendTransmissionSimpleReply(ctx, Protocol.NBD_REP_ERR_INVALID, opParams.cmdHandle, null);
         }
+    }
+
+
+    private static boolean hasMin(ByteBuf in, long wanted) {
+        final int readableBytes = in.readableBytes();
+        return readableBytes >= wanted;
     }
 
     private void freeIfNeeded(OperationParameters operationParameters) {
@@ -212,7 +170,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
         }
     }
 
-    void freeAndFlushIfNeeded(OperationParameters operationParameters) throws IOException {
+    private void freeAndFlushIfNeeded(OperationParameters operationParameters) throws IOException {
         final long sum = unflushedBytes.addAndGet(operationParameters.cmdLength);
         if (sum > maxUnflushedBytes) { //tune this number
             LOGGER.debug("Rohr voll, ZWISCHENSPÜLUNG!");
@@ -223,6 +181,39 @@ public class TransmissionPhase extends ByteToMessageDecoder {
         }
     }
 
+    private void checkFreeMem() {
+        final long freeMem = osBean.getFreePhysicalMemorySize();
+        if (freeMem < minFreeSystemMem) {
+            LOGGER.info("free mem {} too small, dropping caches", freeMem);
+            final byte[] bytes = "3".getBytes(Charsets.UTF_8);
+            try {
+                Files.write(Paths.get("/proc/sys/vm/drop_caches"), bytes);
+            } catch (AccessDeniedException e) {
+                LOGGER.debug("was worth a try ;)");
+            } catch (IOException e) {
+                LOGGER.error("unable to free memory", e);
+            }
+        }
+    }
+
+    private Runnable createReadOperation(ChannelHandlerContext ctx, OperationParameters operationParameters) {
+        return () -> {
+            ByteBuf data = null;
+            int err = 0;
+            try {
+                //FIXME: use FUA/sync flag correctly
+                ByteBuffer bb = exportProvider.read(operationParameters.cmdOffset, Ints.checkedCast(operationParameters.cmdLength));
+                data = Unpooled.wrappedBuffer(bb);
+                checkReadLength(operationParameters, data);
+            } catch (Exception e) {
+                LOGGER.error("error during read", e);
+                err = Protocol.EIO_ERROR;
+            } finally {
+                sendTransmissionSimpleReply(ctx, err, operationParameters.cmdHandle, data);
+            }
+        };
+    }
+
     private Runnable createWriteOperation(ChannelHandlerContext ctx, OperationParameters operationParameters, ByteBuf buf) {
         return () -> {
             int err = 0;
@@ -231,7 +222,7 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 exportProvider.write(operationParameters.cmdOffset, buf.nioBuffer(), false);
             } catch (Exception e) {
                 LOGGER.error("error during write", e);
-                err = Error.EIO;
+                err = Protocol.EIO_ERROR;
             } finally {
                 sendTransmissionSimpleReply(ctx, err, operationParameters.cmdHandle, null);
                 buf.release();
@@ -250,27 +241,23 @@ public class TransmissionPhase extends ByteToMessageDecoder {
                 exportProvider.flush();
             } catch (Exception e) {
                 LOGGER.error("error during flush", e);
-                err = Error.EIO;
+                err = Protocol.EIO_ERROR;
             } finally {
                 sendTransmissionSimpleReply(ctx, err, cmdHandle, null);
             }
         };
     }
 
-    private Runnable createReadOperation(ChannelHandlerContext ctx, OperationParameters operationParameters) {
+    private Runnable createTrimOperation(ChannelHandlerContext ctx, OperationParameters opParams) {
         return () -> {
-            ByteBuf data = null;
             int err = 0;
             try {
-                //FIXME: use FUA/sync flag correctly
-                ByteBuffer bb = exportProvider.read(operationParameters.cmdOffset, Ints.checkedCast(operationParameters.cmdLength));
-                data = Unpooled.wrappedBuffer(bb);
-                checkReadLength(operationParameters, data);
+                exportProvider.trim(opParams.cmdOffset, opParams.cmdLength);
             } catch (Exception e) {
-                LOGGER.error("error during read", e);
-                err = Error.EIO;
+                LOGGER.error("error during trim", e);
+                err = Protocol.EIO_ERROR;
             } finally {
-                sendTransmissionSimpleReply(ctx, err, operationParameters.cmdHandle, data);
+                sendTransmissionSimpleReply(ctx, err, opParams.cmdHandle, null);
             }
         };
     }
@@ -319,44 +306,4 @@ public class TransmissionPhase extends ByteToMessageDecoder {
         }
     }
 
-    private enum State {TM_RECEIVE_CMD, TM_RECEIVE_CMD_DATA, LIMBO}
-
-    private static class Error {
-        public final static int EIO = 5;
-    }
-
-    private static class OperationParameters {
-
-        private static final OperationParameters LIMBO_STATE = new OperationParameters(State.LIMBO);
-        private static final OperationParameters RECEIVE_STATE = new OperationParameters(State.TM_RECEIVE_CMD);
-
-        final short cmdFlags;
-        final short cmdType;
-        final long cmdHandle;
-        final long cmdOffset;
-        final long cmdLength;
-        final State state;
-
-        private OperationParameters(ByteBuf message) {
-            cmdFlags = message.readShort();
-            cmdType = message.readShort();
-            cmdHandle = message.readLong();
-            cmdOffset = message.readLong();
-            cmdLength = message.readUnsignedInt();
-            state = State.TM_RECEIVE_CMD_DATA;
-        }
-
-        private OperationParameters(State state) {
-            this.state = state;
-            cmdFlags = -1;
-            cmdType = -1;
-            cmdHandle = -1;
-            cmdOffset = -1;
-            cmdLength = -1;
-        }
-
-        public static OperationParameters readFromMessage(ByteBuf message) {
-            return new OperationParameters(message);
-        }
-    }
 }

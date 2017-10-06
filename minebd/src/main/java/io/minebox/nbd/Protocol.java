@@ -59,4 +59,5 @@ public class Protocol {
     public static final long IHAVEOPT = 0x49484156454F5054L; // (ASCII 'IHAVEOPT');
 
     public static final long HANDSHAKE_REPLY_MAGIC = 0x3e889045565a9L;
+    public final static int EIO_ERROR = 5;
 }
