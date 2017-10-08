@@ -8,6 +8,8 @@ User=sia
 Nice=5
 # WorkingDirectory may not be required but to be sure.
 WorkingDirectory=/mnt/lower1/sia
+#this could be more dynamic, but if we don't limit this, we will get swap problems.
+MemoryLimit=2G
 ExecStart=/usr/bin/siad --sia-directory /mnt/lower1/sia
 Restart=on-failure
 RestartSec=30
