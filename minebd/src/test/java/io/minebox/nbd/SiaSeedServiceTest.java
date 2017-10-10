@@ -62,6 +62,16 @@ public class SiaSeedServiceTest {
     }
 
     @Test
+    public void makeSingleSeed() {
+        final SiaSeedService siaSeedService = new SiaSeedService(null);
+        final List<String> words = siaSeedService.buildSiaSeed("123");
+        final String wordsList = Joiner.on(" ").join(words);
+        Assert.assertEquals("hotel musical lending pheasants tidy awkward owed viking mews pimple river coexist noises bikini cowl enjoy rebel vapidly envy twofold peculiar unnoticed tobacco punch gels avidly pepper nimbly agile", wordsList);
+
+    }
+
+
+    @Test
     public void getSiaSeed() throws Exception {
         final SiaSeedService siaSeedService = new SiaSeedService(new StaticEncyptionKeyProvider("123"));
 //        final List<String> strings = siaSeedService.buildSiaSeed("123");
