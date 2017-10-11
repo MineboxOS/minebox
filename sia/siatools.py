@@ -268,9 +268,11 @@ def _rebalance_hosting_to_ratio():
         current_app.logger.error("Sia error %s: %s" % (sia_status_code,
                                                        siadata["message"]))
         return False
+    used_space = 0
     if siadata["folders"]:
         for folder in siadata["folders"]:
             folderdata[folder["path"]] = folder
+            used_space += (folder["capacity"] - folder["capacityremaining"])
 
     success = True
 
@@ -284,8 +286,10 @@ def _rebalance_hosting_to_ratio():
         os.chown(hostpath, uid, gid)
         hostspace = _get_btrfs_space(hostpath)
         if hostspace:
-            # TODO: Add already hosted size to free space!
-            raw_size = (hostspace["free_est"]
+            # We need to add already used hosting space to free space in this
+            # calculation, otherwise hosted files would reduce the hosting
+            # capacity!
+            raw_size = ((hostspace["free_est"] + used_space)
                         * settings["minebox_sharing"]["shared_space_ratio"])
             # The actual share size must be a multiple of the granularity.
             share_size = int((raw_size // SIA_HOST_GRANULARITY)
