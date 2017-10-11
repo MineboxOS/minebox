@@ -293,16 +293,17 @@ def _rebalance_hosting_to_ratio():
         else:
             share_size = 0
         if hostpath in folderdata:
-            # Existing folder, (try to) resize it.
-            current_app.logger.info("Resize Sia hosting space at %s to %s MB.",
-                                    hostpath, int(share_size // 2**20))
-            siadata, sia_status_code = post_to_sia("host/storage/folders/resize",
-                                                   {"path": hostpath,
-                                                    "newsize": share_size})
-            if sia_status_code >= 400:
-                current_app.logger.error("Sia error %s: %s" %
-                                          (sia_status_code, siadata["message"]))
-                success = False
+            # Existing folder, (try to) resize it if necessary.
+            if folderdata[hostpath]["capacity"] != share_size:
+                current_app.logger.info("Resize Sia hosting space at %s to %s MB.",
+                                        hostpath, int(share_size // 2**20))
+                siadata, sia_status_code = post_to_sia("host/storage/folders/resize",
+                                                       {"path": hostpath,
+                                                        "newsize": share_size})
+                if sia_status_code >= 400:
+                    current_app.logger.error("Sia error %s: %s" %
+                                              (sia_status_code, siadata["message"]))
+                    success = False
         else:
             # New folder, add it.
             current_app.logger.info("Add Sia hosting space at %s with %s MB.",
