@@ -183,7 +183,8 @@ def update_sia_config():
     if sia_status_code >= 400:
         # If we can't get the current settings, no use in comparing to new ones.
         return False
-    if not siadata["internalsettings"]["acceptingcontracts"]:
+    if (not siadata["internalsettings"]["acceptingcontracts"]
+        and not settings["minebox_sharing"]["enabled"]):
         # If hosting is deactivated, pings will call setup_sia_system()
         # This will care about settings so we don't do anything here.
         return True
