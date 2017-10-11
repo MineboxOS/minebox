@@ -19,6 +19,9 @@ from connecttools import (get_from_sia, post_to_sia, get_from_minebd,
 # if you want to do decimal math with such high precision.
 H_PER_SC=10**24 # hastings per siacoin ("siacoinprecision" in /daemon/constants)
 SEC_PER_BLOCK=600 # seconds per block ("blockfrequency" in /daemon/constants)
+EST_SEC_PER_BLOCK = 9 * 60 # estimate shorter block time for better UX
+KNOWNBLOCK_HEIGHT = 100000
+KNOWNBLOCK_DATETIME = datetime(2017, 4, 13, 23, 29, 49, 0) # Assumes UTC
 SIA_CONFIG_JSON="/etc/minebox/sia_config.json"
 SIA_DIR="/mnt/lower1/sia"
 HOST_DIR_BASE_MASK="/mnt/lower*"
@@ -399,11 +402,17 @@ def estimate_current_height():
     # Estimate current block height so we can estimate a sync progress.
     # See https://github.com/NebulousLabs/Sia/blob/master/siac/consensuscmd.go#L50
     est_datetime = datetime.now()
-    block100k_datetime = datetime(2017, 4, 13, 23, 29, 49, 0) # Assumes UTC
-    block_seconds = 9 * 60 # estimate shorter block time for better UX
-    diff_seconds = (est_datetime - block100k_datetime).total_seconds()
-    est_height = 100000 + round(float(diff_seconds) / block_seconds)
+    diff_seconds = (est_datetime - KNOWNBLOCK_DATETIME).total_seconds()
+    est_height = KNOWNBLOCK_HEIGHT + round(float(diff_seconds)
+                                           / EST_SEC_PER_BLOCK)
     return est_height
+
+def estimate_datetime_for_height(blockheight):
+    # Estimate a timestamp for a block height for display in the UI.
+    est_dt = (KNOWNBLOCK_DATETIME
+              + timedelta(seconds=((blockheight - KNOWNBLOCK_HEIGHT)
+                                   * SEC_PER_BLOCK)))
+    return est_dt
 
 def _get_btrfs_space(diskpath):
     spaceinfo = {}

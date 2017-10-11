@@ -321,6 +321,7 @@ def get_upload_status(backupfileinfo, uploadfiles, is_archived=False):
       "fully_available": True,
     }
     redundancy = []
+    expiration = []
     # create a dict generated from the JSON response.
     sia_map = dict((d["siapath"], index)
                     for (index, d) in enumerate(sia_filedata["files"]))
@@ -338,6 +339,7 @@ def get_upload_status(backupfileinfo, uploadfiles, is_archived=False):
                                               fdata["uploadprogress"] /
                                               100.0)
             redundancy.append(fdata["redundancy"])
+            expiration.append(fdata["expiration"])
             if not fdata["available"]:
                 upstatus["fully_available"] = False
         elif re.match(r".*\.dat$", finfo["siapath"]):
@@ -364,4 +366,5 @@ def get_upload_status(backupfileinfo, uploadfiles, is_archived=False):
                                           upstatus["backupsize"]
                                   if upstatus["backupsize"] else 100)
     upstatus["min_redundancy"] = min(redundancy) if redundancy else 0
+    upstatus["earliest_expiration"] = min(expiration) if expiration else 0
     return upstatus
