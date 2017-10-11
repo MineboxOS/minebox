@@ -8,6 +8,8 @@ from glob import glob
 from datetime import datetime
 import subprocess
 import os
+import pwd
+import grp
 import re
 import time
 
@@ -30,6 +32,9 @@ MINEBD_STORAGE_PATH="/mnt/storage"
 MINEBD_DEVICE_PATH="/dev/nbd0"
 UPPER_SPACE_MIN=50*(2**20)
 UPPER_SPACE_TARGET=100*(2**20)
+# Granularity of Sia hosting folders, see
+# https://github.com/NebulousLabs/Sia/blob/master/modules/host/contractmanager/consts.go#L57-L66
+SIA_HOST_GRANULARITY = 64 * 4 * (2**20)
 
 def check_sia_sync():
     # Check if sia is running and in sync before doing other sia actions.
@@ -263,8 +268,9 @@ def _rebalance_hosting_to_ratio():
         current_app.logger.error("Sia error %s: %s" % (sia_status_code,
                                                        siadata["message"]))
         return False
-    for folder in siadata["folders"]:
-        folderdata[folder["path"]] = folder
+    if siadata["folders"]:
+        for folder in siadata["folders"]:
+            folderdata[folder["path"]] = folder
 
     success = True
 
@@ -272,15 +278,24 @@ def _rebalance_hosting_to_ratio():
         hostpath = os.path.join(basepath, HOST_DIR_NAME)
         if not os.path.isdir(hostpath):
             subprocess.call(['/usr/sbin/btrfs', 'subvolume', 'create', hostpath])
+        # Make sure the directory is owned by the sia user and group.
+        uid = pwd.getpwnam("sia").pw_uid
+        gid = grp.getgrnam("sia").gr_gid
+        os.chown(hostpath, uid, gid)
         hostspace = _get_btrfs_space(hostpath)
         if hostspace:
-            share_size = hostspace["free_est"] * settings["minebox_sharing"]["shared_space_ratio"]
+            # TODO: Add already hosted size to free space!
+            raw_size = (hostspace["free_est"]
+                        * settings["minebox_sharing"]["shared_space_ratio"])
+            # The actual share size must be a multiple of the granularity.
+            share_size = int((raw_size // SIA_HOST_GRANULARITY)
+                             * SIA_HOST_GRANULARITY)
         else:
             share_size = 0
         if hostpath in folderdata:
             # Existing folder, (try to) resize it.
             current_app.logger.info("Resize Sia hosting space at %s to %s MB.",
-                                    hostpath, (share_size // 2**20))
+                                    hostpath, int(share_size // 2**20))
             siadata, sia_status_code = post_to_sia("host/storage/folders/resize",
                                                    {"path": hostpath,
                                                     "newsize": share_size})
@@ -291,7 +306,7 @@ def _rebalance_hosting_to_ratio():
         else:
             # New folder, add it.
             current_app.logger.info("Add Sia hosting space at %s with %s MB.",
-                                    hostpath, (share_size // 2**20))
+                                    hostpath, int(share_size // 2**20))
             siadata, sia_status_code = post_to_sia("host/storage/folders/add",
                                                    {"path": hostpath,
                                                     "size": share_size})
