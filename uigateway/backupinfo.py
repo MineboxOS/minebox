@@ -8,9 +8,11 @@ from os.path import isfile, isdir, join
 import os
 from glob import glob
 from zipfile import ZipFile
+from datetime import datetime
 import time
 import re
 from connecttools import get_from_sia, get_from_backupservice
+from siatools import estimate_datetime_for_height
 
 
 DATADIR_MASK="/mnt/lower*/data"
@@ -21,6 +23,20 @@ INFO_FILENAME="fileinfo"
 
 def get_status(backupname, allow_old=False, use_cache=True):
     status_code = 0
+    backupstatus = {
+      "name": backupname,
+      "time_snapshot": None,
+      "status": None,
+      "metadata": None,
+      "numFiles": None,
+      "size": None,
+      "progress": 0,
+      "relative_size": None,
+      "relative_progress": 0,
+      "min_redundancy": None,
+      "earliest_expiration": None,
+      "earliest_expiration_esttime": None,
+    }
 
     # If use of cache was refused, or we do not have a status from
     # backupservice yet or timestamp is older than 60 seconds, fetch a new one,
@@ -43,34 +59,36 @@ def get_status(backupname, allow_old=False, use_cache=True):
     if get_status.bsdata:
         for binfo in get_status.bsdata["backup_info"]:
             if binfo["name"] == backupname:
-                time_snapshot = binfo["time_snapshot"]
-                files = binfo["filecount"]
-                total_size = binfo["size"]
-                rel_size = binfo["upload_size"]
-                progress = binfo["total_progress"]
-                rel_progress = binfo["upload_progress"]
+                backupstatus["time_snapshot"] = binfo["time_snapshot"]
+                backupstatus["numFiles"] = binfo["filecount"]
+                backupstatus["size"] = binfo["size"]
+                backupstatus["relative_size"] = binfo["upload_size"]
+                backupstatus["progress"] = binfo["total_progress"]
+                backupstatus["relative_progress"] = binfo["upload_progress"]
+                backupstatus["min_redundancy"] = binfo["min_redundancy"]
+                backupstatus["earliest_expiration"] = binfo["earliest_expiration"]
                 fully_available = binfo["fully_available"]
                 if binfo["failed"]:
-                    status = "ERROR"
-                    metadata = "ERROR"
+                    backupstatus["status"] = "ERROR"
+                    backupstatus["metadata"] = "ERROR"
                     status_code = 503
                 elif binfo["finished"] and binfo["metadata_uploaded"]:
-                    status = "FINISHED"
-                    metadata = "FINISHED"
+                    backupstatus["status"] = "FINISHED"
+                    backupstatus["metadata"] = "FINISHED"
                     # Do not set status code as we need to update the progress
                     # because backup service stops updating it after finish.
                     #status_code = 200
                 elif binfo["finished"]:
-                    status = "FINISHED"
-                    metadata = "UPLOADING"
+                    backupstatus["status"] = "FINISHED"
+                    backupstatus["metadata"] = "UPLOADING"
                     status_code = 200
                 elif binfo["upload_size"]:
-                    status = "UPLOADING"
-                    metadata = "PENDING"
+                    backupstatus["status"] = "UPLOADING"
+                    backupstatus["metadata"] = "PENDING"
                     status_code = 200
                 else:
-                    status = "PENDING"
-                    metadata = "PENDING"
+                    backupstatus["status"] = "PENDING"
+                    backupstatus["metadata"] = "PENDING"
                     status_code = 200
                 if not binfo["size"]:
                     # Clean cache, we may have info the next time we're called.
@@ -80,32 +98,26 @@ def get_status(backupname, allow_old=False, use_cache=True):
         backupfileinfo, is_finished, is_archived = get_fileinfo(backupname)
 
         status_code = 200
-        time_snapshot = int(backupname)
+        backupstatus["time_snapshot"] = int(backupname)
         if backupfileinfo is None:
             # This backup has no file info available or doesn't exist.
             status_code = 404
-            files = -1
-            total_size = -1
-            rel_size = -1
-            progress = 100 if is_finished else 0
-            rel_progress = 100 if is_finished else 0
-            status = "ERROR"
-            metadata = "ERROR"
+            backupstatus["progress"] = 100 if is_finished else 0
+            backupstatus["relative_progress"] = 100 if is_finished else 0
+            backupstatus["status"] = "ERROR"
+            backupstatus["metadata"] = "ERROR"
             fully_available = False
         elif len(backupfileinfo) < 1:
             # Before uploads are scheduled, we find a backup but no files.
             # If we believe we are finished/archived though, the data is damaged.
-            files = -1
-            total_size = -1
-            rel_size = -1
-            progress = 0
-            rel_progress = 0
+            backupstatus["progress"] = 0
+            backupstatus["relative_progress"] = 0
             if is_archived or is_finished:
-                status = "DAMAGED"
-                metadata = "DAMAGED"
+                backupstatus["status"] = "DAMAGED"
+                backupstatus["metadata"] = "DAMAGED"
             else:
-                status = "PENDING"
-                metadata = "PENDING"
+                backupstatus["status"] = "PENDING"
+                backupstatus["metadata"] = "PENDING"
             fully_available = False
         else:
             # Nice, we actually have good file info.
@@ -124,56 +136,48 @@ def get_status(backupname, allow_old=False, use_cache=True):
             # Get actual status (this queries Sia).
             upstatus = get_upload_status(backupfileinfo, uploadfiles, is_archived)
             if upstatus:
-                files = upstatus["filecount"]
-                total_size = upstatus["backupsize"]
-                rel_size = upstatus["uploadsize"]
-                progress = upstatus["totalprogress"]
-                rel_progress = upstatus["uploadprogress"]
+                backupstatus["files"] = upstatus["filecount"]
+                backupstatus["size"] = upstatus["backupsize"]
+                backupstatus["progress"] = upstatus["totalprogress"]
+                backupstatus["relative_size"] = upstatus["uploadsize"]
+                backupstatus["relative_progress"] = upstatus["uploadprogress"]
+                backupstatus["min_redundancy"] = upstatus["min_redundancy"]
+                backupstatus["earliest_expiration"] = upstatus["earliest_expiration"]
                 if is_archived:
-                    status = "ARCHIVED"
+                    backupstatus["status"] = "ARCHIVED"
                 elif is_finished and upstatus["fully_available"]:
-                    status = "FINISHED"
+                    backupstatus["status"] = "FINISHED"
                 elif is_finished and not upstatus["fully_available"]:
-                    status = "DAMAGED"
+                    backupstatus["status"] = "DAMAGED"
                 elif upstatus["total_uploaded_size"]:
-                    status = "UPLOADING"
+                    backupstatus["status"] = "UPLOADING"
                 else:
-                    status = "PENDING"
+                    backupstatus["status"] = "PENDING"
                 if is_finished:
                     # Assume metadata is always uploaded when we are finished.
                     # As right now we report finished only if we have a .zip but no
                     # directory, and we delete the directory only after metadata
                     # upload is done, this is actually the case.
-                    metadata = "FINISHED"
+                    backupstatus["metadata"] = "FINISHED"
                 elif is_archived:
                     # Archived backups that are not finished are missing metadata.
-                    metadata = "DAMAGED"
+                    backupstatus["metadata"] = "DAMAGED"
                 else:
                     # Otherwise, always report pending metadata.
-                    metadata = "PENDING"
+                    backupstatus["metadata"] = "PENDING"
                 fully_available = upstatus["fully_available"]
             else:
                 status_code = 503
-                files = -1
-                total_size = -1
-                rel_size = -1
-                progress = 0
-                rel_progress = 0
-                status = "ERROR"
-                metadata = "ERROR"
+                backupstatus["status"] = "ERROR"
+                backupstatus["metadata"] = "ERROR"
                 fully_available = False
 
-    return {
-      "name": backupname,
-      "time_snapshot": time_snapshot,
-      "status": status,
-      "metadata": metadata,
-      "numFiles": files,
-      "size": total_size,
-      "progress": progress,
-      "relative_size": rel_size,
-      "relative_progress": rel_progress,
-    }, status_code
+    if backupstatus["earliest_expiration"]:
+        backupstatus["earliest_expiration_esttime"] = int(
+            (estimate_datetime_for_height(backupstatus["earliest_expiration"])
+             - datetime(1970, 1, 1)).total_seconds())
+
+    return backupstatus, status_code
 
 
 def get_list(include_old=False):

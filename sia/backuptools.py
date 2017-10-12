@@ -123,6 +123,8 @@ def initiate_uploads(status):
     status["uploadfiles"] = []
     status["backupsize"] = 0
     status["uploadsize"] = 0
+    status["min_redundancy"] = None
+    status["earliest_expiration"] = None
     for filepath in glob(path.join(DATADIR_MASK, 'snapshots', snapname, mbdirname, '*.dat')):
         fileinfo = stat(filepath)
         # Only use files of non-zero size.
@@ -184,7 +186,8 @@ def wait_for_uploads(status):
         if upstatus:
             status["uploadprogress"] = upstatus["uploadprogress"]
             status["totalprogress"] = upstatus["totalprogress"]
-            min_redundancy = upstatus["min_redundancy"]
+            status["min_redundancy"] = upstatus["min_redundancy"]
+            status["earliest_expiration"] = upstatus["earliest_expiration"]
             # Break if the backup is fully available on sia and has enough
             # minimum redundancy.
             if (upstatus["fully_available"]

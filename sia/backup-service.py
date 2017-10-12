@@ -92,6 +92,8 @@ def api_start():
           "upload_size": threadstatus[tname]["uploadsize"],
           "upload_progress": threadstatus[tname]["uploadprogress"],
           "total_progress": threadstatus[tname]["totalprogress"],
+          "min_redundancy": threadstatus[tname]["min_redundancy"],
+          "earliest_expiration": threadstatus[tname]["earliest_expiration"],
           "fully_available": threadstatus[tname]["available"],
           "metadata_uploaded": threadstatus[tname]["metadata_uploaded"],
         })
@@ -213,6 +215,8 @@ def run_backup(startevent, snapname=None):
           "uploadfiles": [],
           "uploadprogress": 0,
           "totalprogress": 0,
+          "min_redundancy": None,
+          "earliest_expiration": None,
           "starttime_thread": time.time(),
           "starttime_step": time.time(),
           "available": False,
