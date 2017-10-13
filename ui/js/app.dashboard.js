@@ -20,10 +20,6 @@ function Dashboard() {
 				url: config.mug.url + 'status',
 				requester: new Requester()
 			},
-			consensusStatus: {
-				url: config.mug.url + 'consensus',
-				requester: new Requester()
-			},
 			siaStatus: {
 				url: config.mug.url + 'sia/status',
 				requester: new Requester()
@@ -37,10 +33,6 @@ function Dashboard() {
 			mineboxStatus: {
 				updated: 'mineboxStatusUpdated',
 				failed: 'mineboxStatusFailed'
-			},
-			networkStatus: {
-				updated: 'networkStatusUpdated',
-				failed: 'networkStatusFailed'
 			},
 			siaStatus: {
 				updated: 'siaStatusUpdated',
@@ -69,7 +61,6 @@ function Dashboard() {
 		},
 		messages: {
 			mineboxStatusFailed: 'Minebox Status not updated or request timed out. Retrying in several seconds.',
-			consensusStatusFailed: 'Consensus Status not updated or request timed out. Retrying in several seconds.',
 			siaStatusFailed: 'Sia Status not updated or request timed out. Retrying in several seconds.',
 			mineBDFailed: 'Looks like Minebox is not running well. Try rebooting your system. If the problem persist, please reach us at minebox.io/support.',
 			consensusNotSynced: 'Minebox is currently syncing with consensus. This operation may take up to several hours depending on your Internet connection.',
@@ -86,7 +77,6 @@ function Dashboard() {
 	//global object for last updated status
 	var STATUS = {
 		mineboxStatus: {},
-		consensusStatus: {},
 		siaStatus: {},
 		backupStatus: {}
 	};
@@ -97,6 +87,7 @@ function Dashboard() {
 	var $minebd_running_witness = $('#minebd_running_witness'),
 		$minebd_encrypted_witness = $('#minebd_encrypted_witness'),
 		$minebd_storage_mounted_witness = $('#minebd_storage_mounted_witness'),
+		$sia_daemon_running_witness = $('#sia_daemon_running_witness'),
 		$consensus_synced_witness = $('#consensus_synced_witness'),
 		$consensus_height_witness = $('#consensus_height_witness'),
 		$contracts_witness = $('#contracts_witness'),
@@ -170,55 +161,6 @@ function Dashboard() {
 			$('body').trigger(CONFIG.events.mineboxStatus.failed);
 			//remove witness from loop
 			loop.removeActiveRequest('minebox');
-
-		});
-	}
-
-
-
-
-
-	function getConsensusStatus() {
-		//adding witness to loop.activeRequests
-		loop.addActiveRequest('consensus');
-
-		//requesting consensus/
-		CONFIG.api.consensusStatus.requester.setURL( CONFIG.api.consensusStatus.url );
-		CONFIG.api.consensusStatus.requester.setCache(false);
-		CONFIG.api.consensusStatus.requester.setCredentials(true);
-		CONFIG.api.consensusStatus.requester.setTimeoutFunc(function() {
-			//changing led color to loading
-			networkLEDColor( CONFIG.LEDColors.loading );
-			//not printing any error because time expiration executes also FAIL function
-		});
-
-		var failedData = {
-			id: 'consensusStatusFailed',
-			type: 'error',
-			message: CONFIG.messages.consensusStatusFailed,
-			autoExpire: false
-		};
-
-		CONFIG.api.consensusStatus.requester.run(function(response) {
-			// If an error exists, remove it.
-			dashboardErrorHandler.remove(failedData.id);
-
-			//update global object
-			STATUS.consensusStatus = response;
-			//rise event
-			$('body').trigger(CONFIG.events.networkStatus.updated);
-			//remove witness from loop
-			loop.removeActiveRequest('consensus');
-
-		}, function(error) {
-			//display error
-			dashboardErrorHandler.print(failedData);
-			//update global object (with empty data)
-			STATUS.consensusStatus = {};
-			//rise event
-			$('body').trigger(CONFIG.events.networkStatus.failed);
-			//remove witness from loop
-			loop.removeActiveRequest('consensus');
 
 		});
 	}
@@ -345,30 +287,27 @@ function Dashboard() {
 	//those functions will be executed on events
 	function fillMineboxStatus() {
 		//fill in all the fields relative to ajax call: getMineboxStatus()
-		$minebd_running_witness.html( STATUS.mineboxStatus.minebd_running );
-		$minebd_encrypted_witness.html( STATUS.mineboxStatus.minebd_encrypted );
-		$minebd_storage_mounted_witness.html( STATUS.mineboxStatus.minebd_storage_mounted );
+		$minebd_running_witness.text( STATUS.mineboxStatus.minebd_running + '' );
+		$minebd_encrypted_witness.text( STATUS.mineboxStatus.minebd_encrypted + '' );
+		$minebd_storage_mounted_witness.text( STATUS.mineboxStatus.minebd_storage_mounted + '' );
+		$sia_daemon_running_witness.text( STATUS.mineboxStatus.sia_daemon_running + '' );
 	}
-
-
-
-
-	function fillConsensusStatus() {
-		//fill in all the fields relative to ajax call: getConsensusStatus()
-		$consensus_synced_witness.html( STATUS.consensusStatus.synced );
-		$consensus_height_witness.html( STATUS.consensusStatus.height );
-	}
-
-
-
 
 	function fillSiaStatus() {
 		//fill in all the fields relative to ajax call: getSiaStatus()
-		$contracts_witness.html( STATUS.siaStatus.renting.contracts );
-		$wallet_unlocked_witness.html( STATUS.siaStatus.wallet.unlocked );
-		$wallet_encrypted_witness.html( STATUS.siaStatus.wallet.encrypted );
-		$wallet_balance_witness.html( STATUS.siaStatus.wallet.confirmed_balance_sc + ' SC' );
-		$wallet_unconfirmed_balance_witness.html( STATUS.siaStatus.wallet.unconfirmed_delta_sc + ' SC' );
+		if (STATUS.siaStatus.consensus.synced) {
+			$consensus_synced_witness.text( 'Synced' );
+		} else if (STATUS.siaStatus.consensus.synced == false) {
+			$consensus_synced_witness.text( STATUS.siaStatus.consensus.sync_progress + '%' );
+		} else {
+			$consensus_synced_witness.text( '-' );
+		}
+		$consensus_height_witness.text( STATUS.siaStatus.consensus.height + '' );
+		$contracts_witness.text( STATUS.siaStatus.renting.contracts + '' );
+		$wallet_unlocked_witness.text( STATUS.siaStatus.wallet.unlocked + '' );
+		$wallet_encrypted_witness.text( STATUS.siaStatus.wallet.encrypted + '' );
+		$wallet_balance_witness.text( STATUS.siaStatus.wallet.confirmed_balance_sc + ' SC' );
+		$wallet_unconfirmed_balance_witness.text( STATUS.siaStatus.wallet.unconfirmed_delta_sc + ' SC' );
 	}
 
 
@@ -449,8 +388,8 @@ function Dashboard() {
 
 
 	function networkLEDColor( LEDColor ) {
-		if ( !$.isEmptyObject( STATUS.consensusStatus ) && !$.isEmptyObject( STATUS.siaStatus ) ) {
-			//there is data within consensusStatus
+		if ( !$.isEmptyObject( STATUS.siaStatus ) ) {
+			//there is data within siaStatus
 			var errorData = {
 				id: 'consensusNotSynced',
 				type: 'warning',
@@ -458,7 +397,7 @@ function Dashboard() {
 				autoExpire: false
 			};
 
-			if ( !STATUS.consensusStatus.synced ) {
+			if ( !STATUS.siaStatus.consensus.synced ) {
 				//changing LED color to YELLOW
 				$networkStatusLED.attr('data-led', CONFIG.LEDColors.check);
 				//print error
@@ -627,14 +566,10 @@ function Dashboard() {
 		fillMineboxStatus();
 		mineboxLEDColor();
 	});
-	$('body').bind( CONFIG.events.networkStatus.updated, function() {
-		fillConsensusStatus();
-		networkLEDColor();
-	});
 	$('body').bind( CONFIG.events.siaStatus.updated, function() {
 		fillSiaStatus();
 		siaLEDColor();
-		networkLEDColor(); //LED color also depends on siaStatus object because of contracts number
+		networkLEDColor(); //LED color also depends on siaStatus object because of consensus status and contracts number
 	});
 	$('body').bind( CONFIG.events.backupStatus.updated, function() {
 		handleBackupStatusWidget();
@@ -804,7 +739,6 @@ function Dashboard() {
 		function theLoop() {
 			//this function is being executed every CONFIG.loop.timeout and if all calls are 
 			getMineboxStatus();
-			getConsensusStatus();
 			getSiaStatus();
 			getBackupStatus();
 		}
