@@ -136,7 +136,7 @@ def get_status(backupname, allow_old=False, use_cache=True):
             # Get actual status (this queries Sia).
             upstatus = get_upload_status(backupfileinfo, uploadfiles, is_archived)
             if upstatus:
-                backupstatus["files"] = upstatus["filecount"]
+                backupstatus["numFiles"] = upstatus["filecount"]
                 backupstatus["size"] = upstatus["backupsize"]
                 backupstatus["progress"] = upstatus["totalprogress"]
                 backupstatus["relative_size"] = upstatus["uploadsize"]
