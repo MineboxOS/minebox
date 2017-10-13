@@ -27,7 +27,9 @@ case "$1" in
     /sbin/iptables -t mangle -A OUTPUT --match owner --uid-owner sia -j MARK --set-mark 10
     for ethdev in $ETHDEVICES; do
       # "root" means outgoing/egress, not classified traffic goes to rule 1:20
-      /sbin/tc qdisc add dev ${ethdev} root handle 1:0 htb default 20
+      # See https://bugs.launchpad.net/vulpes/+bug/322180 about r2q.
+      # r2q 40 should be good between about .5 and 19 MBit settings.
+      /sbin/tc qdisc add dev ${ethdev} root handle 1:0 htb default 20 r2q 40
       # Class 1:10 - Sia. Limit with rate, set lower priority.
       /sbin/tc class add dev ${ethdev} parent 1:0 classid 1:10 htb rate ${RATELIMITKBS}kbps prio 3
       # Class 1:20, common traffic. Limit with network port speed, high priority.
