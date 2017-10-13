@@ -4,7 +4,7 @@ function Requester() {
 
   var CONFIG = {
     cache: false,
-    timeout: 10000
+    timeout: 55000 // ms, just under a minute
   };
 
   function setMethod(method) {
