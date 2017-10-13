@@ -59,7 +59,7 @@ function Dashboard() {
 		},
 		loop: {
 			func: null, //setInterval handler
-			time: 60000 //the time for interval
+			time: 60000 // refresh time in ms
 		},
 		errorHandler: {
 			template: '<div style="display:none;" id="{{id}}" class="{{type}} dashboard-notification"><div class="icon-box"><i class="ic ic-cross"></i><i class="ic ic-checkmark"></i><i class="ic ic-warning"></i></div><div class="notification-content"><h3 class="notification-title" style="display:{{title-visibility}}">{{title}}</h3><p class="notification-text">{{message}}</p></div></div>',
@@ -137,12 +137,22 @@ function Dashboard() {
 		CONFIG.api.mineboxStatus.requester.setURL( CONFIG.api.mineboxStatus.url );
 		CONFIG.api.mineboxStatus.requester.setCache(false);
 		CONFIG.api.mineboxStatus.requester.setCredentials(true);
+
+		var failedData = {
+			id: 'mineboxStatusFailed',
+			type: 'error',
+			message: CONFIG.messages.mineboxStatusFailed,
+			autoExpire: false
+		};
+
 		CONFIG.api.mineboxStatus.requester.setTimeoutFunc(function() {
 			//changing led color to loading
 			mineboxLEDColor( CONFIG.LEDColors.loading );
 			//not printing any error because time expiration executes also FAIL function
 		});
 		CONFIG.api.mineboxStatus.requester.run(function(response) {
+			// If an error exists, remove it.
+			dashboardErrorHandler.remove(failedData.id);
 
 			//update global object
 			STATUS.mineboxStatus = response;
@@ -152,16 +162,8 @@ function Dashboard() {
 			loop.removeActiveRequest('minebox');
 
 		}, function(error) {
-
-			var data = {
-				id: 'mineboxStatusFailed',
-				type: 'error',
-				message: CONFIG.messages.mineboxStatusFailed,
-				autoExpire: false
-			};
-
 			//display error
-			dashboardErrorHandler.print(data);
+			dashboardErrorHandler.print(failedData);
 			//update global object (with empty data)
 			STATUS.mineboxStatus = {};
 			//rise event
@@ -189,7 +191,17 @@ function Dashboard() {
 			networkLEDColor( CONFIG.LEDColors.loading );
 			//not printing any error because time expiration executes also FAIL function
 		});
+
+		var failedData = {
+			id: 'consensusStatusFailed',
+			type: 'error',
+			message: CONFIG.messages.consensusStatusFailed,
+			autoExpire: false
+		};
+
 		CONFIG.api.consensusStatus.requester.run(function(response) {
+			// If an error exists, remove it.
+			dashboardErrorHandler.remove(failedData.id);
 
 			//update global object
 			STATUS.consensusStatus = response;
@@ -199,16 +211,8 @@ function Dashboard() {
 			loop.removeActiveRequest('consensus');
 
 		}, function(error) {
-
-			var data = {
-				id: 'consensusStatusFailed',
-				type: 'error',
-				message: CONFIG.messages.consensusStatusFailed,
-				autoExpire: false
-			};
-
 			//display error
-			dashboardErrorHandler.print(data);
+			dashboardErrorHandler.print(failedData);
 			//update global object (with empty data)
 			STATUS.consensusStatus = {};
 			//rise event
@@ -233,10 +237,20 @@ function Dashboard() {
 		CONFIG.api.siaStatus.requester.setCredentials(true);
 		CONFIG.api.siaStatus.requester.setTimeoutFunc(function() {
 			//changing led color to loading
-			mineboxLEDColor( CONFIG.LEDColors.loading );
+			siaLEDColor( CONFIG.LEDColors.loading );
 			//not printing any error because time expiration executes also FAIL function
 		});
+
+		var failedData = {
+			id: 'siaStatusFailed',
+			type: 'error',
+			message: CONFIG.messages.siaStatusFailed,
+			autoExpire: false
+		};
+
 		CONFIG.api.siaStatus.requester.run(function(response) {
+			// If an error exists, remove it.
+			dashboardErrorHandler.remove(failedData.id);
 
 			//update global object
 			STATUS.siaStatus = response;
@@ -246,16 +260,8 @@ function Dashboard() {
 			loop.removeActiveRequest('sia');
 
 		}, function(error) {
-
-			var data = {
-				id: 'siaStatusFailed',
-				type: 'error',
-				message: CONFIG.messages.siaStatusFailed,
-				autoExpire: false
-			};
-
 			//display error
-			dashboardErrorHandler.print(data);
+			dashboardErrorHandler.print(failedData);
 			//update global object (with empty data)
 			STATUS.siaStatus = {};
 			//rise event
@@ -284,7 +290,17 @@ function Dashboard() {
 			backupLEDColor( CONFIG.LEDColors.loading );
 			//not printing any error because time expiration executes also FAIL function
 		});
+
+		var failedData = {
+			id: 'backupStatusFailed',
+			type: 'error',
+			message: CONFIG.messages.backupStatusFailed,
+			autoExpire: false
+		};
+
 		CONFIG.api.backupStatus.requester.run(function(response) {
+			// If an error exists, remove it.
+			dashboardErrorHandler.remove(failedData.id);
 
 			//update global object
 			STATUS.backupStatus = response;
@@ -307,16 +323,8 @@ function Dashboard() {
 			loop.removeActiveRequest('backup');
 
 		}, function(error) {
-
-			var data = {
-				id: 'backupStatusFailed',
-				type: 'error',
-				message: CONFIG.messages.backupStatusFailed,
-				autoExpire: false
-			};
-
 			//display error
-			dashboardErrorHandler.print(data);
+			dashboardErrorHandler.print(failedData);
 			//update global object (with empty data)
 			STATUS.backupStatus = {};
 			//rise event
@@ -407,23 +415,24 @@ function Dashboard() {
 	function mineboxLEDColor( LEDColor ) {
 		if ( !$.isEmptyObject( STATUS.mineboxStatus ) ) {
 			//there is data within mineboxStatus
+			var failedData = {
+				id: 'mineBDFailed',
+				type: 'error',
+				message: CONFIG.messages.mineBDFailed,
+				autoExpire: false
+			};
 
 			if ( !STATUS.mineboxStatus.minebd_running || !STATUS.mineboxStatus.sia_daemon_running ) {
 				//A reboot may help, but otherwise, Minebox support is needed.
 				//changing LED color to red
 				$mineboxStatusLED.attr('data-led', CONFIG.LEDColors.bad);
 				//print error
-				var data = {
-					id: 'mineBDFailed',
-					type: 'error',
-					message: CONFIG.messages.mineBDFailed,
-					autoExpire: false
-				};
-				dashboardErrorHandler.print(data);
-
+				dashboardErrorHandler.print(failedData);
 			} else {
 				//changing LED color to green
 				$mineboxStatusLED.attr('data-led', CONFIG.LEDColors.good);
+				// If an error exists, remove it.
+				dashboardErrorHandler.remove(failedData.id);
 
 			}
 
@@ -442,22 +451,23 @@ function Dashboard() {
 	function networkLEDColor( LEDColor ) {
 		if ( !$.isEmptyObject( STATUS.consensusStatus ) && !$.isEmptyObject( STATUS.siaStatus ) ) {
 			//there is data within consensusStatus
+			var errorData = {
+				id: 'consensusNotSynced',
+				type: 'warning',
+				message: CONFIG.messages.consensusNotSynced,
+				autoExpire: false
+			};
 
 			if ( !STATUS.consensusStatus.synced ) {
 				//changing LED color to YELLOW
 				$networkStatusLED.attr('data-led', CONFIG.LEDColors.check);
 				//print error
-				var data = {
-					id: 'consensusNotSynced',
-					type: 'warning',
-					message: CONFIG.messages.consensusNotSynced,
-					autoExpire: false
-				};
-				dashboardErrorHandler.print(data);
+				dashboardErrorHandler.print(errorData);
 			} else {
 				//changing LED color to green
 				$networkStatusLED.attr('data-led', CONFIG.LEDColors.good);
-
+				// If an error exists, remove it.
+				dashboardErrorHandler.remove(errorData.id);
 			}
 
 		} else {
@@ -477,26 +487,23 @@ function Dashboard() {
 
 		if ( !$.isEmptyObject( STATUS.siaStatus ) ) {
 			//there is data within siaStatus
+			var errorData = {
+				id: 'walletLockedOrNotEncrypted',
+				type: 'warning',
+				message: CONFIG.messages.walletLockedOrNotEncrypted,
+				autoExpire: false
+			};
 
 			if ( !STATUS.siaStatus.wallet.unlocked || !STATUS.siaStatus.wallet.encrypted ) {
 				//change to YELLOW
 				$walletStatusLED.attr('data-led', CONFIG.LEDColors.check);
 				//print error
-				var data = {
-					id: 'walletLockedOrNotEncrypted',
-					type: 'warning',
-					message: CONFIG.messages.walletLockedOrNotEncrypted,
-					autoExpire: false
-				};
-				dashboardErrorHandler.print(data);
-
-
+				dashboardErrorHandler.print(errorData);
 			} else {
 				//change to good
 				$walletStatusLED.attr('data-led', CONFIG.LEDColors.good);
-
-
-
+				// If an error exists, remove it.
+				dashboardErrorHandler.remove(errorData.id);
 			}
 
 		} else {
@@ -516,6 +523,34 @@ function Dashboard() {
 
 		if ( !$.isEmptyObject( STATUS.backupStatus ) ) {
 			//there is data within backupStatus
+			var backupErrors = {
+				'backupPending': {
+					type: 'notification',
+					message: CONFIG.messages.backupPending,
+					autoExpire: false
+				},
+				'backupDamaged': {
+					type: 'error',
+					message: CONFIG.messages.backupDamaged,
+					autoExpire: false
+				},
+				'backupError': {
+					type: 'error',
+					message: CONFIG.messages.backupError,
+					autoExpire: false
+				},
+				'backupMetadataError': {
+					type: 'error',
+					message: CONFIG.messages.backupMetadataError,
+					autoExpire: false
+				},
+				'backupUnknown': {
+					type: 'warning',
+					message: CONFIG.messages.backupUnknown,
+					autoExpire: false
+				},
+			};
+			var displayError = '';
 
 			if ( STATUS.backupStatus.status == 'FINISHED' ) {
 				//change to green
@@ -533,64 +568,42 @@ function Dashboard() {
 
 
 			} else if ( STATUS.backupStatus.status == 'PENDING' ) {
-				//change to yellow
+				//change to good
 				$backupStatusLED.attr('data-led', CONFIG.LEDColors.good);
 				//print error
-				var data = {
-					id: 'backupPending',
-					type: 'notification',
-					message: CONFIG.messages.backupPending,
-					autoExpire: false
-				};
-				dashboardErrorHandler.print(data);
-
+				var displayError = 'backupPending';
 			} else if ( STATUS.backupStatus.status == 'DAMAGED' ) {
-				//change to yellow
+				//change to red
 				$backupStatusLED.attr('data-led', CONFIG.LEDColors.bad);
 				//print error
-				var data = {
-					id: 'backupDamaged',
-					type: 'error',
-					message: CONFIG.messages.backupDamaged,
-					autoExpire: false
-				};
-				dashboardErrorHandler.print(data);
-
+				var displayError = 'backupDamaged';
 			} else if ( STATUS.backupStatus.status == 'ERROR' ) {
 				//change to red
 				$backupStatusLED.attr('data-led', CONFIG.LEDColors.bad);
 				//print error
-				var data = {
-					id: 'backupError',
-					type: 'error',
-					message: CONFIG.messages.backupError,
-					autoExpire: false
-				};
-				dashboardErrorHandler.print(data);
-
+				var displayError = 'backupError';
 			} else if ( STATUS.backupStatus.metadata == 'ERROR' ) {
 				//change to red
 				$backupStatusLED.attr('data-led', CONFIG.LEDColors.bad);
 				//print error
-				var data = {
-					id: 'backupMetadataError',
-					type: 'error',
-					message: CONFIG.messages.backupMetadataError,
-					autoExpire: false
-				};
-				dashboardErrorHandler.print(data);
-
+				var displayError = 'backupMetadataError';
 			} else {
 				//change to loading
 				$backupStatusLED.attr('data-led', CONFIG.LEDColors.loading);
 				//print error
-				var data = {
-					id: 'backupUnknown',
-					type: 'warning',
-					message: CONFIG.messages.backupUnknown,
-					autoExpire: false
-				};
-				dashboardErrorHandler.print(data);
+				var displayError = 'backupUnknown';
+			}
+			// Display error message if required.
+			if (displayError) {
+				var errorData = backupErrors[displayError];
+				errorData.id = displayError;
+				dashboardErrorHandler.print(errorData);
+			}
+			// Remove all other backup errors if needed.
+			for (var errId in backupErrors) {
+				if ( displayError != errId ) {
+					dashboardErrorHandler.remove(errId);
+				}
 			}
 
 		} else {
@@ -720,6 +733,12 @@ function Dashboard() {
 			})
 		}
 
+		function remove( msgid ) {
+			if ( $('#' + msgid).length ) {
+				close( $('#' + msgid) );
+			}
+		}
+
 		function notificationsCounter() {
 			if ( $('.dashboard-notification').length ) {
 				if ( !$dashboardNotificationBox.hasClass( CONFIG.filledClass ) ) {
@@ -744,7 +763,8 @@ function Dashboard() {
 		});
 
 		return {
-			print: print
+			print: print,
+			remove: remove,
 		}
 
 	}
