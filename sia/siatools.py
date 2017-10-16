@@ -24,6 +24,7 @@ SEC_PER_BLOCK=600 # seconds per block ("blockfrequency" in /daemon/constants)
 EST_SEC_PER_BLOCK = 9 * 60 # estimate shorter block time for better UX
 KNOWNBLOCK_HEIGHT = 100000
 KNOWNBLOCK_DATETIME = datetime(2017, 4, 13, 23, 29, 49, 0) # Assumes UTC
+BTRFS='/usr/sbin/btrfs'
 SIA_CONFIG_JSON="/etc/minebox/sia_config.json"
 SIA_DIR="/mnt/lower1/sia"
 HOST_DIR_BASE_MASK="/mnt/lower*"
@@ -232,13 +233,13 @@ def rebalance_diskspace():
         for basepath in glob(HOST_DIR_BASE_MASK):
             hostpath = os.path.join(basepath, HOST_DIR_NAME)
             if not os.path.isdir(hostpath):
-                subprocess.call(['/usr/sbin/btrfs', 'subvolume', 'create', hostpath])
+                subprocess.call([BTRFS, 'subvolume', 'create', hostpath])
             hostspace = _get_btrfs_space(hostpath)
             if hostspace:
                 host_freespace += hostspace["free_est"]
         if host_freespace > space_to_add:
             # We have enough free space that we can enlarge upper.
-            retcode = subprocess.call(['/usr/sbin/btrfs', 'filesystem', 'resize', ('+%s' % space_to_add), MINEBD_STORAGE_PATH])
+            retcode = subprocess.call([BTRFS, 'filesystem', 'resize', ('+%s' % space_to_add), MINEBD_STORAGE_PATH])
             if retcode > 0:
                 current_app.logger.warn("btrfs resize failed with return code %s!" % retcode)
                 return False
@@ -280,7 +281,7 @@ def _rebalance_hosting_to_ratio():
     for basepath in glob(HOST_DIR_BASE_MASK):
         hostpath = os.path.join(basepath, HOST_DIR_NAME)
         if not os.path.isdir(hostpath):
-            subprocess.call(['/usr/sbin/btrfs', 'subvolume', 'create', hostpath])
+            subprocess.call([BTRFS, 'subvolume', 'create', hostpath])
         # Make sure the directory is owned by the sia user and group.
         uid = pwd.getpwnam("sia").pw_uid
         gid = grp.getgrnam("sia").gr_gid
@@ -438,7 +439,7 @@ def estimate_datetime_for_height(blockheight):
 def _get_btrfs_space(diskpath):
     spaceinfo = {}
     # See https://btrfs.wiki.kernel.org/index.php/FAQ#Understanding_free_space.2C_using_the_new_tools
-    outlines = subprocess.check_output(['/usr/sbin/btrfs', 'filesystem', 'usage', '--raw', diskpath]).splitlines()
+    outlines = subprocess.check_output([BTRFS, 'filesystem', 'usage', '--raw', diskpath]).splitlines()
     for line in outlines:
         matches = re.match(r"^\s+Device size:\s+([0-9]+)$", line)
         if matches:

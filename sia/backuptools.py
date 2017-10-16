@@ -17,7 +17,7 @@ import sys
 from connecttools import (get_demo_url, get_from_sia, post_to_sia,
                           get_from_minebd, put_to_minebd, put_to_metadata)
 from backupinfo import *
-from siatools import check_sia_sync, SIA_DIR
+from siatools import check_sia_sync, SIA_DIR, BTRFS
 
 REDUNDANCY_LIMIT = 2.5
 
@@ -47,7 +47,7 @@ def snapshot_upper(status):
     status["starttime_step"] = time.time()
     snapname = status["snapname"]
     upper_subvols = []
-    outlines = subprocess.check_output(['/usr/sbin/btrfs', 'subvolume', 'list', MINEBD_STORAGE_PATH]).splitlines()
+    outlines = subprocess.check_output([BTRFS, 'subvolume', 'list', MINEBD_STORAGE_PATH]).splitlines()
     for line in outlines:
         current_app.logger.info(line)
         matches = re.match(r"^ID ([0-9]+).*gen ([0-9]+).*top level ([0-9]+).*path (.+)$", line)
@@ -59,7 +59,7 @@ def snapshot_upper(status):
     for subvol in upper_subvols:
         if not path.isdir(path.join(MINEBD_STORAGE_PATH, 'snapshots', subvol)):
             makedirs(path.join(MINEBD_STORAGE_PATH, 'snapshots', subvol))
-        subprocess.call(['/usr/sbin/btrfs', 'subvolume', 'snapshot', '-r',
+        subprocess.call([BTRFS, 'subvolume', 'snapshot', '-r',
                          os.path.join(MINEBD_STORAGE_PATH, subvol),
                          os.path.join(MINEBD_STORAGE_PATH, 'snapshots', subvol, snapname)])
     return
@@ -85,7 +85,7 @@ def create_lower_snapshots(status):
         current_app.logger.info('subvol: %s' % subvol)
         if not path.isdir(path.join(subvol, 'snapshots')):
             makedirs(path.join(subvol, 'snapshots'))
-        subprocess.call(['/usr/sbin/btrfs', 'subvolume', 'snapshot', '-r', subvol, path.join(subvol, 'snapshots', snapname)])
+        subprocess.call([BTRFS, 'subvolume', 'snapshot', '-r', subvol, path.join(subvol, 'snapshots', snapname)])
     current_app.logger.info(
       'Telling MineBD to pause (for 1.5s) to make sure no modified blocks exist with the same timestamp as in our snapshots.'
     )
@@ -264,7 +264,7 @@ def remove_lower_snapshots(status):
     status["starttime_step"] = time.time()
     current_app.logger.info('Removing lower-level data snapshot(s) with name: %s' % snapname)
     for snap in glob(path.join(DATADIR_MASK, 'snapshots', snapname)):
-        subprocess.call(['/usr/sbin/btrfs', 'subvolume', 'delete', snap])
+        subprocess.call([BTRFS, 'subvolume', 'delete', snap])
     return
 
 def remove_old_backups(status, activebackups):
@@ -342,6 +342,6 @@ def remove_old_backups(status, activebackups):
         dirname = join(METADATA_BASE, "backup.%s" % snapname)
         if (not path.isfile(zipname) and not path.isdir(dirname)
             and not snapname in activebackups):
-            subprocess.call(['/usr/sbin/btrfs', 'subvolume', 'delete', snap])
+            subprocess.call([BTRFS, 'subvolume', 'delete', snap])
     return True, ""
 
