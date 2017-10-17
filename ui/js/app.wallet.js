@@ -407,6 +407,58 @@ function Wallet() {
 
 
 
+	/* Functions for shapshift form */
+	(function shapeShiftFormFunctions() {
+		(function destinationCoinListManager() {
+			var $destinationCoinList = $('#destination-coin-list'),
+				$unfoldListButton = $('#unfold-destination-coin-list'),
+				$fakeInput = $('#shapeshift-tab .destination-coin-witness'),
+				$destinationInput = $('#destination-coin'),
+				$options = $destinationCoinList.find('.coin');
+
+				function toggleListVisibility() {
+					if ( $destinationCoinList.is(':visible') ) {
+						hideList();
+					} else {
+						showList();
+					}
+				}
+
+				function showList() {
+					$destinationCoinList.fadeIn();
+				}
+
+				function hideList() {
+					$destinationCoinList.fadeOut();
+				}
+
+				function setDestination( $clicked ) {
+					$fakeInput.html( $clicked.html() );
+					$destinationInput.val( $clicked.attr('data-target') );
+
+					hideList();
+				}
+
+				$unfoldListButton.on('click', toggleListVisibility);
+				$fakeInput.on('click', toggleListVisibility);
+
+				$options.on('click', function() {
+					setDestination( $(this) );
+				});
+			}());
+	}());
+
+
+
+
+	/* Handles user input for shapshift form */
+	(function shapeShiftFormValidator() {
+		//checks that all the required fields are properly filled
+	}());
+
+
+
+
 
 
 	/* Copies wallet address to clipboard */
@@ -434,7 +486,7 @@ function Wallet() {
 	/* Requires instascan.min.js & instascan.js (InstascanManager()) */
 	(function WebcamReaderManager() {
 
-		var $webcamButton = $('#scan-address-button'),
+		var $webcamButton = $('.scan-address-button'),
 			$addressInput = $('#send-to-address'),
 			$amountInput = $('#amount-to-send'),
 			$closeWebcamButton = $('#close-instascan-button');
@@ -501,7 +553,7 @@ function Wallet() {
 		var qrCodePlugin = new QRCode('qr-code'); //qr-code is the id of the target element, it will be filled with img element
 
 		var $qrCodeWindow = $('#receive-funds-qr-code'),
-			$qrCodeShowButton = $('#show-qr-code-button'),
+			$qrCodeShowButton = $('.show-qr-code-button'),
 			$qrCodeCloseButton = $('#hide-qr-code-button');
 
 		var $addressInput = $('#user-wallet-address'),

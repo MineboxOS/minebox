@@ -127,3 +127,11 @@ html,body {
   0%   { -o-transform: rotate(0deg); }
   100% { -o-transform: rotate(359deg); }
 }
+
+
+
+
+/* Global */
+.relative {
+  position: relative;
+}

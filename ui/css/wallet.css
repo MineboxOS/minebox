@@ -51,10 +51,34 @@
 		#wallet-tabs-buttons .button {
 			margin-top: 0;
 			margin-bottom: 0;
+			vertical-align: middle;
 		}
 		#wallet-tabs-buttons .button + .button {
-			margin-left: 30px; /* match bootstrap's col padding * 2 */
+			margin-left: 10px; /* match bootstrap's col padding * 2 */
 		}
+			#shapeshift-button {
+				position: relative;
+				padding-left: 0;
+				padding-right: 0;
+				width: 56px;
+				height: 56px;
+				min-width: 0;
+				/* background-color: rgba(0,0,0,.4); */
+			}
+			#shapeshift-button:hover {
+				background-color: rgba(49, 197, 234, 0.6);
+			}
+				#shapeshift-button>img {
+					position: absolute;
+					top: 50%;
+					left: 50%;
+					width: 36px;
+					height: 36px;
+					transform: translateX(-50%) translateY(-50%);
+					-webkit-transform: translateX(-50%) translateY(-50%);
+					-moz-transform: translateX(-50%) translateY(-50%);
+					-o-transform: translateX(-50%) translateY(-50%);
+				}
 
 
 	#wallet-tabs {
@@ -133,6 +157,50 @@
 				position: relative;
 				top: 1px;
 			}
+		#shapeshift-tab {height: 360px;}
+			.shapeshift-params {
+
+			}
+				#shapeshift-tab .destination-coin-witness {
+					height: 42px;
+					line-height: 42px;
+					border: 1px solid rgba(36, 172, 206, 0.2);
+					vertical-align: middle;
+					position: relative;
+					top: -1px;
+				}
+					#shapeshift-tab .destination-coin-witness:hover {
+						border: 1px solid rgba(36, 172, 206, 0.5);
+					}
+				#destination-coin-list {
+					position: absolute;
+					top: 100%;
+					width: 100%;
+					background-color: #1a7d96;
+					padding: 10px;
+					z-index: 100;
+					box-shadow: 0 10px 30px rgba(6, 30, 36, 0.3);
+					display: none;
+				}
+					#destination-coin-list>.coin {
+						display: block;
+						cursor: pointer;
+						padding: 3px 6px;
+						transition: all ease .3s;
+					}
+					#destination-coin-list>.coin:hover {
+						background-color: rgba(0,0,0,.05);
+					}
+						#destination-coin-list .coin-icon {
+							width: 24px;
+							height: 24px;
+							line-height: 24px;
+							vertical-align: middle;
+							position: relative;
+							top: -1px;
+							margin-right: 5px;
+						}
+
 
 		#send-tab {
 

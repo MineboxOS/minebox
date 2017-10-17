@@ -18,6 +18,7 @@
 
 			<div id="wallet-tabs-buttons">
 				<button class="button" id="receive-tab-button" data-tab="receive-tab">Receive</button>
+				<button class="button" id="shapeshift-button" data-tab="shapeshift-tab"><img src="assets/images/shapeshift-button.png" /></button>
 				<button class="button" id="send-tab-button" data-tab="send-tab">Send</button>
 			</div>
 
@@ -37,7 +38,7 @@
 
 				<div class="wallet-tab-group">
 					<input type="text" id="send-to-address" placeholder="Type in an address" class="input-plus-button" />
-					<button class="button button-for-input" id="scan-address-button"><i class="ic ic-qrcode"></i></button>
+					<button class="button button-for-input scan-address-button"><i class="ic ic-qrcode"></i></button>
 
 					<p>Specify amount:</p>
 					<input type="number" id="amount-to-send" />
@@ -61,7 +62,7 @@
 
 				<div class="wallet-tab-group receive-params">
 					<input type="text" id="user-wallet-address" readonly class="input-plus-button" />
-					<button class="button button-for-input" id="show-qr-code-button"><i class="ic ic-qrcode"></i></button>
+					<button class="button button-for-input show-qr-code-button"><i class="ic ic-qrcode"></i></button>
 					<span id="user-wallet-address-feedback" style="display:none;">Wallet address copied to your clipboard</span>
 				</div>
 
@@ -73,6 +74,47 @@
 			</div>
 
 		</div>
+
+
+		<div id="shapeshift-tab" class="wallet-tab">
+
+			<div class="generic-close-button close-wallet-tab-button"></div>
+
+			<div class="tab-content">
+
+				<h2>Shapeshift your funds</h2>
+
+				<div class="wallet-tab-group">
+					<p>Specify amount:</p>
+					<input type="number" min="0" id="amount-to-shapeshift" />
+				</div>
+
+				<div class="wallet-tab-group shapeshift-params">
+					<p>Select the destination coin:</p>
+					<div class="relative">
+						<p class="destination-coin-witness input-plus-button"></p>
+						<button class="button button-for-input" id="unfold-destination-coin-list"><i class="ic ic-arrow-down"></i></button>
+						<div id="destination-coin-list">
+							<span class="coin" data-target="Bitcoin"><img class="coin-icon" src="assets/images/coins/bitcoin.png" />&nbsp;Bitcoin</span>
+							<span class="coin" data-target="Ethereum"><img class="coin-icon" src="assets/images/coins/ethereum.png" />&nbsp;Ethereum</span>
+							<span class="coin" data-target="Dash"><img class="coin-icon" src="assets/images/coins/dash.png" />&nbsp;Dash</span>
+							<span class="coin" data-target="Augur"><img class="coin-icon" src="assets/images/coins/augur.png" />&nbsp;Augur</span>
+							<span class="coin" data-target="Ripple"><img class="coin-icon" src="assets/images/coins/ripple.png" />&nbsp;Ripple</span>
+						</div>
+					</div>
+					<input type="hidden" id="destination-coin" readonly class="input-plus-button" />
+
+					<p>Type in a valid address:</p>
+					<input type="text" id="user-wallet-address" class="input-plus-button" />
+					<button class="button button-for-input scan-address-button"><i class="ic ic-qrcode"></i></button>
+					<button class="button" id="shapeshift-process-button">Shapeshift!</button>
+				</div>
+
+			</div>
+
+		</div>
+
+
 	</div>
 
 
