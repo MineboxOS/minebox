@@ -327,21 +327,46 @@ def remove_old_backups(status, activebackups):
             else:
                 os.rename(dirname, join(METADATA_BASE, "old.backup.%s" % backupname))
 
+    rinfo = _get_repair_paths()
+    keepsnaps = []
+
     if keepfiles and sia_filedata["files"]:
         current_app.logger.info("Removing unneeded files from Sia network")
         for siafile in sia_filedata["files"]:
-            if not siafile["siapath"] in keepfiles:
+            if siafile["siapath"] in keepfiles:
+                # Get snapname from local paths like
+                # /mnt/lowerX/data/snapshots/<snapname>/<id>/minebox_v1_<num>.dat
+                src_snap = rinfo[siafile["siapath"]]["RepairPath"].split("/")[5]
+                # Keep snapshots that are the source of all files to keep, as
+                # they could still be uploading and therefore need the source.
+                if not src_snap in keepsnaps:
+                    keepsnaps.append(src_snap)
+            else:
                 siadata, sia_status_code = post_to_sia("renter/delete/%s" % siafile["siapath"], "")
                 if sia_status_code != 204:
                     return False, "ERROR: sia delete error %s: %s" % (sia_status_code, siadata['message'])
 
+    current_app.logger.info("The following snapshots need to be kept for potential uploads: %s", keepsnaps)
     current_app.logger.info("Removing possibly unneeded old lower-level data snapshots")
     for snap in glob(path.join(DATADIR_MASK, "snapshots", "*")):
         snapname = path.basename(snap)
         zipname = join(METADATA_BASE, "backup.%s.zip" % snapname)
         dirname = join(METADATA_BASE, "backup.%s" % snapname)
         if (not path.isfile(zipname) and not path.isdir(dirname)
-            and not snapname in activebackups):
+            and not snapname in activebackups
+            and not snapname in keepsnaps):
             subprocess.call([BTRFS, 'subvolume', 'delete', snap])
     return True, ""
 
+def _get_repair_paths():
+    # HACK: Get "repair paths" from renter.json
+    # That file doesn't correctly parse as JSON as it has leading non-JSON
+    # data, so we cut off that leading data and take the "Tracking" branch of
+    # the rest. This should be replaced with API info ASAP.
+    # See https://github.com/NebulousLabs/Sia/issues/2428
+    renter_raw = ''
+    with open('/mnt/lower1/sia/renter/renter.json') as renter_json:
+        for line in renter_json:
+            if len(renter_raw) or line.startswith("{"):
+                renter_raw += line
+    return json.loads(renter_raw)["Tracking"]

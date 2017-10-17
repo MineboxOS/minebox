@@ -8,8 +8,14 @@ User=sia
 Nice=5
 # WorkingDirectory may not be required but to be sure.
 WorkingDirectory=/mnt/lower1/sia
-#this could be more dynamic, but if we don't limit this, we will get swap problems.
+# This could be more dynamic, but if we don't limit this, we will get swap problems.
+# Legacy setting for use with cgroups v1.
 MemoryLimit=3.5G
+# Unified hierarchy, supported starting with systemd 231 and later, while CentOS 7 uses 219.
+#MemoryHigh=3G
+#MemoryMax=3.5G
+# Introduced with systemd 232 while CentOS 7 uses 219.
+#MemorySwapMax=0
 ExecStart=/usr/bin/siad --sia-directory /mnt/lower1/sia
 Restart=on-failure
 RestartSec=30
