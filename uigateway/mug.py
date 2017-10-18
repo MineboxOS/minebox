@@ -10,6 +10,7 @@ from __future__ import print_function
 from flask import Flask, request, jsonify, json
 from os.path import ismount, isfile
 from os import environ
+from distutils.util import strtobool
 import re
 import logging
 import time
@@ -241,8 +242,9 @@ def api_transactions():
         return jsonify(consdata), cons_status_code
     blocks_per_day = 24 * 3600 / SEC_PER_BLOCK
     offset = int(request.args.get('offsetdays') or 0) * blocks_per_day
+    duration = int(request.args.get('durationdays') or 1) * blocks_per_day
     endheight = int(consensus_height - offset)
-    startheight = int(endheight - blocks_per_day)
+    startheight = int(endheight - duration)
     siadata, sia_status_code = get_from_sia("wallet/transactions?startheight=%s&endheight=%s" % (startheight, endheight))
     if sia_status_code >= 400:
         return jsonify(siadata), sia_status_code
@@ -541,6 +543,84 @@ def api_wallet_send():
                                % (amount / H_PER_SC, destination)), 200
     else:
         return jsonify(siadata), status_code
+
+
+@app.route("/wallet/transactions", methods=['GET'])
+@set_origin()
+def api_wallet_transactions():
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-wallet-transactions
+    if not check_login():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+      # Do something similar to |siac wallet transactions|, see
+      # https://github.com/NebulousLabs/Sia/blob/master/cmd/siac/walletcmd.go#L443
+    siadata, sia_status_code = get_from_sia("wallet/transactions?startheight=%s&endheight=%s" % (0, 10000000))
+    if sia_status_code >= 400:
+        return jsonify(siadata), sia_status_code
+    showsplits = bool(strtobool(request.args.get("showsplits") or "false"))
+    onlyconfirmed = bool(strtobool(request.args.get("onlyconfirmed") or "false"))
+    tdata = []
+    alltypes = ["confirmed",]
+    if not onlyconfirmed:
+        alltypes.append("unconfirmed")
+    for ttype in alltypes:
+        for trans in siadata["%stransactions" % ttype]:
+            # Note that inputs into a transaction are outgoing currency and outputs
+            # are incoming, actually.
+            txn = {
+              "type": ttype,
+              "height": trans["confirmationheight"],
+              "timestamp": trans["confirmationtimestamp"],
+              "incoming": {},
+              "outgoing": {},
+              "change": 0,
+              "fundschange": 0,
+            }
+            for t_input in trans["inputs"]:
+                if t_input["walletaddress"]:
+                    # Only process the rest if the address is owned by the wallet.
+                    if t_input["fundtype"] in txn["outgoing"]:
+                        txn["outgoing"][t_input["fundtype"]] += int(t_input["value"])
+                    else:
+                        txn["outgoing"][t_input["fundtype"]] = int(t_input["value"])
+                    if t_input["fundtype"].startswith("siafund"):
+                        txn["fundschange"] -= int(t_input["value"])
+                    else:
+                        txn["change"] -= int(t_input["value"])
+            for t_output in trans["outputs"]:
+                if t_output["walletaddress"]:
+                    # Only process the rest if the address is owned by the wallet.
+                    if t_output["fundtype"] in txn["incoming"]:
+                        txn["incoming"][t_output["fundtype"]] += int(t_output["value"])
+                    else:
+                        txn["incoming"][t_output["fundtype"]] = int(t_output["value"])
+                    if t_input["fundtype"].startswith("siafund"):
+                        txn["fundschange"] += int(t_output["value"])
+                    else:
+                        txn["change"] += int(t_output["value"])
+            # Convert into data that can be put into JSON properly.
+            # This also adds _sc values for anything in hastings (not siafunds).
+            txndata = {
+              "confirmed": txn["type"] == "confirmed",
+              "height": txn["height"],
+              "timestamp": txn["timestamp"],
+              "incoming": {},
+              "outgoing": {},
+              "incoming_sc": {},
+              "outgoing_sc": {},
+              "change": str(txn["change"]),
+              "change_sc": txn["change"] / H_PER_SC,
+              "fundschange": str(txn["fundschange"]),
+            }
+            for tdirection in ["outgoing", "incoming"]:
+                for ftype in txn[tdirection]:
+                    txndata[tdirection][ftype] = str(txn[tdirection][ftype])
+                    if not ftype.startswith("siafund"):
+                        txndata["%s_sc" % tdirection][ftype] = txn[tdirection][ftype] / H_PER_SC
+            # Only add transaction to display if it either has an actual change or
+            # we want to show splits.
+            if txn["change"] or txn["fundschange"] or showsplits:
+                tdata.append(txndata)
+    return jsonify(tdata), sia_status_code
 
 
 @app.errorhandler(404)
