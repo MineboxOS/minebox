@@ -192,7 +192,8 @@ def get_list(include_old=False):
             snapname = os.path.basename(snap)
             if (not snapname in backuplist
                 and (isfile(join(METADATA_BASE, "old.backup.%s.zip" % snapname))
-                     or isdir(join(METADATA_BASE, "old.backup.%s" % snapname)))):
+                     or (isdir(join(METADATA_BASE, "old.backup.%s" % snapname))
+                         and isfile(join(METADATA_BASE, "old.backup.%s" % snapname, "fileinfo"))))):
                 backuplist.append(snapname)
     # Converting to a set eliminates duplicates.
     # Convert back to list for type consistency.
