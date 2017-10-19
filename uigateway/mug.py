@@ -548,7 +548,7 @@ def api_wallet_send():
 @app.route("/wallet/transactions", methods=['GET'])
 @set_origin()
 def api_wallet_transactions():
-    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-wallet-transactions
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-wallettransactions
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
       # Do something similar to |siac wallet transactions|, see
