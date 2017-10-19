@@ -316,15 +316,6 @@ system status `true`/`false` fields will also be available in this case.
 }
 ```
 
-### GET /transactions
-
-Return (roughly) a day of transactions on the Sia wallet. By default, this takes
-the last day, with an `offsetdays` parameter, you can get earlier days.
-
-The return format is TBD, right now the
-[Sia /wallet/transactions](https://github.com/NebulousLabs/Sia/blob/master/doc/API.md#wallettransactions-get)
-format is returned directly, but that should be simplified in the future.
-
 ### GET /wallet/address
 
 Generate a new address for the wallet, usually to receive currency into. Also
@@ -381,4 +372,54 @@ value with a `_sc` postfix containing a siacoin amount.
   "siafundbalance": 0,
   "siafundbalance_sc": 0,
 }
+```
+
+### GET /wallet/transactions
+
+Return a list of all transactions this wallet has seen in its existence.
+By default, only transactions that actually change the balance are shown. If
+even zero-sum "split" transactions should be shown, add a `showsplits` url
+parameter with a true-ish (e.g. 1, "true", or "t") value.
+Also, by default, unconfirmed transactions will be listed, with `height` and
+`timestamp` fields of really high values so they sort as "in the future" - but
+they should not be shown to the user in this case.
+If unconfirmed transactions should not be shown, ass a url parameter
+`onlyconfirmed` with a true-ish value.
+
+
+```json
+[
+  "change": "47000000000000000000000000",
+  "change_sc": 47,
+  "confirmed": true,
+  "fundschange": "0",
+  "height": 125006,
+  "incoming": {
+    "siacoin output": "47000000000000000000000000"
+  },
+  "incoming_sc": {
+    "siacoin output": 47
+  },
+  "outgoing": {},
+  "outgoing_sc": {},
+  "timestamp": 1506627478,
+  "transactionid": "3beb72939143b333dd7f3263afe2470bb49d3b50c1fed5be90009dbffd788dda"
+],
+[
+  "change": "-16464093916300282534935134",
+  "change_sc": -16.464093916300282,
+  "confirmed": true,
+  "fundschange": "0",
+  "height": 125021,
+  "incoming": {},
+  "incoming_sc": {},
+  "outgoing: {
+    "siacoin input	"16464093916300282534935134"
+  },
+  "outgoing_sc: {
+    "siacoin input	16.464093916300282
+  },
+  "timestamp": 1506635708,
+  "transactionid": "242934fc0caa72079ec252b5d3618d6a0851f0336619b320016e79dd205294ef"
+]
 ```
