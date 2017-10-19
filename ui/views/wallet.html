@@ -37,13 +37,13 @@
 				<h2>Send funds</h2>
 
 				<div class="wallet-tab-group">
-					<input type="text" id="send-to-address" placeholder="Type in an address" class="input-plus-button" />
+					<input type="text" placeholder="Type in an address" class="input-plus-button send-to-address" />
 					<button class="button button-for-input scan-address-button"><i class="ic ic-qrcode"></i></button>
 
 					<p>Specify amount:</p>
-					<input type="number" id="amount-to-send" />
-					<p id="amount-feedback"></p>
-					<p class="available-amount-line">You have available <span id="available-amount"></span>&nbsp;SC</p>
+					<input type="number" class="amount-to-send" />
+					<p class="amount-feedback"></p>
+					<p class="available-amount-line">You have available <span class="available-amount"></span>&nbsp;SC</p>
 
 					<button class="button" id="send-button">Send funds</button>
 				</div>
@@ -61,14 +61,14 @@
 				<h2>Receive funds</h2>
 
 				<div class="wallet-tab-group receive-params">
-					<input type="text" id="user-wallet-address" readonly class="input-plus-button" />
+					<input type="text" readonly class="input-plus-button user-wallet-address" />
 					<button class="button button-for-input show-qr-code-button"><i class="ic ic-qrcode"></i></button>
-					<span id="user-wallet-address-feedback" style="display:none;">Wallet address copied to your clipboard</span>
+					<span class="user-wallet-address-feedback" style="display:none;">Wallet address copied to your clipboard</span>
 				</div>
 
 				<div class="wallet-tab-group">
 					<p>Specify amount <span>(<em>optional</em>)</span> :</p>
-					<input type="number" min="0" id="amount-to-receive" />
+					<input type="number" min="0" class="amount-to-receive" />
 				</div>
 
 			</div>
@@ -86,7 +86,9 @@
 
 				<div class="wallet-tab-group">
 					<p>Specify amount:</p>
-					<input type="number" min="0" id="amount-to-shapeshift" />
+					<input type="number" min="0" class="amount-to-send" />
+					<p class="amount-feedback"></p>
+					<p class="available-amount-line">You have available <span class="available-amount"></span>&nbsp;SC</p>
 				</div>
 
 				<div class="wallet-tab-group shapeshift-params">
@@ -105,9 +107,12 @@
 					<input type="hidden" id="destination-coin" readonly class="input-plus-button" />
 
 					<p>Type in a valid address:</p>
-					<input type="text" id="user-wallet-address" class="input-plus-button" />
+					<input type="text" class="input-plus-button send-to-address" />
 					<button class="button button-for-input scan-address-button"><i class="ic ic-qrcode"></i></button>
-					<button class="button" id="shapeshift-process-button">Shapeshift!</button>
+				</div>
+
+				<div class="wallet-tab-group">
+					<button class="button" id="shapeshift-process-button">Convert now</button>
 				</div>
 
 			</div>

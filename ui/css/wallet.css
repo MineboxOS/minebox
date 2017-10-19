@@ -63,7 +63,6 @@
 				width: 56px;
 				height: 56px;
 				min-width: 0;
-				/* background-color: rgba(0,0,0,.4); */
 			}
 			#shapeshift-button:hover {
 				background-color: rgba(49, 197, 234, 0.6);
@@ -157,7 +156,9 @@
 				position: relative;
 				top: 1px;
 			}
-		#shapeshift-tab {height: 360px;}
+		#shapeshift-tab {
+			height: 390px;
+		}
 			.shapeshift-params {
 
 			}
@@ -168,6 +169,8 @@
 					vertical-align: middle;
 					position: relative;
 					top: -1px;
+					padding-left: 8px;
+					padding-right: 8px;
 				}
 					#shapeshift-tab .destination-coin-witness:hover {
 						border: 1px solid rgba(36, 172, 206, 0.5);
@@ -191,7 +194,7 @@
 					#destination-coin-list>.coin:hover {
 						background-color: rgba(0,0,0,.05);
 					}
-						#destination-coin-list .coin-icon {
+						#wallet .coin-icon {
 							width: 24px;
 							height: 24px;
 							line-height: 24px;
@@ -205,7 +208,7 @@
 		#send-tab {
 
 		}
-			#amount-feedback {
+			.amount-feedback {
 				color: #ff4a86;
 			}
 			#send-tab .available-amount-line>span {
@@ -219,12 +222,12 @@
 		#receive-tab {
 			height: 230px;
 		}
-			#amount-to-send,
-			#amount-to-receive {
+			.amount-to-send,
+			.amount-to-receive {
 				text-align: right;
 				font-size: 12px;
 			}
-			#user-wallet-address-feedback {
+			.user-wallet-address-feedback {
 				margin-left: 15px;
 			}
 

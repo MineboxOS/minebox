@@ -35,6 +35,9 @@ function Wallet() {
 			walletSend: {
 				fail: 'Funds failed to send. Try again in a few minutes.',
 				success: 'Your funds were sent successfully.'
+			},
+			sendValidation: {
+				notEnoughAmount: 'You don\'t have that many coins.'
 			}
 		}
 	};
@@ -100,7 +103,7 @@ function Wallet() {
 			//printing wallet balance
 			$('#wallet-sia .currency-value').html( formatFunds( CONFIG.wallet.status.confirmedsiacoinbalance_sc ) );
 			//printing you have available:
-			$('#available-amount').html( CONFIG.wallet.status.confirmedsiacoinbalance_sc );
+			$('.available-amount').html( CONFIG.wallet.status.confirmedsiacoinbalance_sc );
 
 			if ( CONFIG.wallet.status.unconfirmedincominsiacoins_sc ) {
 				//printing wallet balance
@@ -143,7 +146,7 @@ function Wallet() {
 				
 			}, function(error) {
 
-				var notify = new Notify({ message: CONFIG.messages.walletAddressLoaded });
+				var notify = new Notify({ message: CONFIG.messages.walletAddressLoaded.fail });
 				notify.print();
 			});
 		}
@@ -161,6 +164,20 @@ function Wallet() {
 		}
 	}
 	var walletAddressManager = WalletAddressManager();
+
+
+
+
+
+	/* Amount Validation */
+	/* This function checks that inserted amount is less or equal than available */
+	function amountValidation( $amountInput ) {
+		if ( $amountInput.val() > CONFIG.wallet.status.confirmedsiacoinbalance_sc ) {
+			return false;
+		} else {
+			return true;
+		}
+	}
 
 
 
@@ -237,6 +254,81 @@ function Wallet() {
 		}
 
 		$sendButton.on('click', sendFunc);
+
+	}());
+
+
+
+
+	/* Handles user amount-to-send input */
+	(function SendFormValidator() {
+
+		//init vars
+		var $amountInput = $('#send-tab .amount-to-send'),
+			$addressInput = $('#send-tab .send-to-address'),
+			$sendButton = $('#send-button');
+
+		$amountInput.on('keyup', function() {
+			validateSendForm();
+		});
+
+		$amountInput.on('change', function() {
+			validateSendForm();
+		});
+
+		$addressInput.on('keyup', function() {
+			validateSendForm();
+		});
+
+		$addressInput.on('change', function() {
+			validateSendForm();
+		});
+
+		function validateSendForm() {
+			if ( !$addressInput.val().length || !$amountInput.val().length || !checkIfEnoughAmount() ) {
+				//if any of the inputs is empty or not enough amount
+				disableSendButton();
+				return false;
+			} else {
+				//if all above is correct
+				enableSendButton();
+			}
+		}
+
+			function checkIfEnoughAmount() {
+				if ( amountValidation( $amountInput ) ) {
+					printAmountFeedbackMessage( CONFIG.sendValidation.messages.notEnoughAmount );
+				} else {
+					hideAmountFeedback();
+				}
+				return amountValidation( $amountInput );
+			}
+
+				function printAmountFeedbackMessage( message ) {
+					$('.amount-feedback:visible')
+						.html( message )
+						.fadeIn(60);
+				}
+
+				function hideAmountFeedback() {
+					$('.amount-feedback:visible')
+						.fadeOut(60, function() {
+							$(this).html(''); //emptying as a callback
+						});
+				}
+
+
+			function disableSendButton() {
+				$sendButton.attr('disabled', 'disabled');
+			}
+
+			function enableSendButton() {
+				$sendButton.removeAttr('disabled');
+			}
+
+
+		//execute validation on document ready
+		$(document).ready(validateSendForm);
 
 	}());
 
@@ -325,37 +417,87 @@ function Wallet() {
 
 
 
-	/* Handles user amount-to-send input */
-	(function SendFormValidator() {
+	/* Functions for shapshift form */
+	(function shapeShiftFormFunctions() {
+		(function destinationCoinListManager() {
+			var $destinationCoinList = $('#destination-coin-list'),
+				$unfoldListButton = $('#unfold-destination-coin-list'),
+				$fakeInput = $('#shapeshift-tab .destination-coin-witness'),
+				$destinationInput = $('#destination-coin'),
+				$options = $destinationCoinList.find('.coin');
 
+			function toggleListVisibility() {
+				if ( $destinationCoinList.is(':visible') ) {
+					hideList();
+				} else {
+					showList();
+				}
+			}
+
+			function showList() {
+				$destinationCoinList.fadeIn();
+			}
+
+			function hideList() {
+				$destinationCoinList.fadeOut();
+			}
+
+			function setDestination( $clicked ) {
+				$fakeInput.html( $clicked.html() );
+				$destinationInput.val( $clicked.attr('data-target') );
+
+				hideList();
+			}
+
+			$unfoldListButton.on('click', toggleListVisibility);
+			$fakeInput.on('click', toggleListVisibility);
+
+			$options.on('click', function() {
+				setDestination( $(this) );
+			});
+		}());
+
+		(function shapeshiftSend() {
+			var $sendButton = $('#shapeshift-process-button');
+
+			function send() {
+				//sending
+			}
+
+			$sendButton.on('click', send);
+		}());
+	}());
+
+
+
+
+	/* Handles user input for shapshift form */
+	(function shapeShiftFormValidator() {
+		//checks that all the required fields are properly filled
 		//init vars
-		var $amountInput = $('#amount-to-send'),
-			$addressInput = $('#send-to-address'),
-			$sendButton = $('#send-button'),
-			$amountFeedback = $('#amount-feedback');
-
-		var errorMessages = {
-			notEnoughAmount: 'You don\'t have that many coins.'
-		};
+		var $amountInput = $('#shapeshift-tab .amount-to-send'),
+			$addressInput = $('#shapeshift-tab .send-to-address'),
+			$targetCoinInput = $('#destination-coin'),
+			$sendButton = $('#shapeshift-process-button');
 
 		$amountInput.on('keyup', function() {
-			validateSendForm();
+			validateShapeshiftForm();
 		});
 
 		$amountInput.on('change', function() {
-			validateSendForm();
+			validateShapeshiftForm();
 		});
 
 		$addressInput.on('keyup', function() {
-			validateSendForm();
+			validateShapeshiftForm();
 		});
 
 		$addressInput.on('change', function() {
-			validateSendForm();
+			validateShapeshiftForm();
 		});
 
-		function validateSendForm() {
-			if ( !$addressInput.val().length || !$amountInput.val().length || !checkIfEnoughAmount() ) {
+		function validateShapeshiftForm() {
+			if ( !$addressInput.val().length || !$amountInput.val().length || !checkIfEnoughAmount() || !isTargetCoinSelected() ) {
 				//if any of the inputs is empty or not enough amount
 				disableSendButton();
 				return false;
@@ -366,27 +508,35 @@ function Wallet() {
 		}
 
 			function checkIfEnoughAmount() {
-				if ( $amountInput.val() > CONFIG.wallet.status.confirmedsiacoinbalance_sc ) {
-					printAmountFeedbackMessage( errorMessages.notEnoughAmount );
-					return false;
+				return true;
+				if ( amountValidation( $amountInput ) ) {
+					printAmountFeedbackMessage( CONFIG.sendValidation.messages.notEnoughAmount );
 				} else {
 					hideAmountFeedback();
-					return true;
 				}
+				return amountValidation( $amountInput );
 			}
 
 				function printAmountFeedbackMessage( message ) {
-					$amountFeedback
+					$('#shapeshift-tab .amount-feedback')
 						.html( message )
 						.fadeIn(60);
 				}
 
 				function hideAmountFeedback() {
-					$amountFeedback
+					$('#shapeshift-tab .amount-feedback')
 						.fadeOut(60, function() {
 							$(this).html(''); //emptying as a callback
 						});
 				}
+
+			function isTargetCoinSelected() {
+				if ( $targetCoinInput.val() ) {
+					return true;
+				} else {
+					return false;
+				}
+			}
 
 
 			function disableSendButton() {
@@ -397,63 +547,8 @@ function Wallet() {
 				$sendButton.removeAttr('disabled');
 			}
 
-
 		//execute validation on document ready
-		$(document).ready(validateSendForm);
-
-
-	}());
-
-
-
-
-	/* Functions for shapshift form */
-	(function shapeShiftFormFunctions() {
-		(function destinationCoinListManager() {
-			var $destinationCoinList = $('#destination-coin-list'),
-				$unfoldListButton = $('#unfold-destination-coin-list'),
-				$fakeInput = $('#shapeshift-tab .destination-coin-witness'),
-				$destinationInput = $('#destination-coin'),
-				$options = $destinationCoinList.find('.coin');
-
-				function toggleListVisibility() {
-					if ( $destinationCoinList.is(':visible') ) {
-						hideList();
-					} else {
-						showList();
-					}
-				}
-
-				function showList() {
-					$destinationCoinList.fadeIn();
-				}
-
-				function hideList() {
-					$destinationCoinList.fadeOut();
-				}
-
-				function setDestination( $clicked ) {
-					$fakeInput.html( $clicked.html() );
-					$destinationInput.val( $clicked.attr('data-target') );
-
-					hideList();
-				}
-
-				$unfoldListButton.on('click', toggleListVisibility);
-				$fakeInput.on('click', toggleListVisibility);
-
-				$options.on('click', function() {
-					setDestination( $(this) );
-				});
-			}());
-	}());
-
-
-
-
-	/* Handles user input for shapshift form */
-	(function shapeShiftFormValidator() {
-		//checks that all the required fields are properly filled
+		$(document).ready(validateShapeshiftForm);
 	}());
 
 
@@ -465,13 +560,12 @@ function Wallet() {
 	/* It requires jquery.copyToClipboard.js */
 	(function walletAddressCopyOnClick() {
 
-		var $userWalletAddress = $('#user-wallet-address'),
-			$userWalletAddressFeedback = $('#user-wallet-address-feedback');
+		var $userWalletAddress = $('.user-wallet-address');
 
 		$userWalletAddress.on('click', function() {
 			copyToClipboard( $(this), function() {
 				//as a callback, print a message
-				$userWalletAddressFeedback.fadeIn(100, function() {
+				$('.user-wallet-address-feedback:visible').fadeIn(100, function() {
 					$(this).delay(1000).fadeOut(1000);
 				});
 			});
@@ -487,8 +581,6 @@ function Wallet() {
 	(function WebcamReaderManager() {
 
 		var $webcamButton = $('.scan-address-button'),
-			$addressInput = $('#send-to-address'),
-			$amountInput = $('#amount-to-send'),
 			$closeWebcamButton = $('#close-instascan-button');
 
 		var instascanManager = InstascanManager();
@@ -520,8 +612,8 @@ function Wallet() {
 			}
 
 			//printing
-			$addressInput.val( address );
-			$amountInput
+			$('.send-to-address:visible').val( address );
+			$('.amount-to-send:visible')
 				.val( amount )
 				.trigger('change');
 
@@ -556,8 +648,8 @@ function Wallet() {
 			$qrCodeShowButton = $('.show-qr-code-button'),
 			$qrCodeCloseButton = $('#hide-qr-code-button');
 
-		var $addressInput = $('#user-wallet-address'),
-			$amountInput = $('#amount-to-receive');
+		var $addressInput = $('.user-wallet-address'),
+			$amountInput = $('.amount-to-receive');
 
 		function generate() {
 			var string = gatherInformation();
