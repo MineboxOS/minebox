@@ -75,7 +75,10 @@ total amounts for this backup.
   "size": 403678324,
   "progress": 44.3,
   "relative_size": 21487245,
-  "relative_progress": 87.5
+  "relative_progress": 87.5,
+  "min_redundancy": 2.9,
+  "earliest_expiration": 149884,
+  "earliest_expiration_esttime": 1522056589
 }
 ```
 
@@ -234,7 +237,8 @@ system status `true`/`false` fields will also be available in this case.
   "sia_daemon_running": true,
   "consensus": {
     "height": 62248,
-    "synced": true
+    "synced": true,
+    "sync_progress": 100
   },
   "wallet": {
     "unlocked": true,
@@ -303,7 +307,8 @@ system status `true`/`false` fields will also be available in this case.
   "minebd_running": true,
   "minebd_encrypted": true,
   "minebd_storage_mounted": true,
-  "restore_running": false,
+  "restore_running": true,
+  "restore_progress": 100,
   "users_created": true,
   "backup_type": "sia",
   "sia_daemon_running": true,
