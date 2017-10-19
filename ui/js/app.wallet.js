@@ -508,7 +508,6 @@ function Wallet() {
 		}
 
 			function checkIfEnoughAmount() {
-				return true;
 				if ( amountValidation( $amountInput ) ) {
 					printAmountFeedbackMessage( CONFIG.sendValidation.messages.notEnoughAmount );
 				} else {
