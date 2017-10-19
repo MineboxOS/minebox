@@ -559,17 +559,18 @@ def api_wallet_transactions():
     showsplits = bool(strtobool(request.args.get("showsplits") or "false"))
     onlyconfirmed = bool(strtobool(request.args.get("onlyconfirmed") or "false"))
     tdata = []
-    alltypes = ["confirmed",]
+    alltypes = ["confirmed"]
     if not onlyconfirmed:
         alltypes.append("unconfirmed")
     for ttype in alltypes:
-        for trans in siadata["%stransactions" % ttype]:
+        for trans in siadata["{0}transactions".format(ttype)]:
             # Note that inputs into a transaction are outgoing currency and outputs
             # are incoming, actually.
             txn = {
               "type": ttype,
               "height": trans["confirmationheight"],
               "timestamp": trans["confirmationtimestamp"],
+              "transactionid": trans["transactionid"],
               "incoming": {},
               "outgoing": {},
               "change": 0,
@@ -603,6 +604,7 @@ def api_wallet_transactions():
               "confirmed": txn["type"] == "confirmed",
               "height": txn["height"],
               "timestamp": txn["timestamp"],
+              "transactionid": txn["transactionid"],
               "incoming": {},
               "outgoing": {},
               "incoming_sc": {},
