@@ -423,7 +423,7 @@ input[type="checkbox"]:before {
 
 /* WALLET VIEW */
 #wallet-balance-box {
-  background-color: rgba(36,172,206,0.2);
+  /* background-color: rgba(36,172,206,0.2); */
 }
 #wallet-sia {
   color: #fff;

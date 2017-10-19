@@ -45,7 +45,7 @@
 
 	#wallet-tabs-buttons {
 		text-align: center;
-		padding: 30px 0;
+		padding: 30px 0 40px;
 	}
 
 		#wallet-tabs-buttons .button {
@@ -77,6 +77,67 @@
 					-webkit-transform: translateX(-50%) translateY(-50%);
 					-moz-transform: translateX(-50%) translateY(-50%);
 					-o-transform: translateX(-50%) translateY(-50%);
+				}
+
+
+	#transaction-history-box {padding-top: 30px;border-top: 1px solid rgba(0,0,0,0.2);}
+		#transaction-history-filter {text-align: center;}
+			#transaction-history-filter .button.active {background-color: rgba(36,172,206,0.9);}
+		#transaction-history {padding: 15px 0;background-color: rgba(0,0,0,.3);}
+			#transaction-history>.transaction {
+
+			}
+				#transaction-history .transaction-main {
+					cursor: pointer;
+				}
+				.transaction:hover .transaction-main {
+					background-color: rgba(255,255,255,.05);
+				}
+					#transaction-history .transaction-main-element {
+						display: inline-block;
+						padding: 5px 10px;
+						vertical-align: middle;
+					}
+					#transaction-history .transaction-icon-box {
+						width: 10%;
+						text-align: center;
+						font-size: 1.4em;
+					}
+						.transaction .transaction-icon {
+							display: none;
+						}
+						.transaction.sent .transaction-icon.icon-sent {display: block;}
+						.transaction.received .transaction-icon.icon-received {display: block;}
+						.transaction.exchanged .transaction-icon.icon-exchanged {display: block;}
+					#transaction-history .transaction-title {
+						width: 40%;
+					}
+						#transaction-history .title {
+							
+						}
+						#transaction-history .amount-original {
+							color: #22a3c3;
+							font-weight: 400;
+							margin: 0 5px;
+						}
+						#transaction-history .amount-conversion {
+							color: rgba(255,255,255,.5);
+							font-style: italic;
+						}
+					#transaction-history .transaction-status {
+						width: 24%;
+						text-align: center;
+					}
+						#transaction-history .transaction-status.unconfirmed { color: #cb002b; }
+						#transaction-history .transaction-status.confirmed { color: #0eb629; }
+					#transaction-history .transaction-timestamp {
+						width: 25%;
+						text-align: right;
+					}
+
+				#transaction-history .transaction-details {
+					height: 150px;
+					display: none;
 				}
 
 

@@ -695,6 +695,48 @@ function Wallet() {
 
 
 
+
+	/* Transaction history manager */
+	(function transactionHistoryManager() {
+
+		var TRANSACTIONS = [];
+
+		var template = '';
+
+		function getTransactions() {
+
+		}
+
+		function fill() {
+
+		}
+
+
+		function toggleTransactionVisibility( $transaction ) {
+			if ( $transaction.find('.transaction-details').is(':visible') ) {
+				hideDetails( $transaction.find('.transaction-details') );
+			} else {
+				showDetails( $transaction.find('.transaction-details') );
+			}
+		}
+			function showDetails( $element ) {
+				$element.fadeIn(300);
+			}
+
+			function hideDetails( $element ) {
+				$element.fadeOut(100);
+			}
+
+
+		$('body').on('click', '#transaction-history .transaction-main', function() {
+			toggleTransactionVisibility( $(this).parents('.transaction') );
+		});
+
+	}());
+
+
+
+
 	$(document).ready(function() {
 		walletStatusManager.load();
 	});
