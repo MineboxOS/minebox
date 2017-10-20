@@ -133,7 +133,8 @@ Return a list of active Sia renter contracts.
     "funds_spent_sc": 0.01234,
     "fees_spent_sc": 5.2345,
     "data_size": 1000000000,
-    "height_end": 50000
+    "height_end": 149884,
+    "esttime_end": 1522056589
   },
   ...
 ]

@@ -12,7 +12,7 @@ from datetime import datetime
 import time
 import re
 from connecttools import get_from_sia, get_from_backupservice
-from siatools import estimate_datetime_for_height
+from siatools import estimate_timestamp_for_height
 
 
 DATADIR_MASK="/mnt/lower*/data"
@@ -173,9 +173,7 @@ def get_status(backupname, allow_old=False, use_cache=True):
                 fully_available = False
 
     if backupstatus["earliest_expiration"]:
-        backupstatus["earliest_expiration_esttime"] = int(
-            (estimate_datetime_for_height(backupstatus["earliest_expiration"])
-             - datetime(1970, 1, 1)).total_seconds())
+        backupstatus["earliest_expiration_esttime"] = estimate_timestamp_for_height(backupstatus["earliest_expiration"])
 
     return backupstatus, status_code
 

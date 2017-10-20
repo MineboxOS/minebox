@@ -21,7 +21,8 @@ import backupinfo
 from connecttools import (set_origin, check_login, get_demo_url,
                           get_from_sia, post_to_sia, get_from_minebd,
                           get_from_backupservice)
-from siatools import H_PER_SC, SEC_PER_BLOCK, estimate_current_height
+from siatools import (H_PER_SC, SEC_PER_BLOCK, estimate_current_height,
+                      estimate_timestamp_for_height)
 
 
 # Define various constants.
@@ -225,6 +226,7 @@ def api_contracts():
           "fees_spent_sc": int(contract["fees"]) / H_PER_SC,
           "data_size": contract["size"],
           "height_end": contract["endheight"],
+          "esttime_end": estimate_timestamp_for_height(contract["endheight"]),
         })
     return jsonify(contractlist), 200
 

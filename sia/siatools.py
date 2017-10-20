@@ -430,11 +430,18 @@ def estimate_current_height():
     return est_height
 
 def estimate_datetime_for_height(blockheight):
-    # Estimate a timestamp for a block height for display in the UI.
+    # Estimate a datetime for a block height for display in the UI.
     est_dt = (KNOWNBLOCK_DATETIME
               + timedelta(seconds=((blockheight - KNOWNBLOCK_HEIGHT)
                                    * SEC_PER_BLOCK)))
     return est_dt
+
+
+def estimate_timestamp_for_height(blockheight):
+    # Estimate a timestamp for a block height for display in the UI.
+    est_ts = int((estimate_datetime_for_height(blockheight)
+                  - datetime(1970, 1, 1)).total_seconds())
+    return est_ts
 
 def _get_btrfs_space(diskpath):
     spaceinfo = {}
