@@ -35,6 +35,10 @@ systemctl daemon-reload
 systemctl enable backup-service
 systemctl start backup-service
 systemctl enable minebox-ip-notify
+# On upgrades, also restart MUG as it depends on some libraries packaged here.
+if [ $1 == 2 ] ; then
+  systemctl restart mug
+fi
 
 # Uninstallation script
 %preun

@@ -224,11 +224,36 @@ def api_contracts():
                              int(contract["uploadspending"]) +
                              int(contract["downloadspending"])) / H_PER_SC,
           "fees_spent_sc": int(contract["fees"]) / H_PER_SC,
+          "totalcost_sc": int(contract["totalcost"]) / H_PER_SC,
           "data_size": contract["size"],
           "height_end": contract["endheight"],
           "esttime_end": estimate_timestamp_for_height(contract["endheight"]),
         })
     return jsonify(contractlist), 200
+
+
+@app.route("/contractstats", methods=['GET'])
+@set_origin()
+def api_contractstats():
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-contractstats
+    if not check_login():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+    siadata, sia_status_code = get_from_sia('renter/contracts')
+    if sia_status_code >= 400:
+        return jsonify(siadata), sia_status_code
+    # List stats about the contracts.
+    statdata = {
+      "contract_count": 0,
+      "data_size": 0,
+      "totalcost_sc": 0,
+      "funds_remaining_sc": 0
+    }
+    for contract in siadata["contracts"]:
+        statdata["contract_count"] += 1
+        statdata["data_size"] += contract["size"]
+        statdata["totalcost_sc"] += int(contract["totalcost"]) / H_PER_SC
+        statdata["funds_remaining_sc"] += int(contract["renterfunds"]) / H_PER_SC
+    return jsonify(statdata), 200
 
 
 @app.route("/transactions", methods=['GET'])

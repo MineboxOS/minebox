@@ -132,12 +132,26 @@ Return a list of active Sia renter contracts.
     "funds_remaining_sc": 10.4562,
     "funds_spent_sc": 0.01234,
     "fees_spent_sc": 5.2345,
+    "totalcost_sc": 15.70304,
     "data_size": 1000000000,
     "height_end": 149884,
     "esttime_end": 1522056589
   },
   ...
 ]
+```
+
+### GET /contractstats
+
+Return overall stats on active Sia renter contracts.
+
+```json
+{
+  "contract_count": 74,
+  "data_size": 206540111872,
+  "funds_remaining_sc": 617.7261893486874,
+  "totalcost_sc": 1079.8019117497108
+}
 ```
 
 ### PUT /key
