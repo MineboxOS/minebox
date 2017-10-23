@@ -1,3 +1,4 @@
 {
-  "sia_upload_limit_kbps": 0
+  "sia_upload_limit_kbps": 0,
+  "currency": "USD"
 }

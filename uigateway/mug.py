@@ -489,6 +489,8 @@ def api_settings_post():
     # Put any entries from the post into mbsettings.
     if "sia_upload_limit_kbps" in request.form:
         mbsettings["sia_upload_limit_kbps"] = int(request.form["sia_upload_limit_kbps"])
+        if "currency" in request.form:
+        mbsettings["currency"] = request.form["currency"]
     # Write settings to disk.
     try:
         with open(MBOX_SETTINGS_JSON_PATH, 'w') as outfile:
