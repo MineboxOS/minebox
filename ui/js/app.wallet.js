@@ -18,13 +18,31 @@ function Wallet() {
 			status: {
 				url: config.mug.url + 'wallet/status',
 				requester: new Requester()
+			},
+			transactions: {
+				url: config.mug.url + 'wallet/transactions',
+				requester: new Requester()
+			},
+			settings: {
+				url: config.mug.url + 'settings',
+				requester: new Requester()
+			},
+			sia: {
+				url: 'https://api.coinmarketcap.com/v1/ticker/siacoin/?convert=',
+				requester: new Requester()
 			}
 		},
+		templates: {
+			transaction: '<div class="transaction {{transaction-type}}" data-transaction-type="{{transaction-type}}"><div class="container"><div class="transaction-main"><div class="transaction-main-element transaction-icon-box"><i class="ic ic-arrow-down transaction-icon icon-received"></i><i class="ic ic-arrow-up transaction-icon icon-sent"></i><i class="ic ic-sync transaction-icon icon-exchanged"></i></div><div class="transaction-main-element transaction-title"><span class="title">{{transaction-type-capitalize}}</span><span class="amount-original">{{transaction-amount}} SC</span><span class="amount-conversion">({{transaction-amount-converted}}&nbsp;{{user-currency}})</span></div><div class="transaction-main-element transaction-status {{transaction-confirmed}}">{{transaction-confirmed-capitalize}}</div><div class="transaction-main-element transaction-date">{{transaction-date}}</div></div><div class="transaction-details"><p class="transaction-block-height">Block height: {{transaction-block-height}}</p><p class="transaction-id">Transaction ID: {{transaction-id}}</p></div></div></div>'
+		},
+		settings: null,
 		wallet: {},
+		transactions: {},
 		events: {
 			walletStatusLoaded: 'walletStatusLoaded',
 			walletAddressLoaded: 'walletAddressLoaded'
 		},
+		siaPrice: null,
 		messages: {
 			walletStatusLoaded: {
 				fail: 'Couldn\'t load wallet status. Try again in a few minutes.'
@@ -38,6 +56,9 @@ function Wallet() {
 			},
 			sendValidation: {
 				notEnoughAmount: 'You don\'t have that many coins.'
+			},
+			transactions: {
+				fail: 'Couldn\'t retrieve transactions history.'
 			}
 		}
 	};
@@ -86,6 +107,52 @@ function Wallet() {
 
 
 
+
+
+	/* Calculates current sia price (given by coinmarketcap) */
+	(function calcSiaPrice() {
+		//start loader
+		loadingManager.add('Sia price');
+		//snowball
+		userSettings();
+
+		function userSettings() {
+			CONFIG.api.settings.requester.setURL( CONFIG.api.settings.url );
+			CONFIG.api.settings.requester.setMethod('GET');
+			CONFIG.api.settings.requester.setCredentials(true);
+			CONFIG.api.settings.requester.setCache(false);
+			CONFIG.api.settings.requester.run(function(response) {
+				CONFIG.settings = response;
+				//hard coding EUR until Robert creates the setting on the backend
+				CONFIG.settings.currency = 'EUR';
+				siaPrice();
+			}, function(error) {
+				//nothing
+			});
+		}
+
+		function siaPrice() {
+			CONFIG.api.sia.requester.setURL( CONFIG.api.sia.url + CONFIG.settings.currency );
+			CONFIG.api.sia.requester.setMethod('GET');
+			CONFIG.api.sia.requester.setCache(false);
+			CONFIG.api.sia.requester.run(function(response) {
+				//storing data
+				CONFIG.siaPrice = response[0]['price_' + CONFIG.settings.currency.toLowerCase()];
+				//start loader
+				loadingManager.remove('Sia price');
+			}, function(error) {
+				//start loader
+				loadingManager.remove('Sia price');
+			});
+		}
+
+	}());
+
+
+
+
+
+
 	/* Handle funds load, format and printing */
 	(function FundsManager() {
 
@@ -119,6 +186,8 @@ function Wallet() {
 		}
 
 	}());
+
+
 
 
 
@@ -169,6 +238,7 @@ function Wallet() {
 
 
 
+
 	/* Amount Validation */
 	/* This function checks that inserted amount is less or equal than available */
 	function amountValidation( $amountInput ) {
@@ -178,6 +248,7 @@ function Wallet() {
 			return true;
 		}
 	}
+
 
 
 
@@ -260,6 +331,8 @@ function Wallet() {
 
 
 
+
+
 	/* Handles user amount-to-send input */
 	(function SendFormValidator() {
 
@@ -331,6 +404,7 @@ function Wallet() {
 		$(document).ready(validateSendForm);
 
 	}());
+
 
 
 
@@ -417,6 +491,8 @@ function Wallet() {
 
 
 
+
+
 	/* Functions for shapshift form */
 	(function shapeShiftFormFunctions() {
 		(function destinationCoinListManager() {
@@ -466,7 +542,10 @@ function Wallet() {
 
 			$sendButton.on('click', send);
 		}());
+
 	}());
+
+
 
 
 
@@ -548,6 +627,7 @@ function Wallet() {
 
 		//execute validation on document ready
 		$(document).ready(validateShapeshiftForm);
+
 	}());
 
 
@@ -571,6 +651,8 @@ function Wallet() {
 		});
 
 	}());
+
+
 
 
 
@@ -637,6 +719,7 @@ function Wallet() {
 
 
 
+
 	/* Handles QR code generation */
 	/* It requires qrcode.min.js */
 	(function QRCodeManager() {
@@ -689,8 +772,8 @@ function Wallet() {
 			close();
 		});
 
-
 	}());
+
 
 
 
@@ -699,16 +782,71 @@ function Wallet() {
 	/* Transaction history manager */
 	(function transactionHistoryManager() {
 
-		var TRANSACTIONS = [];
+		var $transactionsBox = $('#transaction-history');
 
-		var template = '';
+		getTransactions();
 
 		function getTransactions() {
-
+			//start loader
+			loadingManager.add('Wallet transactions history');
+			CONFIG.api.transactions.requester.setURL( CONFIG.api.transactions.url );
+			CONFIG.api.transactions.requester.setMethod( 'GET' );
+			CONFIG.api.transactions.requester.setCache(false);
+			CONFIG.api.transactions.requester.setCredentials(true);
+			CONFIG.api.transactions.requester.run(function(response) {
+				//storing data
+				CONFIG.transactions = response;
+				fill(response);
+				//remove loader
+				loadingManager.remove('Wallet transactions history');
+			}, function(error) {
+				//remove loader
+				loadingManager.remove('Wallet transactions history');
+				//print error
+				var n = new Notify({message: CONFIG.messages.transactions.fail});
+				n.print();
+			});
 		}
 
-		function fill() {
+		function fill( transactions ) {
+			var html = null,
+				data = {};
+			for ( var n = 0; n < transactions.length; n++ ) {
+				//clean copy of the template
+				html = CONFIG.templates.transaction;
+				//setting data
+					//setting transaction_type
+					if ( transactions[n].change < 0 ) {
+						data.transaction_type = 'sent';
+						//converting change_sc value to positive
+						transactions[n].change_sc = transactions[n].change_sc * -1;
+					} else {
+						data.transaction_type = 'received';
+					}
+					//setting transaction_amount_converted
+					data.transaction_amount_converted = (CONFIG.siaPrice * transactions[n].change_sc).toFixed(2);
+					//setting transaction date
+					data.transaction_date = formatDate( new Date( parseInt(transactions[n].timestamp) * 1000 ), 'HH:mm dd/MM/yyyy' );
+					//setting transaction confirmed
+					if ( transactions[n].confirmed ) {
+						data.transaction_confirmed = 'confirmed';
+					} else {
+						data.transaction_confirmed = 'unconfirmed';
+					}
 
+				html = replaceAll( html, '{{transaction-type}}', data.transaction_type);
+				html = replaceAll( html, '{{transaction-type-capitalize}}', capitalizeFirstLetter( data.transaction_type) );
+				html = replaceAll( html, '{{transaction-amount}}', transactions[n].change_sc );
+				html = replaceAll( html, '{{transaction-amount-converted}}', data.transaction_amount_converted);
+				html = replaceAll( html, '{{user-currency}}', CONFIG.settings.currency);
+				html = replaceAll( html, '{{transaction-confirmed}}', data.transaction_confirmed );
+				html = replaceAll( html, '{{transaction-confirmed-capitalize}}', capitalizeFirstLetter( data.transaction_confirmed ) );
+				html = replaceAll( html, '{{transaction-date}}', data.transaction_date);
+				html = replaceAll( html, '{{transaction-block-height}}', transactions[n].height);
+				html = replaceAll( html, '{{transaction-id}}', transactions[n].transactionid);
+
+				$transactionsBox.prepend(html);
+			}
 		}
 
 
@@ -737,9 +875,16 @@ function Wallet() {
 
 
 
+
+
 	$(document).ready(function() {
 		walletStatusManager.load();
 	});
+
+
+
+
+
 
 	$('#receive-tab').bind('show', function() {
 		walletAddressManager.load();
