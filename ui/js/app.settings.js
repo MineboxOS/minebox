@@ -28,6 +28,7 @@ function Settings() {
 	//init vars
 	var $bandwidthBox = $('.bandwidth-box'),
 		$uploadLimit = $('#sia-upload-limit'),
+		$currency = $('#currency'),
 //		$downloadLimit = $('#download-limit'),
 //		$notificationsBox = $('.notifications-box'),
 //		$receiveNotifications = $('#receive-notifications'),
@@ -135,6 +136,7 @@ function Settings() {
 */
 			//minebox bandwidth limit
 			$uploadLimit.val( settings.sia_upload_limit_kbps );
+			$currency.val( settings.currency );
 			//$downloadLimit.val( settings.limit.download );
 
 		}
@@ -150,6 +152,7 @@ function Settings() {
 			};
 */
 			settings.sia_upload_limit_kbps = $uploadLimit.val();
+			settings.currency = $currency.val();
 			//download: $downloadLimit.val()
 
 			return settings;
