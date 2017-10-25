@@ -438,8 +438,10 @@ function Dashboard() {
 			if ( !STATUS.siaStatus.wallet.unlocked || !STATUS.siaStatus.wallet.encrypted ) {
 				//change to YELLOW
 				$walletStatusLED.attr('data-led', CONFIG.LEDColors.check);
-				//print error
-				dashboardErrorHandler.print(errorData);
+				//print error (only if consensus is synced already)
+				if ( STATUS.siaStatus.consensus.synced ) {
+					dashboardErrorHandler.print(errorData);
+				}
 			} else {
 				//change to good
 				$walletStatusLED.attr('data-led', CONFIG.LEDColors.good);
