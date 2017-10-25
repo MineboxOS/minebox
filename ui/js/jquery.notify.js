@@ -17,7 +17,8 @@ function Notify(data) {
 
   var CONFIG = {
     acceptText: 'OK',
-    cancelText: 'Cancel'
+    cancelText: 'Cancel',
+    relPath: ''
   };
   $.extend(true, CONFIG, data);
 
@@ -27,7 +28,7 @@ function Notify(data) {
     interval: 1000
   }
   settings.templates = {
-    outer: '<div id="{{id}}" class="' + settings.class + '"><div class="obfuscation-layer"></div><div class="window"><img src="assets/images/logo/minebox-logo-white.png" class="logo" />{{contents}}<div class="close-btn"></div><div class="buttons clearfix"><button class="accept">{{acceptText}}</button>{{buttons}}</div></div></div>',
+    outer: '<div id="{{id}}" class="' + settings.class + '"><div class="obfuscation-layer"></div><div class="window"><img src="' + CONFIG.relPath + 'assets/images/logo/minebox-logo-white.png" class="logo" />{{contents}}<div class="close-btn"></div><div class="buttons clearfix"><button class="accept">{{acceptText}}</button>{{buttons}}</div></div></div>',
     cancel: '<button class="cancel">{{cancelText}}</button>',
     text: '<div class="text">{{text}}</div>'
   }

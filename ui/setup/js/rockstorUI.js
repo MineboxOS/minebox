@@ -105,7 +105,7 @@ function RockstorLogin() {
 				}).
 				fail(function(request, textStatus, errorThrown) {
 					//something failed
-					var notify = new Notify({message:'We couldn\'t call to appliances.'});
+					var notify = new Notify({message:'We couldn\'t call to appliances.', relPath: '../'});
 					notify.print();
 				});
 
@@ -115,7 +115,7 @@ function RockstorLogin() {
 			}).
 			fail(function(request, textStatus, errorThrown) {
 				//something failed
-				var notify = new Notify({message:'We couldn\'t log you in.'});
+				var notify = new Notify({message:'We couldn\'t log you in.', relPath: '../'});
 				notify.print();
 			});
 
@@ -124,7 +124,7 @@ function RockstorLogin() {
 		}).
 		fail(function(request, textStatus, errorThrown) {
 			//something failed
-			var notify = new Notify({message:'We couldn\'t setup the user.'});
+			var notify = new Notify({message:'We couldn\'t setup the user.', relPath: '../'});
 			notify.print();
 		});
 

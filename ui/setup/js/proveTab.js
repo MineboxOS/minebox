@@ -11,7 +11,8 @@ function proveTab() {
 		},
 		onClose: function() {
 			tabNavigator.go('register');
-		}
+		},
+		relPath: '../'
 	});
 
 	if ( !register.seed || !register.hostname ) {
@@ -165,13 +166,13 @@ function proveTab() {
 			function fail(error) {
 				//the call to the server failed or returned an error
 				if ( error.code == 400 ) {
-					var notify = new Notify({message:'There is a key already set or no key was handed over.'});
+					var notify = new Notify({message:'There is a key already set or no key was handed over.', relPath: '../'});
 					notify.print();
 				} else if ( error.code == 500 ) {
-					var notify = new Notify({message:'Unknown error'});
+					var notify = new Notify({message:'Unknown error', relPath: '../'});
 					notify.print();
 				} else if ( error.code == 503 ) {
-					var notify = new Notify({message:'MineBD not running.'});
+					var notify = new Notify({message:'MineBD not running.', relPath: '../'});
 					notify.print();
 				}
 				$('.prove-section .error').html('Something went wrong. Try again in a few minutes.');

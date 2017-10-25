@@ -239,7 +239,7 @@
 				if ( data.seed ) {
 					qrCodeHandler.makeCode(data.seed);
 				} else {
-					var notify = new Notify({message: 'Missing printing seed. Close this window and try again.'});
+					var notify = new Notify({message: 'Missing printing seed. Close this window and try again.', relPath: '../'});
 					notify.print();
 				}
 				var title = $('title').html();
