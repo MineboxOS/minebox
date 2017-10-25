@@ -12,7 +12,7 @@ var dashboardLoopFunction = null;
 	//getRandomInt();
 	//formatDate();
 function Dashboard() {
-  
+
 
 	var CONFIG = {
 		api: {
@@ -265,8 +265,10 @@ function Dashboard() {
 			loop.removeActiveRequest('backup');
 
 		}, function(error) {
-			//display error
-			dashboardErrorHandler.print(failedData);
+			if ( error.status != 404 ) {
+				//display error only if we actually have a latest backup
+				dashboardErrorHandler.print(failedData);
+			}
 			//update global object (with empty data)
 			STATUS.backupStatus = {};
 			//rise event
