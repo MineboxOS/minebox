@@ -437,26 +437,4 @@ function registerTab() {
 		}
 	});
 
-	// Get current status of the backend and react to that.
-	$.ajax({
-		url: config.mug.url + 'status',
-		method: 'GET',
-		dataType: 'json',
-		contentType: 'application/json',
-	})
-	.done(function(data) {
-		// React to status.
-		if (data['minebd_encrypted'] && !data['users_created']) {
-			// Key is set up but users aren't. Only offer to set user/host info.
-			console.log('Key is set up but no users have been created.');
-			$('.encryption').hide();
-			// Remove the go action - this will make the click function to preceed to progress screen directly.
-			$('#register-minebox-button').removeAttr('data-go');
-		}
-	}).
-	fail(function(request, textStatus, errorThrown) {
-		// Getting status failed. Log a message but otherwise ignore.
-		console.log('Status could not be retrieved from MUG.');
-	});
-
 }
