@@ -26,6 +26,18 @@ body {
   color: #24acce;
 }
 
+a:link,
+a:visited {
+  color: #24acce;
+  text-decoration: none;
+}
+
+a:link:hover,
+a:visited:hover {
+  color: #31c5ea;
+  text-decoration: underline;
+}
+
 
 /* MENU */
 #menu li:hover {

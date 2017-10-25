@@ -29,7 +29,7 @@
 		<section class="welcome-section navigation-tab" data-tab="welcome">
 			<div class="container">
 				<img src="../assets/images/logo/minebox-logo-white.png" class="logo" />
-				<p>Welcome to your Minebox device</p>
+				<p id="welcomeline">Welcome to your Minebox device</p>
 				<div class="choices row">
 					<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3 col-md-offset-2 col-lg-offset-3">
 						<button class="button register-button navigation-button" data-go="register">Create encryption key</button>
@@ -167,7 +167,7 @@
 							</div>
 						</fieldset>
 
-						<fieldset>
+						<fieldset class="encryption">
 							<p>We highly recommend you to print your encryption key QR code and store it somewhere safe. A new page will open automatically, you can follow the instructions in there to print your QR code.</p>
 							<p>Once you have printed your QR code, you will be able to click on <em>Initialize my Minebox</em> button and then you will have to prove the validity of your QR code and also the validity of the twelve words.</p>
 							<button id="print-encryption-key-qr-code" class="button">Print</button>
