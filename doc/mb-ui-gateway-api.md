@@ -317,6 +317,7 @@ system status `true`/`false` fields will also be available in this case.
 
 ```json
 {
+  "hostname": "minebox",
   "logged_in": true,
   "user": "myuser",
   "minebd_running": true,

@@ -9,7 +9,7 @@ from __future__ import division
 from __future__ import print_function
 from flask import Flask, request, jsonify, json
 from os.path import ismount, isfile
-from os import environ
+from os import environ,uname
 from distutils.util import strtobool
 import re
 import logging
@@ -285,6 +285,7 @@ def api_status():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-status
     username = check_login()
     outdata = {}
+    outdata["hostname"] = uname()[1]
     if username:
         outdata["logged_in"] = True
         outdata["user"] = username
