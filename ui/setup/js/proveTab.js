@@ -165,13 +165,13 @@ function proveTab() {
 
 			function fail(error) {
 				//the call to the server failed or returned an error
-				if ( error.code == 400 ) {
+				if ( error.status == 400 ) {
 					var notify = new Notify({message:'There is a key already set or no key was handed over.', relPath: '../'});
 					notify.print();
-				} else if ( error.code == 500 ) {
+				} else if ( error.status == 500 ) {
 					var notify = new Notify({message:'Unknown error', relPath: '../'});
 					notify.print();
-				} else if ( error.code == 503 ) {
+				} else if ( error.status == 503 ) {
 					var notify = new Notify({message:'MineBD not running.', relPath: '../'});
 					notify.print();
 				}
