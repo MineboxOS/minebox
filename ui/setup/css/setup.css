@@ -263,9 +263,8 @@ html {
 	width: 180px;
 	text-align: left;
 }
-#boot-log>li>input[type="checkbox"] {
-	-webkit-appearance: none;
-	appearance: none;
+#boot-log > li::before {
+	content: "";
 	margin-top: -2px;
 	margin-right: 8px;
 	display: inline-block;
@@ -277,40 +276,24 @@ html {
 	position: relative;
 	width: 20px;
 	height: 20px;
-	cursor: default !important;
+	transition: all ease .3s;
 }
-#boot-log>li>input[type="checkbox"]:focus {
-	outline: 0;
+#boot-log > li.active::before {
+	animation: 1s linear 0s infinite alternate pulse;
 }
-#boot-log>li>input[type="checkbox"]:before {
+#boot-log > li.done::before {
+	background: #0eb629;
+}
+#boot-log > li.fail::before {
+	background: #ff8080;
+}
+@keyframes pulse {
+	from { background: transparent; }
+	to { background: #24acce; }
+}
+#boot-log > li.deactivated {
 	display: none;
 }
-#boot-log>li>input[type="checkbox"]:after {
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	width: 12px;
-	height: 12px;
-	margin-top: -6px;
-	margin-left: -6px;
-	transform: scale(0);
-	-webkit-transform: scale(0);
-	-moz-transform: scale(0);
-	-o-transform: scale(0);
-	transition: all ease .3s;
-	-webkit-transition: all ease .3s;
-	-moz-transition: all ease .3s;
-	-o-transition: all ease .3s;
-	border-radius: 50%;
-}
-#boot-log>li>input[type="checkbox"]:checked:after {
-	transform: scale(1);
-	-webkit-transform: scale(1);
-	-moz-transform: scale(1);
-	-o-transform: scale(1);
-}
-
-
 
 #loading-space {
 	position: absolute;

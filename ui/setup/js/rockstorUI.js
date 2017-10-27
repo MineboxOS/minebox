@@ -37,6 +37,7 @@ function RockstorLogin() {
 		updateInfo();
 
 		//calling to setup
+		$('#boot-log-user').addClass('active');
 		$.ajax({
 			url: CONFIG.urls.setup,
 			method: 'POST',
@@ -49,12 +50,11 @@ function RockstorLogin() {
 			})
 		})
 		.done(function(data) {
-
-
-
-
+			$('#boot-log-user').removeClass('active');
+			$('#boot-log-user').addClass('done');
 
 			//calling to login
+			$('#boot-log-login').addClass('active');
 			$.ajax({
 				url: CONFIG.urls.login,
 				method: 'POST',
@@ -65,14 +65,12 @@ function RockstorLogin() {
 				}
 			})
 			.done(function(data) {
-
-
-
-
-
+				$('#boot-log-login').removeClass('active');
+				$('#boot-log-login').addClass('done');
 
 				//the cookie is set now
 				//calling to appliances
+				$('#boot-log-hostname').addClass('active');
 				$.ajax({
 					url: CONFIG.urls.appliances,
 					method: 'POST',
@@ -87,48 +85,40 @@ function RockstorLogin() {
 					})
 				})
 				.done(function(data) {
-
-
-
+					$('#boot-log-hostname').removeClass('active');
+					$('#boot-log-hostname').addClass('done');
 
 					//we're done
 					if ( cb ) {
 						cb();
 					}
 
-
-
-
-
-
-
-				}).
-				fail(function(request, textStatus, errorThrown) {
+				})
+				.fail(function(request, textStatus, errorThrown) {
 					//something failed
-					var notify = new Notify({message:'We couldn\'t call to appliances.', relPath: '../'});
+					$('#boot-log-hostname').removeClass('active');
+					$('#boot-log-hostname').addClass('fail');
+					var notify = new Notify({message:'We couldn\'t set the host name.', relPath: '../'});
 					notify.print();
 				});
 
-
-
-
-			}).
-			fail(function(request, textStatus, errorThrown) {
+			})
+			.fail(function(request, textStatus, errorThrown) {
 				//something failed
+				$('#boot-log-login').removeClass('active');
+				$('#boot-log-login').addClass('fail');
 				var notify = new Notify({message:'We couldn\'t log you in.', relPath: '../'});
 				notify.print();
 			});
 
-
-
-		}).
-		fail(function(request, textStatus, errorThrown) {
+		})
+		.fail(function(request, textStatus, errorThrown) {
 			//something failed
+			$('#boot-log-user').removeClass('active');
+			$('#boot-log-user').addClass('fail');
 			var notify = new Notify({message:'We couldn\'t setup the user.', relPath: '../'});
 			notify.print();
 		});
-
-
 
 	}
 
