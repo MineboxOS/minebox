@@ -24,6 +24,7 @@ function registerTab() {
 
 		var validation = {
 			hostname: false,
+			username: false,
 			password: false,
 			required: false
 		};
@@ -82,7 +83,7 @@ function registerTab() {
 				strength: false
 			},
 			messages: {
-				min: 'Your hostname needs to be longer than 4 characters.',
+				min: 'Your host name needs to be longer than 4 characters.',
 				specialChars: 'You\'ve provided invalid characters.'
 			}
 		},
@@ -201,8 +202,8 @@ function registerTab() {
 					//if there is another query on the way
 					//DO NOT EXECUTE THE CALLBACK
 					//a most updated result is on its way!
-					//exec cb
-					cb(true);
+					//exec cb, parameter is true when it's available, false if not.
+					cb($hostnameInput.val().toLowerCase() != 'minebox');
 				}
 				//updating status
 				hostnameRequestStatus = null;
@@ -298,6 +299,79 @@ function registerTab() {
 		$(document).ready(getWords);
 	})();
 
+
+
+	//validate user name
+	var usernameValidationConfig = {
+			requirements: {
+				min: 4,
+				max: 30,
+				numbers: false,
+				capitals: false,
+				specialChars: true, // this only means we check for allowed special chars
+				strength: false
+			},
+			messages: {
+				min: 'Your user name needs to be at least 4 characters.',
+				max: 'Your user name needs to be at most 30 characters.',
+				specialChars: 'You\'ve provided invalid characters.'
+			}
+		},
+		usernameValidation = null,
+		usernameValidator = new PasswordCheck(usernameValidationConfig),
+		$usernameInput = $('.register-username'),
+		$usernameValidationWitness = $('.username-validation'),
+		$usernameResponse = $('.username-response');
+
+	$usernameInput.on('keyup', function() {
+		validateUsername();
+	});
+
+	function validateUsername() {
+
+		//updating validation object to false until the script completes and says otherwise
+		registerValidation.update({username: false});
+
+		//making sure it meets the requirements before asking for availability
+		usernameValidation = usernameValidator.validate( $usernameInput.val() );
+
+		//username is too short
+		if ( !usernameValidation.min.validated ) {
+			//hidding validated display
+			$usernameValidationWitness.find('.validated').fadeOut(50);
+			//showing not validated display
+			$usernameValidationWitness.find('.not-validated').fadeIn(50);
+			//printing error in username response
+			$usernameResponse.html( usernameValidation.min.message );
+			//updatevalidation object
+			return false;
+		}
+
+		// allowed characters are a-z, A-Z, 0-9, - and _
+		// the specialCharacters() regex matches USERNAME_REGEX of rockstor-core:conf/settings.conf.in
+		if ( usernameValidation.specialChars.validated ) {
+			//hidding validated display
+			$usernameValidationWitness.find('.validated').fadeOut(50);
+			//showing not validated display
+			$usernameValidationWitness.find('.not-validated').fadeIn(50);
+			//printing error in username response
+			$usernameResponse.html( usernameValidationConfig.messages.specialChars );
+			//updatevalidation object
+			return false;
+		}
+
+		//if the requirements are met, proceed
+		//showing validated display
+		$usernameValidationWitness.find('.validated').fadeIn(50);
+		//hidding not validated display
+		$usernameValidationWitness.find('.not-validated').fadeOut(50);
+		//emptying in username response
+		$usernameResponse.html('');
+		//updating global object
+		register.username = $usernameInput.val();
+		//update validation object
+		registerValidation.update({username: true});
+	}
 
 
 
@@ -422,7 +496,11 @@ function registerTab() {
 		$(this).siblings('.error').html('');
 		//if hostname is not valid
 		if ( !registerValidation.status('hostname') ) {
-			$(this).siblings('.error').append('Your hostname is not valid<br />');
+			$(this).siblings('.error').append('Your host name is not valid<br />');
+		}
+		//if username is not valid
+		if ( !registerValidation.status('username') ) {
+			$(this).siblings('.error').append('Your user name is not valid<br />');
 		}
 		//if passwords are not valid
 		if ( !registerValidation.status('password') ) {

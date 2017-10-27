@@ -58,7 +58,7 @@
 
 						<fieldset class="hostname">
 							<h4>Name your Minebox</h4>
-							<p>Your server will be accessible from anywhere using the registered hostname. Only a-z and 0-9 characters allowed.</p>
+							<p>Your server will be accessible from anywhere using the registered host name. Only a-z and 0-9 characters allowed.</p>
 							<div class="hostname-block">
 								<input type="text" class="register-hostname" placeholder="Hostname" required="required" />
 								<span class="permanent">.local</span>
@@ -75,13 +75,20 @@
 
 
 						<fieldset class="username">
-							<h4>Set a username & password</h4>
+							<h4>Set a user name & password</h4>
 							<p>In order to keep your files protected and secure, please provide your access credentials.</p>
 
 							<div class="group">
-								<p>Set your username</p>
-								<input type="text" class="register-username" placeholder="Username" required="required" />
+								<p>Set your user name</p>
+								<div class="username-block">
+									<input type="text" class="register-username" placeholder="Username" required="required" />
+									<div class="username-validation">
+										<span class="oi validated" data-glyph="check"></span>
+										<span class="oi not-validated" data-glyph="ban"></span>
+									</div>
+								</div>
 							</div>
+							<p class="username-response"></p>
 
 							<div class="group">
 								<p>Set your password</p>

@@ -40,7 +40,8 @@ html {
 .register-section .group {
 	position: relative;
 }
-.hostname-block {
+.hostname-block,
+.username-block {
 	position: relative;
 }
 .register-hostname {
@@ -54,7 +55,8 @@ html {
 	vertical-align: middle;
 	margin-top: -9px;
 }
-.hostname-validation {
+.hostname-validation,
+.username-validation {
 	position: absolute;
 	top: 0;
 	left: 100%;
@@ -62,7 +64,8 @@ html {
 	width: 40px;
 	height: 40px;
 }
-.hostname-validation>span {
+.hostname-validation>span,
+.username-validation>span {
 	position: absolute;
 	top: 0;
 	left: 0;
