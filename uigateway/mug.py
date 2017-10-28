@@ -581,8 +581,8 @@ def api_wallet_transactions():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-wallettransactions
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-      # Do something similar to |siac wallet transactions|, see
-      # https://github.com/NebulousLabs/Sia/blob/master/cmd/siac/walletcmd.go#L443
+    # Do something similar to |siac wallet transactions|, see
+    # https://github.com/NebulousLabs/Sia/blob/master/cmd/siac/walletcmd.go#L443
     siadata, sia_status_code = get_from_sia("wallet/transactions?startheight=%s&endheight=%s" % (0, 10000000))
     if sia_status_code >= 400:
         return jsonify(siadata), sia_status_code
