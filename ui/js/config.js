@@ -1,6 +1,6 @@
 var config = {
 	mug: {
-		url: '/mug/'
+		url: 'https://127.0.0.1:4443/mug/'
 		//url: 'https://' + location.hostname + ':5000/'
 	},
 	views: {
