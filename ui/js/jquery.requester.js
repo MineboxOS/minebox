@@ -2,6 +2,9 @@ function Requester() {
 
   var xhr;
 
+  //init as empty function to prevent error on console if no timeoutFunction is set on current instance
+  timeoutFunction = function() {};
+
   var CONFIG = {
     cache: false,
     timeout: 55000 // ms, just under a minute
@@ -30,6 +33,9 @@ function Requester() {
       withCredentials: credentials
     };
   }
+  function setBeforeSend(func) {
+    CONFIG.beforeSend = func;
+  }
   function setTimeoutTime(time) {
     CONFIG.timeout = time;
   }
@@ -39,6 +45,10 @@ function Requester() {
 
   function abort() {
     xhr.abort();
+  }
+
+  function getHandler() {
+    return xhr;
   }
 
   function run( successCallback, errorCallback, callback_func ) {
@@ -65,11 +75,13 @@ function Requester() {
     setData: setData,
     setType: setType,
     setCache: setCache,
+    setBeforeSend: setBeforeSend,
     setCredentials: setCredentials,
     setContentType: setContentType,
     setTimeoutTime: setTimeoutTime,
     setTimeoutFunc: setTimeoutFunc,
     abort: abort,
+    getHandler, getHandler,
     run: run
   }
 }
