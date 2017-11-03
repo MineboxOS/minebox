@@ -1,3 +1,4 @@
+var r = null;
 /* jsing dashboard */
 viewLoader.add('wallet', Wallet);
 
@@ -500,7 +501,9 @@ function Wallet() {
 				$unfoldListButton = $('#unfold-destination-coin-list'),
 				$fakeInput = $('#shapeshift-tab .destination-coin-witness'),
 				$destinationInput = $('#destination-coin'),
-				$options = $destinationCoinList.find('.coin');
+				$options = null;
+
+			var destinationCoinListTemplate = '<span class="coin" data-symbol="{{coin_symbol}}"><div class="coin-icon-box"><img class="coin-icon" src="{{coin_image}}" /></div>{{coin_name}}</span>';
 
 			function toggleListVisibility() {
 				if ( $destinationCoinList.is(':visible') ) {
@@ -520,15 +523,46 @@ function Wallet() {
 
 			function setDestination( $clicked ) {
 				$fakeInput.html( $clicked.html() );
-				$destinationInput.val( $clicked.attr('data-target') );
+				$destinationInput.val( $clicked.attr('data-symbol') );
+				//trigger change event
+				$destinationInput.trigger('change');
 
 				hideList();
 			}
 
+			(function fillDestinationCoinList() {
+
+				//start loading
+				loadingManager.add('Accepted coins');
+
+				shapeshift.get.supportedCoins(function(response) {
+
+					var keys = objectKeys(response);
+					var html = '';
+					//iterating through coins object
+					for ( var n = 0; n < objectLength(response); n++ ) {
+						if ( response[keys[n]].status == 'available' && response[keys[n]].symbol != 'SC' ) {
+							//if coin is available and is not sia (it doesn't make sense to shapeshift sia into sia...):
+							html = destinationCoinListTemplate;
+							html = replaceAll( html, '{{coin_symbol}}', response[keys[n]].symbol );
+							html = replaceAll( html, '{{coin_image}}', response[keys[n]].image );
+							html = replaceAll( html, '{{coin_name}}', response[keys[n]].name );
+							$destinationCoinList.append( html );
+						}
+					}
+
+					//stop loading
+					loadingManager.remove('Accepted coins');
+				}, function(error) {
+					//stop loading
+					loadingManager.remove('Accepted coins');
+				});
+			}());
+
 			$unfoldListButton.on('click', toggleListVisibility);
 			$fakeInput.on('click', toggleListVisibility);
 
-			$options.on('click', function() {
+			$('body').on('click', '#destination-coin-list .coin', function() {
 				setDestination( $(this) );
 			});
 		}());
@@ -556,6 +590,7 @@ function Wallet() {
 		//init vars
 		var $amountInput = $('#shapeshift-tab .amount-to-send'),
 			$addressInput = $('#shapeshift-tab .send-to-address'),
+			$addressVerificationWitness = $('#shapeshift-tab .address-verification-witness'),
 			$targetCoinInput = $('#destination-coin'),
 			$sendButton = $('#shapeshift-process-button');
 
@@ -567,24 +602,84 @@ function Wallet() {
 			validateShapeshiftForm();
 		});
 
-		$addressInput.on('keyup', function() {
+		$amountInput.on('paste', function() {
 			validateShapeshiftForm();
+		});
+
+		$addressInput.on('keyup', function() {
+			console.log('keyup!');
+			validateShapeshiftForm(validateDestinationAddress);
 		});
 
 		$addressInput.on('change', function() {
-			validateShapeshiftForm();
+			console.log('chage!');
+			validateShapeshiftForm(validateDestinationAddress);
 		});
 
-		function validateShapeshiftForm() {
-			if ( !$addressInput.val().length || !$amountInput.val().length || !checkIfEnoughAmount() || !isTargetCoinSelected() ) {
-				//if any of the inputs is empty or not enough amount
+		$addressInput.on('paste', function() {
+			console.log('paste!');
+			setTimeout(function() {
+				console.log('timeout!');
+				$addressInput.trigger('keyup');
+			}, 150);
+		});
+
+		$targetCoinInput.on('change', function() {
+			validateShapeshiftForm(validateDestinationAddress);
+		});
+
+		function validateShapeshiftForm(callbackFunc) {
+			//cleaning address validation witness
+			$addressVerificationWitness.html('');
+
+			//validate inputs are not empty
+			if ( !$amountInput.val().length ) {
+				//if amount input is empty
 				disableSendButton();
-				return false;
-			} else {
-				//if all above is correct
-				enableSendButton();
+				return false; //cut execution
+			}
+
+			if ( !$targetCoinInput.val().length ) {
+				//if target coin input is empty
+				disableSendButton();
+				return false; //cut execution
+			}
+
+			if ( !$addressInput.val().length ) {
+				console.log('address input is empty mozo');
+				//if address input is empty
+				disableSendButton();
+				return false; //cut execution
+			}
+
+			//exec callback if any
+			if ( callbackFunc ) {
+				callbackFunc();
 			}
 		}
+
+		function validateDestinationAddress() {
+			var address = $addressInput.val(),
+				symbol = $targetCoinInput.val();
+
+			$addressVerificationWitness.html('Validating address...');
+
+			shapeshift.validateAddress(address, symbol, function(response) {
+				if ( response.isvalid ) {
+					$addressVerificationWitness.html('Address is valid :)');
+					//enable send button
+					enableSendButton();
+				} else {
+					$addressVerificationWitness.html( response.error );
+					//disable send button
+					disableSendButton();
+				}
+			}, function(error) {
+				$addressVerificationWitness.html( 'Error validating address...' );
+				//disable send button
+				disableSendButton();
+			});
+			}
 
 			function checkIfEnoughAmount() {
 				if ( amountValidation( $amountInput ) ) {

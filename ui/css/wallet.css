@@ -218,7 +218,7 @@
 				top: 1px;
 			}
 		#shapeshift-tab {
-			height: 390px;
+			height: 410px;
 		}
 			.shapeshift-params {
 
@@ -240,6 +240,8 @@
 					position: absolute;
 					top: 100%;
 					width: 100%;
+					height: 200px;
+					overflow-y: scroll;
 					background-color: #1a7d96;
 					padding: 10px;
 					z-index: 100;
@@ -255,15 +257,24 @@
 					#destination-coin-list>.coin:hover {
 						background-color: rgba(0,0,0,.05);
 					}
-						#wallet .coin-icon {
+						#wallet .coin-icon-box {
 							width: 24px;
 							height: 24px;
-							line-height: 24px;
+							background-color: rgba(255, 255, 255, 0.8);
+							border-radius: 50%;
 							vertical-align: middle;
+							display: inline-block;
 							position: relative;
-							top: -1px;
 							margin-right: 5px;
 						}
+							#wallet .coin-icon {
+								position: absolute;
+								width: 20px;
+								height: 20px;
+								top: 2px;
+								left: 2px;
+								border-radius: 50%;
+							}
 
 
 		#send-tab {

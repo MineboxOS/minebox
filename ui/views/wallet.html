@@ -112,19 +112,14 @@
 					<div class="relative">
 						<p class="destination-coin-witness input-plus-button"></p>
 						<button class="button button-for-input" id="unfold-destination-coin-list"><i class="ic ic-arrow-down"></i></button>
-						<div id="destination-coin-list">
-							<span class="coin" data-target="Bitcoin"><img class="coin-icon" src="assets/images/coins/bitcoin.png" />&nbsp;Bitcoin</span>
-							<span class="coin" data-target="Ethereum"><img class="coin-icon" src="assets/images/coins/ethereum.png" />&nbsp;Ethereum</span>
-							<span class="coin" data-target="Dash"><img class="coin-icon" src="assets/images/coins/dash.png" />&nbsp;Dash</span>
-							<span class="coin" data-target="Augur"><img class="coin-icon" src="assets/images/coins/augur.png" />&nbsp;Augur</span>
-							<span class="coin" data-target="Ripple"><img class="coin-icon" src="assets/images/coins/ripple.png" />&nbsp;Ripple</span>
-						</div>
+						<div id="destination-coin-list"></div>
 					</div>
-					<input type="hidden" id="destination-coin" readonly class="input-plus-button" />
+					<input type="hidden" id="destination-coin" readonly />
 
 					<p>Type in a valid address:</p>
 					<input type="text" class="input-plus-button send-to-address" />
 					<button class="button button-for-input scan-address-button"><i class="ic ic-qrcode"></i></button>
+					<p class="address-verification-witness"></p>
 				</div>
 
 				<div class="wallet-tab-group">
