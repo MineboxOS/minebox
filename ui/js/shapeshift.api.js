@@ -8,7 +8,7 @@ function Shapeshift() {
 
 
 	var CONFIG = {
-		api_url: 'https://shapeshift.io'
+		api_url: 'https://cors.shapeshift.io'
 	}
 
 
@@ -122,7 +122,7 @@ function Shapeshift() {
 	var validateAddressRequester = new Requester();
 	function validateAddress( address, coinSymbol, successFunc, failFunc ) {
 		//validates a given address for a given coinSymbol
-		validateAddressRequester.setURL( CONFIG.api_url + '/getCoins/' + address + '/' + coinSymbol );
+		validateAddressRequester.setURL( CONFIG.api_url + '/validateAddress/' + address + '/' + coinSymbol );
 		validateAddressRequester.setMethod('GET');
 		validateAddressRequester.setCache(false);
 		validateAddressRequester.run(successFunc, failFunc);
