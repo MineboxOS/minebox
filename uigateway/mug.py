@@ -309,7 +309,8 @@ def api_status():
 
     hasusers = False
     for user in pwd.getpwall():
-        if user.pw_uid >= 1000 and user.pw_uid < 65500 and user.pw_name != "sia":
+        if (user.pw_uid >= 1000 and user.pw_uid < 65500
+            and user.pw_name != "sia" and not user.pw_name.endswith("$")):
             hasusers = True
     outdata["users_created"] = hasusers
 
