@@ -12,6 +12,7 @@ import socket
 from connecttools import (post_to_adminservice)
 
 MACHINE_AUTH_FILE = "/etc/minebox/machine_auth.json"
+BOX_SETTINGS_JSON_PATH="/etc/minebox/minebox_settings.json"
 DMIDECODE = "/usr/sbin/dmidecode"
 HDPARM = "/usr/sbin/hdparm"
 HOSTNAME_TO_CONNECT = "minebox.io"
@@ -118,3 +119,49 @@ def get_local_ipaddress():
     except: # On *ANY* exception, we error out.
         return False
     return ipaddress
+
+def get_box_settings():
+    settings = {}
+    try:
+        if isfile(BOX_SETTINGS_JSON_PATH):
+            with open(BOX_SETTINGS_JSON_PATH) as json_file:
+                settings = json.load(json_file)
+    except:
+        # If anything fails here, we'll just deliver the defaults set below.
+        app.logger.warn("Settings file could not be read: %s"
+                        % BOX_SETTINGS_JSON_PATH)
+    # Set default values.
+    if not "sia_upload_limit_kbps" in settings:
+        settings["sia_upload_limit_kbps"] = 0
+    if not "display_currency" in settings:
+        settings["display_currency"] = "USD"
+    if not "last_maintenance" in settings:
+        settings["last_maintenance"] = 0
+    return settings
+
+def write_box_settings(settings):
+    try:
+        with open(BOX_SETTINGS_JSON_PATH, 'w') as outfile:
+            json.dump(settings, outfile)
+    except:
+        return False, ("Error writing settings to file: %s"
+                       % BOX_SETTINGS_JSON_PATH)
+    return True, ""
+
+def system_maintenance():
+    # See if it's time to run some system maintenance and do so if required.
+    settings = get_box_settings()
+    if settings["last_maintenance"]
+    timenow = int(time.time())
+    if settings["last_maintenance"] < timenow - 24 * 3600:
+        # Check for updates to our own packagesand  install those if needed.
+        pass
+        # Check if old logs are taking up a large part of the root filesystem
+        # and clean them if necessary.
+        pass
+    # Store the fact that we ran a maintenance.
+    settings["last_maintenance"] = timenow
+    success, errmsg = write_box_settings(settings)
+    if not success:
+        return False, errmsg
+    return True, ""

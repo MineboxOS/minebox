@@ -23,6 +23,7 @@ from connecttools import (set_origin, check_login, get_demo_url,
                           get_from_backupservice)
 from siatools import (H_PER_SC, SEC_PER_BLOCK, estimate_current_height,
                       estimate_timestamp_for_height)
+from systemtools import (get_box_settings, write_box_settings)
 
 
 # Define various constants.
@@ -31,7 +32,6 @@ REST_HOST_DEBUG="0.0.0.0"
 REST_HOST_TLS="0.0.0.0"
 REST_PORT=5000
 MUG_CONFIG_JSON_PATH="/etc/minebox/mug_config.json"
-MBOX_SETTINGS_JSON_PATH="/etc/minebox/minebox_settings.json"
 SSL_CERT="/opt/rockstor/certs/rockstor.cert"
 SSL_KEY="/opt/rockstor/certs/rockstor.key"
 MINEBD_STORAGE_PATH="/mnt/storage"
@@ -454,30 +454,14 @@ def api_sia_status():
     return jsonify(outdata), 200
 
 
-def get_mbsettings_from_disk():
-    mbsettings = {}
-    try:
-        if isfile(MBOX_SETTINGS_JSON_PATH):
-            with open(MBOX_SETTINGS_JSON_PATH) as json_file:
-                mbsettings = json.load(json_file)
-    except:
-        # If anything fails here, we'll just deliver the defaults set below.
-        app.logger.warn("Settings file could not be read: %s"
-                        % MBOX_SETTINGS_JSON_PATH)
-    # Set default values.
-    if not "sia_upload_limit_kbps" in mbsettings:
-        mbsettings["sia_upload_limit_kbps"] = 0
-    return mbsettings
-
-
 @app.route("/settings", methods=['GET'])
 @set_origin()
 def api_settings_get():
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-settings
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    mbsettings = get_mbsettings_from_disk()
-    return jsonify(mbsettings), 200
+    settings = get_box_settings()
+    return jsonify(settings), 200
 
 
 @app.route("/settings", methods=['POST'])
@@ -487,23 +471,20 @@ def api_settings_post():
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     # Read current settings from disk.
-    mbsettings = get_mbsettings_from_disk()
+    settings = get_box_settings()
     # Put any entries from the post into mbsettings.
     if "sia_upload_limit_kbps" in request.form:
-        mbsettings["sia_upload_limit_kbps"] = int(request.form["sia_upload_limit_kbps"])
-    if "currency" in request.form:
-        mbsettings["currency"] = request.form["currency"]
+        settings["sia_upload_limit_kbps"] = int(request.form["sia_upload_limit_kbps"])
+    if "display_currency" in request.form:
+        settings["display_currency"] = request.form["display_currency"]
     # Write settings to disk.
-    try:
-        with open(MBOX_SETTINGS_JSON_PATH, 'w') as outfile:
-            json.dump(mbsettings, outfile)
-        retcode = subprocess.call([SUDO, TRAFFICSHAPER_CMD, "restart"])
-        if retcode != 0:
-            app.logger.error("Restarting traffic shaper failed, return code: %s" % retcode)
-    except:
-        app.logger.warn("Error writing settings to file: %s"
-                        % MBOX_SETTINGS_JSON_PATH)
+    success, errmsg = write_box_settings(settings)
+    if not success:
+        app.logger.warn(errmsg)
         return jsonify(message="Error writing settings to disk."), 503
+    retcode = subprocess.call([SUDO, TRAFFICSHAPER_CMD, "restart"])
+    if retcode != 0:
+        app.logger.error("Restarting traffic shaper failed, return code: %s" % retcode)
     return jsonify(message="Settings saved and applied successfully."), 200
 
 

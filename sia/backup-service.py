@@ -14,7 +14,8 @@ import threading
 from backuptools import *
 from siatools import *
 from backupinfo import get_backups_to_restart, get_latest, get_list, is_finished
-from systemtools import MACHINE_AUTH_FILE, submit_machine_auth, submit_ip_notification
+from systemtools import (MACHINE_AUTH_FILE, submit_machine_auth,
+                         submit_ip_notification, system_maintenance)
 from connecttools import get_from_sia
 
 # Define various constants.
@@ -179,6 +180,11 @@ def api_ping():
 
     # See if we need to rebalance the disk space.
     rebalance_diskspace()
+
+    # Look if we need to run some system maintenance tasks.
+    success, errmsg = system_maintenance()
+    if not success:
+        app.logger.error(errmsg)
 
     return "", 204
 
