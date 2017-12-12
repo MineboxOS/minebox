@@ -16,6 +16,8 @@ BOX_SETTINGS_JSON_PATH="/etc/minebox/minebox_settings.json"
 DMIDECODE = "/usr/sbin/dmidecode"
 HDPARM = "/usr/sbin/hdparm"
 HOSTNAME_TO_CONNECT = "minebox.io"
+DF = "/usr/bin/df"
+OLD_LOGFILES_MASK = "/var/log/*-*"
 YUM = "/usr/bin/yum"
 OWN_PACKAGES_LIST = "minebox* MineBD"
 
@@ -153,7 +155,6 @@ def write_box_settings(settings):
 def system_maintenance():
     # See if it's time to run some system maintenance and do so if required.
     settings = get_box_settings()
-    if settings["last_maintenance"]
     timenow = int(time.time())
     if settings["last_maintenance"] < timenow - 24 * 3600:
         # Store the fact that we're running a maintenance.
@@ -163,7 +164,12 @@ def system_maintenance():
             return False, errmsg
         # Check if old logs are taking up a large part of the root filesystem
         # and clean them if necessary.
-        pass
+        # Right now, delete them if they take up more space than is free.
+        root_space = get_mountpoint_size("/")
+        if "free" in root_space:
+            if root_space["free"] < get_filemask_size(OLD_LOGFILES_MASK)
+                for filepath in glob(OLD_LOGFILES_MASK):
+                    os.remove()
         # Check for updates to our own packages and install those if needed.
         # Note: this call may end up restarting our own process!
         # Therefore, this function shouldn't do anything important after this.
@@ -171,3 +177,28 @@ def system_maintenance():
         if retcode != 0:
             return False, ("Updating failed, return code: %s" % retcode)
     return True, ""
+
+def get_mountpoint_size(mountpath):
+    # Get total, used and free sizes of a mount point.
+    #df --block-size=1 --output=target,fstype,size,used,avail /
+    spaceinfo = {}
+    # See https://btrfs.wiki.kernel.org/index.php/FAQ#Understanding_free_space.2C_using_the_new_tools
+    dfcommand = [DF, "--block-size=1", "--output=target,fstype,size,used,avail", mountpath]
+    outlines = subprocess.check_output(dfcommand).splitlines()
+    for line in outlines:
+        matches = re.match(r"^\/[^\s]*\s+([^\s]+)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)$", line)
+        if matches:
+            spaceinfo["filesystem"] = matches.group(1)
+            spaceinfo["total"] = int(matches.group(2))
+            spaceinfo["used"] = int(matches.group(3))
+            spaceinfo["free"] = int(matches.group(4))
+
+    return spaceinfo
+
+def get_filemask_size(filemask):
+    # Get the summmary size of all files in the given "glob" mask.
+    sumsize = 0
+    for filepath in glob(filemask):
+        fileinfo = stat(filepath)
+        sumsize += fileinfo.st_size
+    return sumsize
