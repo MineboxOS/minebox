@@ -16,6 +16,8 @@ BOX_SETTINGS_JSON_PATH="/etc/minebox/minebox_settings.json"
 DMIDECODE = "/usr/sbin/dmidecode"
 HDPARM = "/usr/sbin/hdparm"
 HOSTNAME_TO_CONNECT = "minebox.io"
+YUM = "/usr/bin/yum"
+OWN_PACKAGES_LIST = "minebox* MineBD"
 
 def register_machine():
     machine_info = get_machine_info()
@@ -154,14 +156,18 @@ def system_maintenance():
     if settings["last_maintenance"]
     timenow = int(time.time())
     if settings["last_maintenance"] < timenow - 24 * 3600:
-        # Check for updates to our own packagesand  install those if needed.
-        pass
+        # Store the fact that we're running a maintenance.
+        settings["last_maintenance"] = timenow
+        success, errmsg = write_box_settings(settings)
+        if not success:
+            return False, errmsg
         # Check if old logs are taking up a large part of the root filesystem
         # and clean them if necessary.
         pass
-    # Store the fact that we ran a maintenance.
-    settings["last_maintenance"] = timenow
-    success, errmsg = write_box_settings(settings)
-    if not success:
-        return False, errmsg
+        # Check for updates to our own packages and install those if needed.
+        # Note: this call may end up restarting our own process!
+        # Therefore, this function shouldn't do anything important after this.
+        retcode = subprocess.call([YUM, "upgrade", "-y", OWN_PACKAGES_LIST])
+        if retcode != 0:
+            return False, ("Updating failed, return code: %s" % retcode)
     return True, ""
