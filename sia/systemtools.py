@@ -3,8 +3,10 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from flask import current_app, json
 from glob import glob
 import json
+import os
 import re
 import subprocess
 import socket
@@ -170,6 +172,14 @@ def system_maintenance():
             if root_space["free"] < get_filemask_size(OLD_LOGFILES_MASK)
                 for filepath in glob(OLD_LOGFILES_MASK):
                     os.remove()
+        # One-off for Kernel 4.8.7, which was obsoleted by the time most
+        # Minebox devices shipped. If a different kernel than that is running,
+        # remove this old one to make /boot not overflow.
+        retcode = subprocess.call([YUM, "info", "kernel-ml-4.8.7"])
+        if retcode == 0 and not os.uname()[2].startswith("4.8.7-"):
+            retcode = subprocess.call([YUM, "remove", "-y", "kernel-ml-4.8.7"])
+            if retcode != 0:
+                 current_app.logger.warn("Removing old kernel failed, return code: %s" % retcode)
         # Check for updates to our own packages and install those if needed.
         # Note: this call may end up restarting our own process!
         # Therefore, this function shouldn't do anything important after this.
