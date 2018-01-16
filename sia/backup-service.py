@@ -113,7 +113,13 @@ def api_ping():
         if not success:
             app.logger.error(errmsg)
 
-    # Check for synced sia consensus as a prerequisite toe verything else.
+    # Look if we need to run some system maintenance tasks.
+    # Do this here so it runs even if Sia and upper storage are down.
+    success, errmsg = system_maintenance()
+    if not success:
+        app.logger.error(errmsg)
+
+    # Check for synced sia consensus as a prerequisite to everything else.
     success, errmsg = check_sia_sync()
     if not success:
         # Return early, we need a synced consensus to do anything.
@@ -180,11 +186,6 @@ def api_ping():
 
     # See if we need to rebalance the disk space.
     rebalance_diskspace()
-
-    # Look if we need to run some system maintenance tasks.
-    success, errmsg = system_maintenance()
-    if not success:
-        app.logger.error(errmsg)
 
     return "", 204
 
