@@ -22,7 +22,7 @@ HOSTNAME_TO_CONNECT = "minebox.io"
 DF = "/usr/bin/df"
 OLD_LOGFILES_MASK = "/var/log/*-*"
 YUM = "/usr/bin/yum"
-OWN_PACKAGES_LIST = "minebox* MineBD"
+OWN_PACKAGES_LIST = ["minebox*", "MineBD"]
 
 def register_machine():
     machine_info = get_machine_info()
@@ -188,7 +188,7 @@ def system_maintenance():
         # Note: this call may end up restarting our own process!
         # Therefore, this function shouldn't do anything important after this.
         current_app.logger.info("Tryng to update our own packages.")
-        retcode = subprocess.call([YUM, "upgrade", "-y", OWN_PACKAGES_LIST])
+        retcode = subprocess.call([YUM, "upgrade", "-y"] + OWN_PACKAGES_LIST)
         if retcode != 0:
             return False, ("Updating failed, return code: %s" % retcode)
     return True, ""

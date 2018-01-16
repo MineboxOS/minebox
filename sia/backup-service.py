@@ -115,6 +115,8 @@ def api_ping():
 
     # Look if we need to run some system maintenance tasks.
     # Do this here so it runs even if Sia and upper storage are down.
+    # Note that in the case of updates being available for backup-service,
+    # this results in a restart and the rest of the ping will not be executed.
     success, errmsg = system_maintenance()
     if not success:
         app.logger.error(errmsg)
