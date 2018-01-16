@@ -130,7 +130,7 @@ def get_local_ipaddress():
 def get_box_settings():
     settings = {}
     try:
-        if isfile(BOX_SETTINGS_JSON_PATH):
+        if os.path.isfile(BOX_SETTINGS_JSON_PATH):
             with open(BOX_SETTINGS_JSON_PATH) as json_file:
                 settings = json.load(json_file)
     except:
@@ -214,6 +214,6 @@ def get_filemask_size(filemask):
     # Get the summmary size of all files in the given "glob" mask.
     sumsize = 0
     for filepath in glob(filemask):
-        fileinfo = stat(filepath)
+        fileinfo = os.stat(filepath)
         sumsize += fileinfo.st_size
     return sumsize
