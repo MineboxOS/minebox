@@ -134,8 +134,8 @@ def get_box_settings():
                 settings = json.load(json_file)
     except:
         # If anything fails here, we'll just deliver the defaults set below.
-        app.logger.warn("Settings file could not be read: %s"
-                        % BOX_SETTINGS_JSON_PATH)
+        current_app.logger.warn("Settings file could not be read: %s"
+                                % BOX_SETTINGS_JSON_PATH)
     # Set default values.
     if not "sia_upload_limit_kbps" in settings:
         settings["sia_upload_limit_kbps"] = 0
@@ -159,6 +159,7 @@ def system_maintenance():
     settings = get_box_settings()
     timenow = int(time.time())
     if settings["last_maintenance"] < timenow - 24 * 3600:
+        current_app.logger.info("Run system maintenance.")
         # Store the fact that we're running a maintenance.
         settings["last_maintenance"] = timenow
         success, errmsg = write_box_settings(settings)
@@ -170,6 +171,7 @@ def system_maintenance():
         root_space = get_mountpoint_size("/")
         if "free" in root_space:
             if root_space["free"] < get_filemask_size(OLD_LOGFILES_MASK):
+                current_app.logger.info("Root free space too low, cleaning up logs.")
                 for filepath in glob(OLD_LOGFILES_MASK):
                     os.remove()
         # One-off for Kernel 4.8.7, which was obsoleted by the time most
@@ -177,12 +179,14 @@ def system_maintenance():
         # remove this old one to make /boot not overflow.
         retcode = subprocess.call([YUM, "info", "kernel-ml-4.8.7"])
         if retcode == 0 and not os.uname()[2].startswith("4.8.7-"):
+            current_app.logger.info("Kernel 4.8.7 is installed but not running, removing it.")
             retcode = subprocess.call([YUM, "remove", "-y", "kernel-ml-4.8.7"])
             if retcode != 0:
-                 current_app.logger.warn("Removing old kernel failed, return code: %s" % retcode)
+                current_app.logger.warn("Removing old kernel failed, return code: %s" % retcode)
         # Check for updates to our own packages and install those if needed.
         # Note: this call may end up restarting our own process!
         # Therefore, this function shouldn't do anything important after this.
+        current_app.logger.info("Tryng to update our own packages.")
         retcode = subprocess.call([YUM, "upgrade", "-y", OWN_PACKAGES_LIST])
         if retcode != 0:
             return False, ("Updating failed, return code: %s" % retcode)
