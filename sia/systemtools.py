@@ -169,7 +169,7 @@ def system_maintenance():
         # Right now, delete them if they take up more space than is free.
         root_space = get_mountpoint_size("/")
         if "free" in root_space:
-            if root_space["free"] < get_filemask_size(OLD_LOGFILES_MASK)
+            if root_space["free"] < get_filemask_size(OLD_LOGFILES_MASK):
                 for filepath in glob(OLD_LOGFILES_MASK):
                     os.remove()
         # One-off for Kernel 4.8.7, which was obsoleted by the time most
