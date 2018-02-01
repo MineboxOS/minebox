@@ -14,7 +14,8 @@ import threading
 from backuptools import *
 from siatools import *
 from backupinfo import get_backups_to_restart, get_latest, get_list, is_finished
-from systemtools import MACHINE_AUTH_FILE, submit_machine_auth, submit_ip_notification
+from systemtools import (MACHINE_AUTH_FILE, submit_machine_auth,
+                         submit_ip_notification, system_maintenance)
 from connecttools import get_from_sia
 
 # Define various constants.
@@ -112,7 +113,15 @@ def api_ping():
         if not success:
             app.logger.error(errmsg)
 
-    # Check for synced sia consensus as a prerequisite toe verything else.
+    # Look if we need to run some system maintenance tasks.
+    # Do this here so it runs even if Sia and upper storage are down.
+    # Note that in the case of updates being available for backup-service,
+    # this results in a restart and the rest of the ping will not be executed.
+    success, errmsg = system_maintenance()
+    if not success:
+        app.logger.error(errmsg)
+
+    # Check for synced sia consensus as a prerequisite to everything else.
     success, errmsg = check_sia_sync()
     if not success:
         # Return early, we need a synced consensus to do anything.

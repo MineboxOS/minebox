@@ -3,18 +3,26 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from flask import current_app, json
 from glob import glob
 import json
+import os
 import re
+import time
 import subprocess
 import socket
 
 from connecttools import (post_to_adminservice)
 
 MACHINE_AUTH_FILE = "/etc/minebox/machine_auth.json"
+BOX_SETTINGS_JSON_PATH="/etc/minebox/minebox_settings.json"
 DMIDECODE = "/usr/sbin/dmidecode"
 HDPARM = "/usr/sbin/hdparm"
 HOSTNAME_TO_CONNECT = "minebox.io"
+DF = "/usr/bin/df"
+OLD_LOGFILES_MASK = "/var/log/*-*"
+YUM = "/usr/bin/yum"
+OWN_PACKAGES_LIST = ["minebox*", "MineBD"]
 
 def register_machine():
     machine_info = get_machine_info()
@@ -118,3 +126,94 @@ def get_local_ipaddress():
     except: # On *ANY* exception, we error out.
         return False
     return ipaddress
+
+def get_box_settings():
+    settings = {}
+    try:
+        if os.path.isfile(BOX_SETTINGS_JSON_PATH):
+            with open(BOX_SETTINGS_JSON_PATH) as json_file:
+                settings = json.load(json_file)
+    except:
+        # If anything fails here, we'll just deliver the defaults set below.
+        current_app.logger.warn("Settings file could not be read: %s"
+                                % BOX_SETTINGS_JSON_PATH)
+    # Set default values.
+    if not "sia_upload_limit_kbps" in settings:
+        settings["sia_upload_limit_kbps"] = 0
+    if not "display_currency" in settings:
+        settings["display_currency"] = "USD"
+    if not "last_maintenance" in settings:
+        settings["last_maintenance"] = 0
+    return settings
+
+def write_box_settings(settings):
+    try:
+        with open(BOX_SETTINGS_JSON_PATH, 'w') as outfile:
+            json.dump(settings, outfile)
+    except:
+        return False, ("Error writing settings to file: %s"
+                       % BOX_SETTINGS_JSON_PATH)
+    return True, ""
+
+def system_maintenance():
+    # See if it's time to run some system maintenance and do so if required.
+    settings = get_box_settings()
+    timenow = int(time.time())
+    if settings["last_maintenance"] < timenow - 24 * 3600:
+        current_app.logger.info("Run system maintenance.")
+        # Store the fact that we're running a maintenance.
+        settings["last_maintenance"] = timenow
+        success, errmsg = write_box_settings(settings)
+        if not success:
+            return False, errmsg
+        # Check if old logs are taking up a large part of the root filesystem
+        # and clean them if necessary.
+        # Right now, delete them if they take up more space than is free.
+        root_space = get_mountpoint_size("/")
+        if "free" in root_space:
+            if root_space["free"] < get_filemask_size(OLD_LOGFILES_MASK):
+                current_app.logger.info("Root free space too low, cleaning up logs.")
+                for filepath in glob(OLD_LOGFILES_MASK):
+                    os.remove()
+        # One-off for Kernel 4.8.7, which was obsoleted by the time most
+        # Minebox devices shipped. If a different kernel than that is running,
+        # remove this old one to make /boot not overflow.
+        retcode = subprocess.call([YUM, "info", "kernel-ml-4.8.7"])
+        if retcode == 0 and not os.uname()[2].startswith("4.8.7-"):
+            current_app.logger.info("Kernel 4.8.7 is installed but not running, removing it.")
+            retcode = subprocess.call([YUM, "remove", "-y", "kernel-ml-4.8.7"])
+            if retcode != 0:
+                current_app.logger.warn("Removing old kernel failed, return code: %s" % retcode)
+        # Check for updates to our own packages and install those if needed.
+        # Note: this call may end up restarting our own process!
+        # Therefore, this function shouldn't do anything important after this.
+        current_app.logger.info("Tryng to update our own packages.")
+        retcode = subprocess.call([YUM, "upgrade", "-y"] + OWN_PACKAGES_LIST)
+        if retcode != 0:
+            return False, ("Updating failed, return code: %s" % retcode)
+    return True, ""
+
+def get_mountpoint_size(mountpath):
+    # Get total, used and free sizes of a mount point.
+    #df --block-size=1 --output=target,fstype,size,used,avail /
+    spaceinfo = {}
+    # See https://btrfs.wiki.kernel.org/index.php/FAQ#Understanding_free_space.2C_using_the_new_tools
+    dfcommand = [DF, "--block-size=1", "--output=target,fstype,size,used,avail", mountpath]
+    outlines = subprocess.check_output(dfcommand).splitlines()
+    for line in outlines:
+        matches = re.match(r"^\/[^\s]*\s+([^\s]+)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)$", line)
+        if matches:
+            spaceinfo["filesystem"] = matches.group(1)
+            spaceinfo["total"] = int(matches.group(2))
+            spaceinfo["used"] = int(matches.group(3))
+            spaceinfo["free"] = int(matches.group(4))
+
+    return spaceinfo
+
+def get_filemask_size(filemask):
+    # Get the summmary size of all files in the given "glob" mask.
+    sumsize = 0
+    for filepath in glob(filemask):
+        fileinfo = os.stat(filepath)
+        sumsize += fileinfo.st_size
+    return sumsize

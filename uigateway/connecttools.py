@@ -407,6 +407,22 @@ def post_to_adminservice(api, usetoken, jsonData):
 
 
 def check_login():
+    # If we got an auth token, see if it's the local auth key.
+    authtoken = request.headers.get('X-Auth-Token')
+    current_app.logger.info('Auth token: %s' % authtoken)
+    if authtoken:
+        local_key = None
+        if os.path.isfile(MINEBD_AUTH_KEY_FILE):
+            with open(MINEBD_AUTH_KEY_FILE) as f:
+                local_key = f.read().rstrip()
+        if authtoken == local_key:
+            # Fake a user name to fit with what users expect.
+            return "[local_service]"
+        else:
+            current_app.logger.warn('Wrong auth token: %s' % authtoken)
+            return False
+    # We have no auth token, so check for django login.
+    current_app.logger.info('Check django')
     csrftoken = request.cookies.get('csrftoken')
     sessionid = request.cookies.get('sessionid')
     user_api = "https://localhost/api/commands/current-user"
@@ -425,10 +441,10 @@ def check_login():
             response = requests.post(user_api, data=[], headers=headers,
                                      cookies=cookiejar, verify=False)
         if response.status_code == 200:
-          return response.json()
+            return response.json()
         else:
-          current_app.logger.warn('No valid login found: %s' % response.text)
-          return False
+            current_app.logger.warn('No valid login found: %s' % response.text)
+            return False
     except requests.exceptions.RequestException as e:
         current_app.logger.error('Error checking login: %s' % str(e))
         return False

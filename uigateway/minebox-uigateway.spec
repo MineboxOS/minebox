@@ -30,6 +30,7 @@ install -pD --mode 644 "%{_topdir}uigateway/connecttools.py" "$RPM_BUILD_ROOT/us
 /usr/bin/getent group mug || /usr/sbin/groupadd -r mug
 /usr/bin/getent passwd mug || /usr/sbin/useradd -r -d /usr/lib/minebox/mbvenv -s /sbin/nologin -g mug mug
 /usr/sbin/usermod mug -a -G minebd
+/usr/sbin/usermod webconfig -a -G minebd
 set +e
 systemctl stop mug
 set -e
