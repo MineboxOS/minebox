@@ -23,6 +23,10 @@ DF = "/usr/bin/df"
 OLD_LOGFILES_MASK = "/var/log/*-*"
 YUM = "/usr/bin/yum"
 OWN_PACKAGES_LIST = ["minebox*", "MineBD"]
+SWAPON = "/usr/sbin/swapon"
+SWAPOFF = "/usr/sbin/swapoff"
+SED = "/usr/bin/sed"
+FSTAB = "/etc/fstab"
 
 def register_machine():
     machine_info = get_machine_info()
@@ -166,6 +170,7 @@ def system_maintenance():
         success, errmsg = write_box_settings(settings)
         if not success:
             return False, errmsg
+        # *** Logfile disk congestion ***
         # Check if old logs are taking up a large part of the root filesystem
         # and clean them if necessary.
         # Right now, delete them if they take up more space than is free.
@@ -175,6 +180,7 @@ def system_maintenance():
                 current_app.logger.info("Root free space too low, cleaning up logs.")
                 for filepath in glob(OLD_LOGFILES_MASK):
                     os.remove()
+        # *** Kernels filling up /boot ***
         # One-off for Kernel 4.8.7, which was obsoleted by the time most
         # Minebox devices shipped. If a different kernel than that is running,
         # remove this old one to make /boot not overflow.
@@ -184,10 +190,32 @@ def system_maintenance():
             retcode = subprocess.call([YUM, "remove", "-y", "kernel-ml-4.8.7"])
             if retcode != 0:
                 current_app.logger.warn("Removing old kernel failed, return code: %s" % retcode)
+        # *** Swap wearing down USB flash ***
+        # Find if swap on USB stick is activated and deactivate it.
+        swapdevs = []
+        usbswapuuids = []
+        outlines = subprocess.check_output([SWAPON, "--show=NAME"]).splitlines()
+        for line in outlines:
+            matches = re.match(r"^/dev/(.+)$", line)
+            if matches:
+                swapdevs.append(matches.group(1).strip())
+        # Now see if any of those swap devices are on USB and get the UUIDs.
+        for dev in swapdevs:
+            for usbdevpath in glob("/dev/disk/by-id/usb-*"):
+                if os.readlink(usbdevpath).endswith(dev):
+                    for uuidpath in glob("/dev/disk/by-uuid/*"):
+                        if os.readlink(uuidpath).endswith(dev):
+                            usbswapuuids.append(os.path.basename(uuidpath))
+        # Now actually disable those UUIDs directly and in fstab.
+        for swapuuid in usbswapuuids:
+            current_app.logger.info("Disable USB swap with UUID %s.", swapuuid)
+            subprocess.call([SED, "-i", "-e", "s/^UUID=%s/#&/" % swapuuid, FSTAB])
+            subprocess.call([SWAPOFF, "-U", swapuuid])
+        # *** Updates on own packages ***
         # Check for updates to our own packages and install those if needed.
         # Note: this call may end up restarting our own process!
         # Therefore, this function shouldn't do anything important after this.
-        current_app.logger.info("Tryng to update our own packages.")
+        current_app.logger.info("Trying to update our own packages.")
         retcode = subprocess.call([YUM, "upgrade", "-y"] + OWN_PACKAGES_LIST)
         if retcode != 0:
             return False, ("Updating failed, return code: %s" % retcode)
