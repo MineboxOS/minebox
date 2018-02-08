@@ -24,6 +24,7 @@ ADMIN_URL="https://faucet.api.minebox.io/v1/faucet/admin/"
 METADATA_URL="https://metadata.api.minebox.io/v1/metadata/"
 LOCALDEMO_URL="http://localhost:8050/v1/"
 DEMOSIAD_URL="http://localhost:9900/"
+ROCKSTOR_URL="https://localhost/"
 
 
 def set_origin(*args, **kwargs):
@@ -405,11 +406,38 @@ def post_to_adminservice(api, usetoken, jsonData):
     except requests.RequestException as e:
         return {"message": str(e)}, 500
 
+def rockstor_user_setup():
+    csrftoken = request.cookies.get('csrftoken')
+    sessionid = request.cookies.get('sessionid')
+    user_setup = ROCKSTOR_URL + "setup_user"
+    referer = ROCKSTOR_URL
+
+    headers = requests.utils.default_headers()
+    headers.update({'X-CSRFToken': csrftoken, 'referer': referer})
+    cookiejar = requests.cookies.RequestsCookieJar()
+    cookiejar.set('csrftoken', csrftoken)
+    cookiejar.set('sessionid', sessionid)
+    try:
+        # Given that we call localhost, the cert will be wrong, so
+        # don't verify and suppress the warning on doing an insecure request.
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore",
+                category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
+            response = requests.get(user_setup, headers=headers,
+                                    cookies=cookiejar, verify=False)
+        if response.status_code == 200:
+            return not response.json()["new_setup"]
+        else:
+            current_app.logger.warn('Checking users failed: %s' % response.text)
+            return None
+    except requests.exceptions.RequestException as e:
+        current_app.logger.error('Error checking users: %s' % str(e))
+        return None
+
 
 def check_login():
     # If we got an auth token, see if it's the local auth key.
     authtoken = request.headers.get('X-Auth-Token')
-    current_app.logger.info('Auth token: %s' % authtoken)
     if authtoken:
         local_key = None
         if os.path.isfile(MINEBD_AUTH_KEY_FILE):
@@ -422,11 +450,10 @@ def check_login():
             current_app.logger.warn('Wrong auth token: %s' % authtoken)
             return False
     # We have no auth token, so check for django login.
-    current_app.logger.info('Check django')
     csrftoken = request.cookies.get('csrftoken')
     sessionid = request.cookies.get('sessionid')
-    user_api = "https://localhost/api/commands/current-user"
-    referer = "https://localhost/"
+    user_api = ROCKSTOR_URL + "api/commands/current-user"
+    referer = ROCKSTOR_URL
 
     headers = requests.utils.default_headers()
     headers.update({'X-CSRFToken': csrftoken, 'referer': referer})
@@ -437,7 +464,8 @@ def check_login():
         # Given that we call localhost, the cert will be wrong, so
         # don't verify and suppress the warning on doing an insecure request.
         with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
+            warnings.filterwarnings("ignore",
+                category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
             response = requests.post(user_api, data=[], headers=headers,
                                      cookies=cookiejar, verify=False)
         if response.status_code == 200:

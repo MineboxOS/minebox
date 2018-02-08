@@ -20,7 +20,7 @@ import decimal
 import backupinfo
 from connecttools import (set_origin, check_login, get_demo_url,
                           get_from_sia, post_to_sia, get_from_minebd,
-                          get_from_backupservice)
+                          get_from_backupservice, rockstor_user_setup)
 from siatools import (H_PER_SC, SEC_PER_BLOCK, estimate_current_height,
                       estimate_timestamp_for_height)
 from systemtools import (get_box_settings, write_box_settings)
@@ -313,6 +313,7 @@ def api_status():
             and user.pw_name != "sia" and not user.pw_name.endswith("$")):
             hasusers = True
     outdata["users_created"] = hasusers
+    outdata["user_setup_complete"] = rockstor_user_setup()
 
     if 'DEMO' in environ:
         outdata["backup_type"] = "sia_demo"
