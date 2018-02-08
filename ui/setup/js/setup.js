@@ -17,7 +17,7 @@ function Setup() {
 		})
 		.done(function(data) {
 			// React to status.
-			if (data['minebd_storage_mounted'] && data['users_created']) {
+			if (data['minebd_storage_mounted'] && data['user_setup_complete']) {
 				// Everything set up already.
 				console.log('Setup already completed.');
 				$('#welcomeline').html('Your Minebox is already set up, go to the <a href="/">main user interface</a> or the <a href="../">Minebox dashboard</a>.');
