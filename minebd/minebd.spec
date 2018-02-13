@@ -24,7 +24,7 @@ install -pD --mode 755 "%{_topdir}minebd/mbkey.sh" "$RPM_BUILD_ROOT/usr/lib/mine
 install -pD --mode 644 "%{_topdir}minebd/config.yaml" "$RPM_BUILD_ROOT/etc/minebox/config.yaml"
 install -pD --mode 644 "%{_topdir}minebd/systemd/minebd.service" "$RPM_BUILD_ROOT/etc/systemd/system/minebd.service"
 install -pD --mode 644 "%{_topdir}minebd/systemd/nbd@nbd0.service.d/mount.conf" "$RPM_BUILD_ROOT/etc/systemd/system/nbd@nbd0.service.d/mount.conf"
-install -pD --mode 644 "%{_topdir}distro-tools/VM/nbd-client-config" "$RPM_BUILD_ROOT/etc/nbdtab"
+install -pD --mode 644 "%{_topdir}minebd/nbd-client-config" "$RPM_BUILD_ROOT/etc/nbdtab"
 
 # Installation script
 %pre

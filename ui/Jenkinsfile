@@ -19,7 +19,7 @@ node ("rockstor") {
                   , doGenerateSubmoduleConfigurations: false
                   , extensions: []
                   , submoduleCfg: []
-                  , userRemoteConfigs: [[credentialsId: '0c80fc94-d6f5-489b-a850-30e0deb2273f', url: 'git@bitbucket.org:mineboxgmbh/minebox-client-tools.git']]
+                  , userRemoteConfigs: [[credentialsId: '0c80fc94-d6f5-489b-a850-30e0deb2273f', url: 'git@bitbucket.org:mineboxgmbh/minebox.git']]
                   ])
       }
    }
