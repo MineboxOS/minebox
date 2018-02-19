@@ -19,7 +19,7 @@ public enum SiaCommand {
     private final String command;
     private final String httpMethod;
     private final boolean longOperation;
-
+    private static boolean unirestLongOperation = true;
 
     SiaCommand(String command, String httpMethod, boolean longOperation) {
         this.command = command;
@@ -33,10 +33,9 @@ public enum SiaCommand {
     }
 
     HttpRequest unirest(String baseUrl, String... extraPath) {
-        if (longOperation) {
-            Unirest.setTimeouts(10000, 15 * 60000);
-        } else {
-            Unirest.setTimeouts(10000, 60000);
+        if (unirestLongOperation != longOperation) {
+            Unirest.setTimeouts(10000, longOperation ? 15 * 60000 : 60000);
+            unirestLongOperation = longOperation;
         }
         String joinedPath = "/" + Joiner.on("/").join(extraPath);
         if (joinedPath.length() == 1) {
