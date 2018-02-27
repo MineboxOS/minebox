@@ -190,6 +190,14 @@ def system_maintenance():
             retcode = subprocess.call([YUM, "remove", "-y", "kernel-ml-4.8.7"])
             if retcode != 0:
                 current_app.logger.warn("Removing old kernel failed, return code: %s" % retcode)
+        # Also, Kernel 4.12.4 never booted correctly on Gen10 boxes,
+        # so remove it as well (still ensure it's not running though).
+        retcode = subprocess.call([YUM, "info", "kernel-ml-4.12.4"])
+        if retcode == 0 and not os.uname()[2].startswith("4.12.4-"):
+            current_app.logger.info("Kernel 4.12.4 is installed but not running, removing it.")
+            retcode = subprocess.call([YUM, "remove", "-y", "kernel-ml-4.12.4"])
+            if retcode != 0:
+                current_app.logger.warn("Removing old kernel failed, return code: %s" % retcode)
         # *** Swap wearing down USB flash ***
         # Find if swap on USB stick is activated and deactivate it.
         swapdevs = []
