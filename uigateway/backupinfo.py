@@ -7,7 +7,7 @@ from flask import current_app, json
 from os.path import isfile, isdir, join
 import os
 from glob import glob
-from zipfile import ZipFile
+from zipfile import ZipFile, is_zipfile
 from datetime import datetime
 import time
 import re
@@ -265,7 +265,7 @@ def get_fileinfo(backupname):
         if isfile(bfinfo_path):
             with open(bfinfo_path) as json_file:
                 backupfileinfo = json.load(json_file)
-    elif isfile(zipname):
+    elif isfile(zipname) and is_zipfile(zipname):
         backupfileinfo = []
         is_finished = True
         is_archived = False
@@ -279,7 +279,7 @@ def get_fileinfo(backupname):
             elif infofname_long in backupzip.namelist():
                 with backupzip.open(infofname_long) as json_file:
                     backupfileinfo = json.load(json_file)
-    elif isfile(oldzipname):
+    elif isfile(oldzipname) and is_zipfile(oldzipname):
         backupfileinfo = []
         is_finished = True
         is_archived = True
