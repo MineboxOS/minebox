@@ -298,12 +298,15 @@ def api_status():
         outdata["minebd_running"] = True
         outdata["minebd_encrypted"] = mbdata["hasEncryptionKey"]
         outdata["minebd_storage_mounted"] = ismount(MINEBD_STORAGE_PATH)
+        ST_RDONLY = 1 # In Python >= 3.2, we could use os.ST_RDONLY directly instead.
+        outdata["minebd_storage_mount_readonly"] = bool(os.statvfs(MINEBD_STORAGE_PATH).f_flag & ST_RDONLY)
         outdata["restore_running"] = mbdata["restoreRunning"]
         outdata["restore_progress"] = mbdata["completedRestorePercent"]
     else:
         outdata["minebd_running"] = False
         outdata["minebd_encrypted"] = None
         outdata["minebd_storage_mounted"] = False
+        outdata["minebd_storage_mount_readonly"] = None
         outdata["restore_running"] = False
         outdata["restore_progress"] = None
 
