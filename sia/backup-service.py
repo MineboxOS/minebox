@@ -107,8 +107,8 @@ def api_storage_shares():
     subvols = get_btrfs_subvolumes(MINEBD_STORAGE_PATH)
     shares = []
     for subvol in subvols:
-        if subvol.parent_uuid == '-':
-            shares.append(subvol.path)
+        if subvol["parent_uuid"] == "-":
+            shares.append(subvol["path"])
     return jsonify(shares), 200
 
 
