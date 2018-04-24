@@ -101,6 +101,17 @@ def api_start():
     return jsonify(statusdata), 200
 
 
+@app.route("/storage/shares", methods=['GET'])
+def api_storage_shares():
+    # To be called/forwarded by MUG
+    subvols = get_btrfs_subvolumes(MINEBD_STORAGE_PATH)
+    shares = []
+    for subvol in subvols:
+        if subvol.parent_uuid == '-':
+            shares.append(subvol.path)
+    return jsonify(shares), 200
+
+
 @app.route("/ping")
 def api_ping():
     # This can be called to just have the service run something.

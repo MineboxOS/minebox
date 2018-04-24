@@ -22,7 +22,7 @@ from connecttools import (set_origin, check_login, get_demo_url,
                           get_from_sia, post_to_sia, get_from_minebd,
                           get_from_backupservice, rockstor_user_setup)
 from siatools import (H_PER_SC, SEC_PER_BLOCK, estimate_current_height,
-                      estimate_timestamp_for_height, get_btrfs_subvolumes)
+                      estimate_timestamp_for_height)
 from systemtools import (get_box_settings, write_box_settings)
 
 
@@ -500,15 +500,11 @@ def api_settings_post():
 @app.route("/storage/shares", methods=['GET'])
 @set_origin()
 def api_storage_shares():
-    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-settings
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-get-storageshares
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    subvols = get_btrfs_subvolumes(MINEBD_STORAGE_PATH)
-    shares = []
-    for subvol in subvols:
-        if subvol.parent_uuid = '-':
-            shares.append(subvol.path)
-    return jsonify(shares), 200
+    bsdata, bs_status_code = get_from_backupservice('storage/shares')
+    return jsonify(bsdata), bs_status_code
 
 
 @app.route("/wallet/status", methods=['GET'])
