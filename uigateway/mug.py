@@ -377,6 +377,11 @@ def api_sia_status():
           "synced": None,
           "sync_progress": None,
         }
+    verdata, ver_status_code = get_from_sia("daemon/version")
+    if ver_status_code == 200:
+        outdata["sia_version"] = verdata["version"]
+    else:
+        outdata["sia_version"] = None
     walletdata, wallet_status_code = get_from_sia('wallet')
     if wallet_status_code == 200:
         outdata["wallet"] = {
