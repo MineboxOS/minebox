@@ -422,7 +422,7 @@ def get_sia_config():
 
 def estimate_current_height():
     # Estimate current block height so we can estimate a sync progress.
-    # See https://github.com/NebulousLabs/Sia/blob/master/siac/consensuscmd.go#L50
+    # See https://github.com/NebulousLabs/Sia/blob/master/cmd/siac/consensuscmd.go#L50
     est_datetime = datetime.now()
     diff_seconds = (est_datetime - KNOWNBLOCK_DATETIME).total_seconds()
     est_height = KNOWNBLOCK_HEIGHT + round(float(diff_seconds)
@@ -442,6 +442,20 @@ def estimate_timestamp_for_height(blockheight):
     est_ts = int((estimate_datetime_for_height(blockheight)
                   - datetime(1970, 1, 1)).total_seconds())
     return est_ts
+
+def get_btrfs_subvolumes(diskpath):
+    subvols = []
+    outlines = subprocess.check_output([BTRFS, 'subvolume', 'list', '-q', '-u', diskpath]).splitlines()
+    for line in outlines:
+        matches = re.match(r"parent_uuid ([0-9a-f\-]+) uuid ([0-9a-f\-]+) path (.+)$", line)
+        if matches:
+            subvols.append({
+                "path": matches.group(3),
+                "uuid": matches.group(2),
+                "parent_uuid": matches.group(1),
+            })
+
+    return subvols
 
 def _get_btrfs_space(diskpath):
     spaceinfo = {}
