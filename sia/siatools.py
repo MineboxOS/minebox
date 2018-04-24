@@ -447,7 +447,8 @@ def get_btrfs_subvolumes(diskpath):
     subvols = []
     outlines = subprocess.check_output([BTRFS, 'subvolume', 'list', '-q', '-u', diskpath]).splitlines()
     for line in outlines:
-        matches = re.match(r"parent_uuid ([0-9a-f\-]+) uuid ([0-9a-f\-]+) path (.+)$", line)
+        # Use .search as .match only matches start of the string.
+        matches = re.search(r"parent_uuid ([0-9a-f\-]+) uuid ([0-9a-f\-]+) path (.+)$", line)
         if matches:
             subvols.append({
                 "path": matches.group(3),
