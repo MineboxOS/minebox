@@ -152,7 +152,7 @@ def get_from_backupservice(api):
 def post_to_backupservice(api, formData):
     url = BACKUPSERVICE_URL + api
     try:
-        response = requests.post(url, data=formData, headers=headers)
+        response = requests.post(url, data=formData)
         if ('Content-Type' in response.headers
             and re.match(r'^application/json',
                          response.headers['Content-Type'])):
