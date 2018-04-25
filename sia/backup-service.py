@@ -125,6 +125,7 @@ def api_storage_shares_delete(share):
     delete_btrfs_subvolume(os.path.join(MINEBD_STORAGE_PATH, share))
     return "", 204
 
+
 @app.route("/ping")
 def api_ping():
     # This can be called to just have the service run something.

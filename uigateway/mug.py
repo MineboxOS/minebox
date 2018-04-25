@@ -21,7 +21,8 @@ import decimal
 import backupinfo
 from connecttools import (set_origin, check_login, get_demo_url,
                           get_from_sia, post_to_sia, get_from_minebd,
-                          get_from_backupservice, rockstor_user_setup)
+                          get_from_backupservice, post_to_backupservice,
+                          rockstor_user_setup)
 from siatools import (H_PER_SC, SEC_PER_BLOCK, estimate_current_height,
                       estimate_timestamp_for_height)
 from systemtools import (get_box_settings, write_box_settings)
@@ -514,7 +515,7 @@ def api_storage_shares_delete(share):
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-post-storagesharesdelete
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
-    bsdata, bs_status_code = get_from_backupservice('storage/shares/delete/%s' % share)
+    bsdata, bs_status_code = post_to_backupservice('storage/shares/delete/%s' % share, {})
     return jsonify(bsdata), bs_status_code
 
 

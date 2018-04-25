@@ -149,6 +149,28 @@ def get_from_backupservice(api):
         return {"message": str(e)}, 500
 
 
+def post_to_backupservice(api, formData):
+    url = BACKUPSERVICE_URL + api
+    try:
+        response = requests.post(url, data=formData, headers=headers)
+        if ('Content-Type' in response.headers
+            and re.match(r'^application/json',
+                         response.headers['Content-Type'])):
+            # create a dict generated from the JSON response.
+            bsdata = response.json()
+            if response.status_code >= 400:
+                # For error-ish codes, tell that they are from backup service.
+                bsdata["messagesource"] = "backupservice"
+            return bsdata, response.status_code
+        else:
+            return {"message": response.text,
+                    "messagesource": "backupservice"}, response.status_code
+    except requests.ConnectionError as e:
+        return {"message": str(e)}, 503
+    except requests.RequestException as e:
+        return {"message": str(e)}, 500
+
+
 def get_from_minebd(api):
     url = MINEBD_URL + api
     # MineBD access requires the local key, fetch it.
