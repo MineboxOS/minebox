@@ -511,7 +511,7 @@ def api_storage_shares():
 
 @app.route("/storage/shares/add/<share>", methods=['POST'])
 @set_origin()
-def api_storage_shares_delete(share):
+def api_storage_shares_add(share):
     # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-post-storagesharesadd
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
