@@ -112,6 +112,20 @@ def api_storage_shares():
     return jsonify(shares), 200
 
 
+@app.route("/storage/shares/add/<share>", methods=['POST'])
+def api_storage_shares_add(share):
+    # To be called/forwarded by MUG
+    subvols = get_btrfs_subvolumes(MINEBD_STORAGE_PATH)
+    share_found = False
+    for subvol in subvols:
+        if subvol["path"] == share and subvol["parent_uuid"] == "-":
+            share_found = True
+    if share_found:
+        return jsonify(message="Share does already exist, cannot be created twice."), 409
+    create_btrfs_subvolume(os.path.join(MINEBD_STORAGE_PATH, share))
+    return "", 204
+
+
 @app.route("/storage/shares/delete/<share>", methods=['POST'])
 def api_storage_shares_delete(share):
     # To be called/forwarded by MUG
@@ -121,7 +135,7 @@ def api_storage_shares_delete(share):
         if subvol["path"] == share and subvol["parent_uuid"] == "-":
             share_found = True
     if not share_found:
-        return jsonify(message="Share dos not exist."), 404
+        return jsonify(message="Share does not exist."), 404
     delete_btrfs_subvolume(os.path.join(MINEBD_STORAGE_PATH, share))
     return "", 204
 

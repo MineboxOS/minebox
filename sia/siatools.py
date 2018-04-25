@@ -461,6 +461,9 @@ def get_btrfs_subvolumes(diskpath):
 def delete_btrfs_subvolume(diskpath):
     subprocess.call([BTRFS, 'subvolume', 'delete', diskpath])
 
+def create_btrfs_subvolume(diskpath):
+    subprocess.call([BTRFS, 'subvolume', 'create', diskpath])
+
 def _get_btrfs_space(diskpath):
     spaceinfo = {}
     # See https://btrfs.wiki.kernel.org/index.php/FAQ#Understanding_free_space.2C_using_the_new_tools
