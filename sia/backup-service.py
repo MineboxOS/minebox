@@ -113,7 +113,6 @@ def api_storage_shares():
 
 
 @app.route("/storage/shares/delete/<share>", methods=['POST'])
-@set_origin()
 def api_storage_shares_delete(share):
     # To be called/forwarded by MUG
     subvols = get_btrfs_subvolumes(MINEBD_STORAGE_PATH)
