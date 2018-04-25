@@ -508,6 +508,16 @@ def api_storage_shares():
     return jsonify(bsdata), bs_status_code
 
 
+@app.route("/storage/shares/delete/<share>", methods=['POST'])
+@set_origin()
+def api_storage_shares_delete(share):
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-post-storagesharesdelete
+    if not check_login():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+    bsdata, bs_status_code = get_from_backupservice('storage/shares/delete/%s' % share)
+    return jsonify(bsdata), bs_status_code
+
+
 @app.route("/wallet/status", methods=['GET'])
 @set_origin()
 def api_wallet_status():
