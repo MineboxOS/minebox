@@ -6,7 +6,7 @@ Version: %(git describe --tags --match 'mug*'|grep -oP "(?<=mug_v)[^-]+")
 Release: %{getenv:BUILD_ID}%(git describe --tags --match 'mug*'|grep -oP -- "-.*$" | tr '-' '_')%{?dist}
 Summary: Minebox UI Gateway (MUG)
 License: Proprietary
-Requires: minebox-virtualenv minebox-rockstor MineBD sudo systemd
+Requires: minebox-virtualenv MineBD sudo systemd
 Requires(pre): /usr/sbin/useradd, /usr/sbin/groupadd, /usr/bin/getent, /usr/sbin/usermod
 Requires(postun): /usr/sbin/userdel,  /usr/sbin/groupdel
 
