@@ -3,7 +3,7 @@ node ("rockstor") {
    properties([
       parameters([
          string(defaultValue: 'master', description: 'Branch of Sia to build', name: 'SIA_BRANCH'),
-         string(defaultValue: '1.3.1', description: 'Version of Sia to build', name: 'SIA_VERSION'),
+         string(defaultValue: '1.3.2', description: 'Version of Sia to build', name: 'SIA_VERSION'),
       ]),
       [$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: false],
       pipelineTriggers([]),
