@@ -34,8 +34,9 @@ REST_HOST_DEBUG="0.0.0.0"
 REST_HOST_TLS="0.0.0.0"
 REST_PORT=5000
 MUG_CONFIG_JSON_PATH="/etc/minebox/mug_config.json"
-SSL_CERT="/opt/rockstor/certs/rockstor.cert"
-SSL_KEY="/opt/rockstor/certs/rockstor.key"
+ROCKSTOR_PATH="/opt/rockstor"
+SSL_CERT="%s/certs/rockstor.cert" % ROCKSTOR_PATH
+SSL_KEY="%s/certs/rockstor.key" % ROCKSTOR_PATH
 MINEBD_STORAGE_PATH="/mnt/storage"
 DEMOSIAC_CMD="/root/minebox-client-tools_vm/sia/demosiac.sh"
 SUDO="/usr/bin/sudo"
@@ -318,7 +319,10 @@ def api_status():
             and user.pw_name != "sia" and not user.pw_name.endswith("$")):
             hasusers = True
     outdata["users_created"] = hasusers
-    outdata["user_setup_complete"] = rockstor_user_setup()
+    # Only used by minebox-ui which requires minebox-rockstor, so test for a
+    # file included in every Rockstor package for sure.
+    if os.path.isdir(os.path.join(ROCKSTOR_PATH, "conf", "rockstor.service")):
+        outdata["user_setup_complete"] = rockstor_user_setup()
 
     if 'DEMO' in environ:
         outdata["backup_type"] = "sia_demo"
