@@ -33,9 +33,7 @@ install -pD --mode 644 "%{_topdir}minebd/nbd-client-config" "$RPM_BUILD_ROOT/etc
 
 %post
 systemctl daemon-reload
-# TBD do this different and don't append all the time
-echo modprobe nbd >> "/etc/rc.modules"
-chmod +x /etc/rc.modules
+# Load right at install, usually modules-load.d loads it at boot.
 modprobe nbd
 
 systemctl enable minebd

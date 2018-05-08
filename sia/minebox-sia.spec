@@ -18,8 +18,8 @@ Sia is a new decentralized cloud storage platform that radically alters the land
 install -pD --mode 755 "%{_topdir}BUILD/siad" "$RPM_BUILD_ROOT/usr/bin/siad"
 install -pD --mode 755 "%{_topdir}BUILD/siac" "$RPM_BUILD_ROOT/usr/bin/siac"
 install -pD --mode 755 "%{_topdir}sia/trafficshaper.sh" "$RPM_BUILD_ROOT/usr/lib/minebox/trafficshaper.sh"
-install -pD --mode 644 "%{_topdir}sia/systemd/minebox-trafficshaper.service" "$RPM_BUILD_ROOT/etc/systemd/system/minebox-trafficshaper.service"
-install -pD --mode 644 "%{_topdir}sia/systemd/sia.service" "$RPM_BUILD_ROOT/etc/systemd/system/sia.service"
+install -pD --mode 644 "%{_topdir}sia/systemd/minebox-trafficshaper.service" "$RPM_BUILD_ROOT/usr/lib/systemd/system/minebox-trafficshaper.service"
+install -pD --mode 644 "%{_topdir}sia/systemd/sia.service" "$RPM_BUILD_ROOT/usr/lib/systemd/system/sia.service"
 
 # Installation script
 %pre
@@ -61,5 +61,5 @@ systemctl daemon-reload
 /usr/bin/siac
 /usr/bin/siad
 /usr/lib/minebox/trafficshaper.sh
-/etc/systemd/system/minebox-trafficshaper.service
-/etc/systemd/system/sia.service
+/usr/lib/systemd/system/minebox-trafficshaper.service
+/usr/lib/systemd/system/sia.service
