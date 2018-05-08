@@ -22,8 +22,9 @@ install -pD --mode 644 "%{_topdir}minebd/build/libs/minebd-1.0-SNAPSHOT-all.jar"
 install -pD --mode 755 "%{_topdir}minebd/systemd/mount-nbd0.sh" "$RPM_BUILD_ROOT/usr/lib/minebox/mount-nbd0.sh"
 install -pD --mode 755 "%{_topdir}minebd/mbkey.sh" "$RPM_BUILD_ROOT/usr/lib/minebox/mbkey.sh"
 install -pD --mode 644 "%{_topdir}minebd/config.yaml" "$RPM_BUILD_ROOT/etc/minebox/config.yaml"
-install -pD --mode 644 "%{_topdir}minebd/systemd/minebd.service" "$RPM_BUILD_ROOT/etc/systemd/system/minebd.service"
-install -pD --mode 644 "%{_topdir}minebd/systemd/nbd@nbd0.service.d/mount.conf" "$RPM_BUILD_ROOT/etc/systemd/system/nbd@nbd0.service.d/mount.conf"
+install -pD --mode 644 "%{_topdir}minebd/modules-load.d/nbd.conf" "$RPM_BUILD_ROOT/usr/lib/modules-load.d/nbd.conf"
+install -pD --mode 644 "%{_topdir}minebd/systemd/minebd.service" "$RPM_BUILD_ROOT/usr/lib/systemd/system/minebd.service"
+install -pD --mode 644 "%{_topdir}minebd/systemd/nbd@nbd0.service.d/mount.conf" "$RPM_BUILD_ROOT/usr/lib/systemd/system/nbd@nbd0.service.d/mount.conf"
 install -pD --mode 644 "%{_topdir}minebd/nbd-client-config" "$RPM_BUILD_ROOT/etc/nbdtab"
 
 # Installation script
@@ -62,7 +63,8 @@ fi
 /usr/lib/minebox/mount-nbd0.sh
 /usr/lib/minebox/mbkey.sh
 %config(noreplace) /etc/minebox/config.yaml
-/etc/systemd/system/minebd.service
-/etc/systemd/system/nbd@nbd0.service.d/mount.conf
+/usr/lib/modules-load.d/nbd.conf
+/usr/lib/systemd/system/minebd.service
+/usr/lib/systemd/system/nbd@nbd0.service.d/mount.conf
 /etc/nbdtab
 
