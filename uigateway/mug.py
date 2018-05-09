@@ -320,7 +320,7 @@ def api_status():
             hasusers = True
     outdata["users_created"] = hasusers
     # Only used by minebox-ui which requires minebox-rockstor
-    if is_rockstor_system:
+    if is_rockstor_system():
         outdata["user_setup_complete"] = rockstor_user_setup()
 
     if 'DEMO' in environ:

@@ -186,7 +186,7 @@ def system_maintenance():
                 for filepath in glob(OLD_LOGFILES_MASK):
                     os.remove()
         # *** Kernels filling up /boot ***
-        if is_rockstor_system:
+        if is_rockstor_system():
             # One-off for Kernel 4.8.7, which was obsoleted by the time most
             # Minebox devices shipped. If a different kernel than that is running,
             # remove this old one to make /boot not overflow.
@@ -205,7 +205,7 @@ def system_maintenance():
                 if retcode != 0:
                     current_app.logger.warn("Removing old kernel failed, return code: %s" % retcode)
         # *** Swap wearing down USB flash ***
-        if is_rockstor_system:
+        if is_rockstor_system():
             # Find if swap on USB stick is activated and deactivate it.
             # This may be reasonable on non-Rockstor systems but was added as a
             # fix to an issue with the original Minebox systems and also runs a
