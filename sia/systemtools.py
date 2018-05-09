@@ -16,6 +16,7 @@ from connecttools import (post_to_adminservice)
 
 MACHINE_AUTH_FILE = "/etc/minebox/machine_auth.json"
 BOX_SETTINGS_JSON_PATH="/etc/minebox/minebox_settings.json"
+ROCKSTOR_PATH="/opt/rockstor"
 DMIDECODE = "/usr/sbin/dmidecode"
 HDPARM = "/usr/sbin/hdparm"
 HOSTNAME_TO_CONNECT = "minebox.io"
@@ -114,6 +115,10 @@ def get_machine_info():
 
     return machine_info
 
+def is_rockstor_system():
+    # Test for a file included in every Rockstor package for sure.
+    return os.path.isdir(os.path.join(ROCKSTOR_PATH, "conf", "rockstor.service"))
+
 def get_local_ipaddress():
     # By opening up a socket to the outside and look at our side, we get our
     # IP address on the local network.
@@ -181,44 +186,49 @@ def system_maintenance():
                 for filepath in glob(OLD_LOGFILES_MASK):
                     os.remove()
         # *** Kernels filling up /boot ***
-        # One-off for Kernel 4.8.7, which was obsoleted by the time most
-        # Minebox devices shipped. If a different kernel than that is running,
-        # remove this old one to make /boot not overflow.
-        retcode = subprocess.call([YUM, "info", "kernel-ml-4.8.7"])
-        if retcode == 0 and not os.uname()[2].startswith("4.8.7-"):
-            current_app.logger.info("Kernel 4.8.7 is installed but not running, removing it.")
-            retcode = subprocess.call([YUM, "remove", "-y", "kernel-ml-4.8.7"])
-            if retcode != 0:
-                current_app.logger.warn("Removing old kernel failed, return code: %s" % retcode)
-        # Also, Kernel 4.12.4 never booted correctly on Gen10 boxes,
-        # so remove it as well (still ensure it's not running though).
-        retcode = subprocess.call([YUM, "info", "kernel-ml-4.12.4"])
-        if retcode == 0 and not os.uname()[2].startswith("4.12.4-"):
-            current_app.logger.info("Kernel 4.12.4 is installed but not running, removing it.")
-            retcode = subprocess.call([YUM, "remove", "-y", "kernel-ml-4.12.4"])
-            if retcode != 0:
-                current_app.logger.warn("Removing old kernel failed, return code: %s" % retcode)
+        if is_rockstor_system:
+            # One-off for Kernel 4.8.7, which was obsoleted by the time most
+            # Minebox devices shipped. If a different kernel than that is running,
+            # remove this old one to make /boot not overflow.
+            retcode = subprocess.call([YUM, "info", "kernel-ml-4.8.7"])
+            if retcode == 0 and not os.uname()[2].startswith("4.8.7-"):
+                current_app.logger.info("Kernel 4.8.7 is installed but not running, removing it.")
+                retcode = subprocess.call([YUM, "remove", "-y", "kernel-ml-4.8.7"])
+                if retcode != 0:
+                    current_app.logger.warn("Removing old kernel failed, return code: %s" % retcode)
+            # Also, Kernel 4.12.4 never booted correctly on Gen10 boxes,
+            # so remove it as well (still ensure it's not running though).
+            retcode = subprocess.call([YUM, "info", "kernel-ml-4.12.4"])
+            if retcode == 0 and not os.uname()[2].startswith("4.12.4-"):
+                current_app.logger.info("Kernel 4.12.4 is installed but not running, removing it.")
+                retcode = subprocess.call([YUM, "remove", "-y", "kernel-ml-4.12.4"])
+                if retcode != 0:
+                    current_app.logger.warn("Removing old kernel failed, return code: %s" % retcode)
         # *** Swap wearing down USB flash ***
-        # Find if swap on USB stick is activated and deactivate it.
-        swapdevs = []
-        usbswapuuids = []
-        outlines = subprocess.check_output([SWAPON, "--show=NAME"]).splitlines()
-        for line in outlines:
-            matches = re.match(r"^/dev/(.+)$", line)
-            if matches:
-                swapdevs.append(matches.group(1).strip())
-        # Now see if any of those swap devices are on USB and get the UUIDs.
-        for dev in swapdevs:
-            for usbdevpath in glob("/dev/disk/by-id/usb-*"):
-                if os.readlink(usbdevpath).endswith(dev):
-                    for uuidpath in glob("/dev/disk/by-uuid/*"):
-                        if os.readlink(uuidpath).endswith(dev):
-                            usbswapuuids.append(os.path.basename(uuidpath))
-        # Now actually disable those UUIDs directly and in fstab.
-        for swapuuid in usbswapuuids:
-            current_app.logger.info("Disable USB swap with UUID %s.", swapuuid)
-            subprocess.call([SED, "-i", "-e", "s/^UUID=%s/#&/" % swapuuid, FSTAB])
-            subprocess.call([SWAPOFF, "-U", swapuuid])
+        if is_rockstor_system:
+            # Find if swap on USB stick is activated and deactivate it.
+            # This may be reasonable on non-Rockstor systems but was added as a
+            # fix to an issue with the original Minebox systems and also runs a
+            # decent amount of commands, so let's avoid it outside of Rockstor.
+            swapdevs = []
+            usbswapuuids = []
+            outlines = subprocess.check_output([SWAPON, "--show=NAME"]).splitlines()
+            for line in outlines:
+                matches = re.match(r"^/dev/(.+)$", line)
+                if matches:
+                    swapdevs.append(matches.group(1).strip())
+            # Now see if any of those swap devices are on USB and get the UUIDs.
+            for dev in swapdevs:
+                for usbdevpath in glob("/dev/disk/by-id/usb-*"):
+                    if os.readlink(usbdevpath).endswith(dev):
+                        for uuidpath in glob("/dev/disk/by-uuid/*"):
+                            if os.readlink(uuidpath).endswith(dev):
+                                usbswapuuids.append(os.path.basename(uuidpath))
+            # Now actually disable those UUIDs directly and in fstab.
+            for swapuuid in usbswapuuids:
+                current_app.logger.info("Disable USB swap with UUID %s.", swapuuid)
+                subprocess.call([SED, "-i", "-e", "s/^UUID=%s/#&/" % swapuuid, FSTAB])
+                subprocess.call([SWAPOFF, "-U", swapuuid])
         # *** Updates on own packages ***
         # Check for updates to our own packages and install those if needed.
         # Note: this call may end up restarting our own process!

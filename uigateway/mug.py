@@ -25,7 +25,8 @@ from connecttools import (set_origin, check_login, get_demo_url,
                           rockstor_user_setup)
 from siatools import (H_PER_SC, SEC_PER_BLOCK, estimate_current_height,
                       estimate_timestamp_for_height)
-from systemtools import (get_box_settings, write_box_settings)
+from systemtools import (get_box_settings, write_box_settings, ROCKSTOR_PATH,
+                         is_rockstor_system)
 
 
 # Define various constants.
@@ -34,7 +35,6 @@ REST_HOST_DEBUG="0.0.0.0"
 REST_HOST_TLS="0.0.0.0"
 REST_PORT=5000
 MUG_CONFIG_JSON_PATH="/etc/minebox/mug_config.json"
-ROCKSTOR_PATH="/opt/rockstor"
 SSL_CERT="%s/certs/rockstor.cert" % ROCKSTOR_PATH
 SSL_KEY="%s/certs/rockstor.key" % ROCKSTOR_PATH
 MINEBD_STORAGE_PATH="/mnt/storage"
@@ -319,9 +319,8 @@ def api_status():
             and user.pw_name != "sia" and not user.pw_name.endswith("$")):
             hasusers = True
     outdata["users_created"] = hasusers
-    # Only used by minebox-ui which requires minebox-rockstor, so test for a
-    # file included in every Rockstor package for sure.
-    if os.path.isdir(os.path.join(ROCKSTOR_PATH, "conf", "rockstor.service")):
+    # Only used by minebox-ui which requires minebox-rockstor
+    if is_rockstor_system:
         outdata["user_setup_complete"] = rockstor_user_setup()
 
     if 'DEMO' in environ:
