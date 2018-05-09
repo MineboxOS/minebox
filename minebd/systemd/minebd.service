@@ -1,8 +1,8 @@
 [Unit]
 Description=Minebd daemon
 Before=nbd@.service
-#Requires=
-#After=
+Requires=systemd-modules-load.service
+After=systemd-modules-load.service
 
 [Service]
 Type=notify
