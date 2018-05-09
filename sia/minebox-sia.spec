@@ -31,6 +31,11 @@ systemctl stop minebox-trafficshaper
 set -e
 
 %post
+if [ "$1" = "2" ]; then
+# On updates, disable first to reflect path changes correctly.
+systemctl disable sia
+systemctl disable minebox-trafficshaper
+fi
 /usr/bin/chown -R sia:sia /mnt/lower*/sia/
 systemctl daemon-reload
 systemctl enable minebox-trafficshaper
