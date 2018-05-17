@@ -280,6 +280,24 @@ def get_btrfs_subvolumes(diskpath):
 
     return subvols
 
+def get_btrfs_snapshots(diskpath):
+    parents = dict((k["uuid",k["path"]) for k in get_btrfs_subvolumes(diskpath))
+    snaps = []
+    outlines = subprocess.check_output([BTRFS, 'subvolume', 'list', '-s', '-q', '-u', diskpath]).splitlines()
+    for line in outlines:
+        # Use .search as .match only matches start of the string.
+        matches = re.search(r"otime ([0-9\-]+ [0-9:]+) parent_uuid ([0-9a-f\-]+) uuid ([0-9a-f\-]+) path (.+)$", line)
+        if matches:
+            snaps.append({
+                "path": matches.group(4),
+                "uuid": matches.group(3),
+                "parent_uuid": matches.group(2),
+                "parent_path": parents[matches.group(2)],
+                "creation_time": matches.group(1),
+            })
+
+    return snaps
+
 def create_btrfs_subvolume(diskpath):
     subprocess.call([BTRFS, 'subvolume', 'create', diskpath])
 

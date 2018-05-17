@@ -142,6 +142,21 @@ def api_storage_shares_delete(share):
     return "", 204
 
 
+@app.route("/storage/snapshots", methods=['GET'])
+def api_storage_snapshots():
+    # To be called/forwarded by MUG
+    subvols = get_btrfs_snapshots(MINEBD_STORAGE_PATH)
+    snapshots = []
+    for subvol in subvols:
+        if subvol["parent_uuid"] != "-" and subvol["path"].startswith("snapshots/"):
+            snapshots.append({
+              "name": subvol["path"].replace("snapshots/", "", 1),
+              "parent": subvol["parent_path"],
+              "created": subvol["creation_time"],
+            })
+    return jsonify(snapshots), 200
+
+
 @app.route("/ping")
 def api_ping():
     # This can be called to just have the service run something.
