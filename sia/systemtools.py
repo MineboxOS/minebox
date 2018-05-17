@@ -9,6 +9,7 @@ import json
 import os
 import re
 import time
+import datetime
 import subprocess
 import socket
 
@@ -293,7 +294,7 @@ def get_btrfs_snapshots(diskpath):
                 "uuid": matches.group(3),
                 "parent_uuid": matches.group(2),
                 "parent_path": parents[matches.group(2)],
-                "creation_time": time.strptime(matches.group(1), "%Y-%m-%d %H:%M:%S"),
+                "creation_time": datetime.strptime(matches.group(1), "%Y-%m-%d %H:%M:%S"),
             })
 
     return snaps
