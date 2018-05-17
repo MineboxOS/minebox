@@ -17,7 +17,7 @@ from backupinfo import get_backups_to_restart, get_latest, get_list, is_finished
 from systemtools import (MACHINE_AUTH_FILE, submit_machine_auth,
                          submit_ip_notification, system_maintenance,
                          get_btrfs_subvolumes, create_btrfs_subvolume,
-                         delete_btrfs_subvolume)
+                         delete_btrfs_subvolume, get_btrfs_snapshots)
 from connecttools import get_from_sia
 
 # Define various constants.
@@ -151,8 +151,8 @@ def api_storage_snapshots():
         if subvol["parent_uuid"] != "-" and subvol["path"].startswith("snapshots/"):
             snapshots.append({
               "name": subvol["path"].replace("snapshots/", "", 1),
-              "parent": subvol["parent_path"],
-              "created": subvol["creation_time"],
+              "share": subvol["parent_path"],
+              "created": subvol["creation_time"].time(),
             })
     return jsonify(snapshots), 200
 

@@ -281,7 +281,7 @@ def get_btrfs_subvolumes(diskpath):
     return subvols
 
 def get_btrfs_snapshots(diskpath):
-    parents = dict((k["uuid",k["path"]) for k in get_btrfs_subvolumes(diskpath))
+    parents = dict((k["uuid"],k["path"]) for k in get_btrfs_subvolumes(diskpath))
     snaps = []
     outlines = subprocess.check_output([BTRFS, 'subvolume', 'list', '-s', '-q', '-u', diskpath]).splitlines()
     for line in outlines:
@@ -293,7 +293,7 @@ def get_btrfs_snapshots(diskpath):
                 "uuid": matches.group(3),
                 "parent_uuid": matches.group(2),
                 "parent_path": parents[matches.group(2)],
-                "creation_time": matches.group(1),
+                "creation_time": time.strptime(matches.group(1), "%Y-%m-%d %H:%M:%S"),
             })
 
     return snaps

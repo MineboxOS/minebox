@@ -240,7 +240,7 @@ def rebalance_diskspace():
                 host_freespace += hostspace["free_est"]
         if host_freespace > space_to_add:
             # We have enough free space that we can enlarge upper.
-            if not resize_btrfs_volume(('+%s' % space_to_add), MINEBD_STORAGE_PATH]):
+            if not resize_btrfs_volume(('+%s' % space_to_add), MINEBD_STORAGE_PATH):
                 return False
             # See to resize sharing folders to fulfill the defined ratio.
             # If that succeeds, we should be able to enlarge upper again in the
