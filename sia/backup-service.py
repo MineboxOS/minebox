@@ -15,7 +15,9 @@ from backuptools import *
 from siatools import *
 from backupinfo import get_backups_to_restart, get_latest, get_list, is_finished
 from systemtools import (MACHINE_AUTH_FILE, submit_machine_auth,
-                         submit_ip_notification, system_maintenance)
+                         submit_ip_notification, system_maintenance,
+                         get_btrfs_subvolumes, create_btrfs_subvolume,
+                         delete_btrfs_subvolume)
 from connecttools import get_from_sia
 
 # Define various constants.

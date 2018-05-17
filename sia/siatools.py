@@ -15,6 +15,8 @@ import time
 
 from connecttools import (get_from_sia, post_to_sia, get_from_minebd,
                           get_from_mineboxconfig, post_to_faucetservice)
+from systemtools import (get_btrfs_space, get_device_size,
+                         create_btrfs_subvolume, resize_btrfs_volume)
 
 # Note: no not use float (e.g. 1e24) for numers that need high precision!
 # The ** operator produces int, which is fine, or use decimal.Decimal()
@@ -24,7 +26,6 @@ SEC_PER_BLOCK=600 # seconds per block ("blockfrequency" in /daemon/constants)
 EST_SEC_PER_BLOCK = 9 * 60 # estimate shorter block time for better UX
 KNOWNBLOCK_HEIGHT = 100000
 KNOWNBLOCK_DATETIME = datetime(2017, 4, 13, 23, 29, 49, 0) # Assumes UTC
-BTRFS='/usr/sbin/btrfs'
 SIA_CONFIG_JSON="/etc/minebox/sia_config.json"
 SIA_DIR="/mnt/lower1/sia"
 HOST_DIR_BASE_MASK="/mnt/lower*"
@@ -222,8 +223,8 @@ def rebalance_diskspace():
     if not os.path.ismount(MINEBD_STORAGE_PATH):
         current_app.logger.warn("Upper storage is not mounted (yet), cannot rebalance disk space.")
         return False
-    devsize = _get_device_size(MINEBD_DEVICE_PATH)
-    upper_space = _get_btrfs_space(MINEBD_STORAGE_PATH)
+    devsize = get_device_size(MINEBD_DEVICE_PATH)
+    upper_space = get_btrfs_space(MINEBD_STORAGE_PATH)
     if (upper_space["free_est"] < UPPER_SPACE_MIN
         and devsize > upper_space["total"]):
         current_app.logger.info("Less than %s MB free on upper, try to rebalance disk space." % (UPPER_SPACE_MIN // 2**20))
@@ -233,15 +234,13 @@ def rebalance_diskspace():
         for basepath in glob(HOST_DIR_BASE_MASK):
             hostpath = os.path.join(basepath, HOST_DIR_NAME)
             if not os.path.isdir(hostpath):
-                subprocess.call([BTRFS, 'subvolume', 'create', hostpath])
-            hostspace = _get_btrfs_space(hostpath)
+                create_btrfs_subvolume(hostpath)
+            hostspace = get_btrfs_space(hostpath)
             if hostspace:
                 host_freespace += hostspace["free_est"]
         if host_freespace > space_to_add:
             # We have enough free space that we can enlarge upper.
-            retcode = subprocess.call([BTRFS, 'filesystem', 'resize', ('+%s' % space_to_add), MINEBD_STORAGE_PATH])
-            if retcode > 0:
-                current_app.logger.warn("btrfs resize failed with return code %s!" % retcode)
+            if not resize_btrfs_volume(('+%s' % space_to_add), MINEBD_STORAGE_PATH]):
                 return False
             # See to resize sharing folders to fulfill the defined ratio.
             # If that succeeds, we should be able to enlarge upper again in the
@@ -281,12 +280,12 @@ def _rebalance_hosting_to_ratio():
     for basepath in glob(HOST_DIR_BASE_MASK):
         hostpath = os.path.join(basepath, HOST_DIR_NAME)
         if not os.path.isdir(hostpath):
-            subprocess.call([BTRFS, 'subvolume', 'create', hostpath])
+            create_btrfs_subvolume(hostpath)
         # Make sure the directory is owned by the sia user and group.
         uid = pwd.getpwnam("sia").pw_uid
         gid = grp.getgrnam("sia").gr_gid
         os.chown(hostpath, uid, gid)
-        hostspace = _get_btrfs_space(hostpath)
+        hostspace = get_btrfs_space(hostpath)
         if hostspace:
             # We need to add already used hosting space to free space in this
             # calculation, otherwise hosted files would reduce the hosting
@@ -442,52 +441,3 @@ def estimate_timestamp_for_height(blockheight):
     est_ts = int((estimate_datetime_for_height(blockheight)
                   - datetime(1970, 1, 1)).total_seconds())
     return est_ts
-
-def get_btrfs_subvolumes(diskpath):
-    subvols = []
-    outlines = subprocess.check_output([BTRFS, 'subvolume', 'list', '-q', '-u', diskpath]).splitlines()
-    for line in outlines:
-        # Use .search as .match only matches start of the string.
-        matches = re.search(r"parent_uuid ([0-9a-f\-]+) uuid ([0-9a-f\-]+) path (.+)$", line)
-        if matches:
-            subvols.append({
-                "path": matches.group(3),
-                "uuid": matches.group(2),
-                "parent_uuid": matches.group(1),
-            })
-
-    return subvols
-
-def delete_btrfs_subvolume(diskpath):
-    subprocess.call([BTRFS, 'subvolume', 'delete', diskpath])
-
-def create_btrfs_subvolume(diskpath):
-    subprocess.call([BTRFS, 'subvolume', 'create', diskpath])
-
-def _get_btrfs_space(diskpath):
-    spaceinfo = {}
-    # See https://btrfs.wiki.kernel.org/index.php/FAQ#Understanding_free_space.2C_using_the_new_tools
-    outlines = subprocess.check_output([BTRFS, 'filesystem', 'usage', '--raw', diskpath]).splitlines()
-    for line in outlines:
-        matches = re.match(r"^\s+Device size:\s+([0-9]+)$", line)
-        if matches:
-            spaceinfo["total"] = int(matches.group(1))
-
-        matches = re.match(r"^\s+Device allocated:\s+([0-9]+)$", line)
-        if matches:
-            spaceinfo["allocated"] = int(matches.group(1))
-
-        matches = re.match(r"^\s+Used:\s+([0-9]+)$", line)
-        if matches:
-            spaceinfo["used"] = int(matches.group(1))
-
-        matches = re.match(r"^\s+Free \(estimated\):\s+([0-9]+)\s+\(min: ([0-9]+)\)$", line)
-        if matches:
-            spaceinfo["free_est"] = int(matches.group(1))
-            spaceinfo["free_min"] = int(matches.group(2))
-
-    return spaceinfo
-
-def _get_device_size(devpath):
-    devsize = int(subprocess.check_output(['/usr/sbin/blockdev', '--getsize64', devpath]))
-    return devsize

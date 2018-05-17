@@ -20,6 +20,7 @@ ROCKSTOR_PATH="/opt/rockstor"
 DMIDECODE = "/usr/sbin/dmidecode"
 HDPARM = "/usr/sbin/hdparm"
 HOSTNAME_TO_CONNECT = "minebox.io"
+BTRFS="/usr/sbin/btrfs"
 DF = "/usr/bin/df"
 OLD_LOGFILES_MASK = "/var/log/*-*"
 YUM = "/usr/bin/yum"
@@ -263,3 +264,59 @@ def get_filemask_size(filemask):
         fileinfo = os.stat(filepath)
         sumsize += fileinfo.st_size
     return sumsize
+
+def get_btrfs_subvolumes(diskpath):
+    subvols = []
+    outlines = subprocess.check_output([BTRFS, 'subvolume', 'list', '-q', '-u', diskpath]).splitlines()
+    for line in outlines:
+        # Use .search as .match only matches start of the string.
+        matches = re.search(r"parent_uuid ([0-9a-f\-]+) uuid ([0-9a-f\-]+) path (.+)$", line)
+        if matches:
+            subvols.append({
+                "path": matches.group(3),
+                "uuid": matches.group(2),
+                "parent_uuid": matches.group(1),
+            })
+
+    return subvols
+
+def create_btrfs_subvolume(diskpath):
+    subprocess.call([BTRFS, 'subvolume', 'create', diskpath])
+
+def delete_btrfs_subvolume(diskpath):
+    subprocess.call([BTRFS, 'subvolume', 'delete', diskpath])
+
+def resize_btrfs_volume(size, diskpath):
+    retcode = subprocess.call([BTRFS, 'filesystem', 'resize', size, diskpath])
+    if retcode > 0:
+        current_app.logger.warn("btrfs resize failed with return code %s!" % retcode)
+        return False
+    return True
+
+def get_btrfs_space(diskpath):
+    spaceinfo = {}
+    # See https://btrfs.wiki.kernel.org/index.php/FAQ#Understanding_free_space.2C_using_the_new_tools
+    outlines = subprocess.check_output([BTRFS, 'filesystem', 'usage', '--raw', diskpath]).splitlines()
+    for line in outlines:
+        matches = re.match(r"^\s+Device size:\s+([0-9]+)$", line)
+        if matches:
+            spaceinfo["total"] = int(matches.group(1))
+
+        matches = re.match(r"^\s+Device allocated:\s+([0-9]+)$", line)
+        if matches:
+            spaceinfo["allocated"] = int(matches.group(1))
+
+        matches = re.match(r"^\s+Used:\s+([0-9]+)$", line)
+        if matches:
+            spaceinfo["used"] = int(matches.group(1))
+
+        matches = re.match(r"^\s+Free \(estimated\):\s+([0-9]+)\s+\(min: ([0-9]+)\)$", line)
+        if matches:
+            spaceinfo["free_est"] = int(matches.group(1))
+            spaceinfo["free_min"] = int(matches.group(2))
+
+    return spaceinfo
+
+def get_device_size(devpath):
+    devsize = int(subprocess.check_output(['/usr/sbin/blockdev', '--getsize64', devpath]))
+    return devsize

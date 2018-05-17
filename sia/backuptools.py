@@ -17,7 +17,8 @@ import sys
 from connecttools import (get_demo_url, get_from_sia, post_to_sia,
                           get_from_minebd, put_to_minebd, put_to_metadata)
 from backupinfo import *
-from siatools import check_sia_sync, SIA_DIR, BTRFS
+from siatools import check_sia_sync, SIA_DIR
+from systemtools import BTRFS
 
 REDUNDANCY_LIMIT = 2.5
 
