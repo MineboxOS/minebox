@@ -152,7 +152,7 @@ def api_storage_snapshots():
             snapshots.append({
               "name": subvol["path"].replace("snapshots/", "", 1),
               "share": subvol["parent_path"],
-              "created": subvol["creation_time"].strftime("%s"),
+              "created": int(subvol["creation_time"].strftime("%s")),
             })
     return jsonify(snapshots), 200
 

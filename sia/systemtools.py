@@ -9,7 +9,7 @@ import json
 import os
 import re
 import time
-import datetime
+from datetime import datetime
 import subprocess
 import socket
 
