@@ -11,6 +11,7 @@ import os
 import time
 import logging
 import threading
+import urllib
 from backuptools import *
 from siatools import *
 from backupinfo import get_backups_to_restart, get_latest, get_list, is_finished
@@ -155,6 +156,24 @@ def api_storage_snapshots():
               "created": int(subvol["creation_time"].strftime("%s")),
             })
     return jsonify(snapshots), 200
+
+
+@app.route("/storage/snapshots/delete/<snapshot>", methods=['POST'])
+def api_storage_snapshots_delete(snapshot):
+    # To be called/forwarded by MUG
+    try: # python 3
+      snapshot_path = "snapshots/%s" % urllib.parse.unquote(snapshot)
+    except: #python 2
+      snapshot_path = "snapshots/%s" % urllib.unquote(snapshot)
+    subvols = get_btrfs_subvolumes(MINEBD_STORAGE_PATH)
+    snapshot_found = False
+    for subvol in subvols:
+        if subvol["path"] == snapshot_path and subvol["parent_uuid"] != "-":
+            snapshot_found = True
+    if not snapshot_found:
+        return jsonify(message="Snapshot does not exist."), 404
+    delete_btrfs_subvolume(os.path.join(MINEBD_STORAGE_PATH, snapshot_path))
+    return "", 204
 
 
 @app.route("/ping")

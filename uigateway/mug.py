@@ -19,6 +19,7 @@ import subprocess
 import pwd
 import decimal
 import backupinfo
+import urllib
 from connecttools import (set_origin, check_login, get_demo_url,
                           get_from_sia, post_to_sia, get_from_minebd,
                           get_from_backupservice, post_to_backupservice,
@@ -539,6 +540,20 @@ def api_storage_snapshots():
     if not check_login():
         return jsonify(message="Unauthorized access, please log into the main UI."), 401
     bsdata, bs_status_code = get_from_backupservice('storage/snapshots')
+    return jsonify(bsdata), bs_status_code
+
+
+@app.route("/storage/snapshots/delete/<snapshot>", methods=['POST'])
+@set_origin()
+def api_storage_snapshots_delete(snapshot):
+    # Doc: https://bitbucket.org/mineboxgmbh/minebox-client-tools/src/master/doc/mb-ui-gateway-api.md#markdown-header-post-storagesnapshotsdelete
+    if not check_login():
+        return jsonify(message="Unauthorized access, please log into the main UI."), 401
+    try: # python 3
+      quoted_snapshot = urllib.parse.quote(snapshot)
+    except: #python 2
+      quoted_snapshot = urllib.quote(snapshot)
+    bsdata, bs_status_code = post_to_backupservice('storage/snapshots/delete/%s' % quoted_snapshot, {})
     return jsonify(bsdata), bs_status_code
 
 
