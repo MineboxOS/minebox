@@ -25,11 +25,13 @@ BTRFS="/usr/sbin/btrfs"
 DF = "/usr/bin/df"
 OLD_LOGFILES_MASK = "/var/log/*-*"
 YUM = "/usr/bin/yum"
+YUMCOMPTRANS = "/usr/sbin/yum-complete-transaction"
 OWN_PACKAGES_LIST = ["minebox*", "MineBD"]
 SWAPON = "/usr/sbin/swapon"
 SWAPOFF = "/usr/sbin/swapoff"
 SED = "/usr/bin/sed"
 FSTAB = "/etc/fstab"
+FINDMNT = "/usr/bin/findmnt"
 
 def register_machine():
     machine_info = get_machine_info()
@@ -231,10 +233,26 @@ def system_maintenance():
                 current_app.logger.info("Disable USB swap with UUID %s.", swapuuid)
                 subprocess.call([SED, "-i", "-e", "s/^UUID=%s/#&/" % swapuuid, FSTAB])
                 subprocess.call([SWAPOFF, "-U", swapuuid])
+            # *** Harddisks without swap partitions ***
+            lowerparts = []
+            for i in range(1, 2):
+                outlines = subprocess.check_output([FINDMNT, "-P", "/mnt/lower%s" % i]).splitlines()
+                for line in outlines:
+                    matches = re.match(r'SOURCE="/dev/(.+)"', line)
+                    if matches:
+                        lowerparts.append(matches.group(1).strip())
+            for part in lowerparts:
+                disk = part[0:-1]
+                if not disk in [dev[0:-1] for dev in swapdevs]:
+                    current_app.logger.info("%s needs a swap partition." % disk)
+                else:
+                    current_app.logger.info("%s has a swap partition." % disk)
         # *** Updates on own packages ***
         # Check for updates to our own packages and install those if needed.
         # Note: this call may end up restarting our own process!
         # Therefore, this function shouldn't do anything important after this.
+        current_app.logger.info("See if any yum transactions are pending.")
+        subprocess.call([COMPTRANS, "-y"])
         current_app.logger.info("Trying to update our own packages.")
         retcode = subprocess.call([YUM, "upgrade", "-y"] + OWN_PACKAGES_LIST)
         if retcode != 0:
