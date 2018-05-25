@@ -10,7 +10,7 @@ Nice=5
 WorkingDirectory=/mnt/lower1/sia
 # This could be more dynamic, but if we don't limit this, we will get swap problems.
 # Legacy setting for use with cgroups v1.
-MemoryLimit=7.5G
+MemoryLimit=7G
 # Unified hierarchy, supported starting with systemd 231 and later, while CentOS 7 uses 219.
 #MemoryHigh=3G
 #MemoryMax=3.5G
