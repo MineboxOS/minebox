@@ -6,7 +6,7 @@ Version: %(git describe --tags --match 'bkupsvc*'|grep -oP "(?<=bkupsvc_v)[^-]+"
 Release: %{getenv:BUILD_ID}%(git describe --tags --match 'bkupsvc*'|grep -oP -- "-.*$" | tr '-' '_')%{?dist}
 Summary: Minebox Backup Service
 License: Proprietary
-Requires: minebox-virtualenv minebox-uigateway systemd cronie btrfs-progs minebox-sia dmidecode hdparm
+Requires: minebox-virtualenv minebox-uigateway systemd cronie btrfs-progs minebox-sia dmidecode hdparm yum-utils
 
 %description
 The Minebox Backup Service drives the actual generation and upload of backups as well as the setup of the Sia service.

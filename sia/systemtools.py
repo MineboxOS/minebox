@@ -121,7 +121,7 @@ def get_machine_info():
 
 def is_rockstor_system():
     # Test for a file included in every Rockstor package for sure.
-    return os.path.isdir(os.path.join(ROCKSTOR_PATH, "conf", "rockstor.service"))
+    return os.path.isfile(os.path.join(ROCKSTOR_PATH, "conf", "rockstor.service"))
 
 def get_local_ipaddress():
     # By opening up a socket to the outside and look at our side, we get our
@@ -173,7 +173,8 @@ def system_maintenance():
     settings = get_box_settings()
     timenow = int(time.time())
     if settings["last_maintenance"] < timenow - 24 * 3600:
-        current_app.logger.info("Run system maintenance.")
+        current_app.logger.info("Run system maintenance on %s system." %
+                                ("Rockstor" if is_rockstor_system() else "non-Rockstor"))
         # Store the fact that we're running a maintenance.
         settings["last_maintenance"] = timenow
         success, errmsg = write_box_settings(settings)
@@ -235,12 +236,16 @@ def system_maintenance():
                 subprocess.call([SWAPOFF, "-U", swapuuid])
             # *** Harddisks without swap partitions ***
             lowerparts = []
-            for i in range(1, 2):
-                outlines = subprocess.check_output([FINDMNT, "-P", "/mnt/lower%s" % i]).splitlines()
-                for line in outlines:
-                    matches = re.match(r'SOURCE="/dev/(.+)"', line)
-                    if matches:
-                        lowerparts.append(matches.group(1).strip())
+            for i in range(1, 5): # starting with 1, up to (not including) 5
+                try:
+                    outlines = subprocess.check_output([FINDMNT, "-P", "/mnt/lower%s" % i]).splitlines()
+                    for line in outlines:
+                        matches = re.search(r'SOURCE="/dev/(.+?)"', line)
+                        if matches:
+                            lowerparts.append(matches.group(1).strip())
+                except subprocess.CalledProcessError:
+                    # We just ignore if findmnt fails as that usually means the parition doesn't exist.
+                    pass
             for part in lowerparts:
                 disk = part[0:-1]
                 if not disk in [dev[0:-1] for dev in swapdevs]:
@@ -252,7 +257,7 @@ def system_maintenance():
         # Note: this call may end up restarting our own process!
         # Therefore, this function shouldn't do anything important after this.
         current_app.logger.info("See if any yum transactions are pending.")
-        subprocess.call([COMPTRANS, "-y"])
+        subprocess.call([YUMCOMPTRANS, "-y"])
         current_app.logger.info("Trying to update our own packages.")
         retcode = subprocess.call([YUM, "upgrade", "-y"] + OWN_PACKAGES_LIST)
         if retcode != 0:
