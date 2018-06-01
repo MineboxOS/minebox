@@ -370,7 +370,7 @@ def get_device_size(devpath):
 
 def create_flexshare(sharename, diskpath):
     subprocess.call([FLEXSHARE, '-n', sharename, '-a', 'create', '-g', 'allusers',
-                     '-d', diskpath, '--description', '%s on Capacity Storage' % sharename])
+                     '-d', diskpath, '--description', '%s on Minebox Storage' % sharename])
     subprocess.call([FLEXSHARE, '-n', sharename, '-a', 'activate'])
 
 def delete_flexshare(sharename):
