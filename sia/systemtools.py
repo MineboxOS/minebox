@@ -254,7 +254,8 @@ def system_maintenance():
             for part in lowerparts:
                 disk = part[0:-1]
                 if not disk in [dev[0:-1] for dev in swapdevs]:
-                    current_app.logger.info("%s needs a swap partition." % disk)
+                    current_app.logger.info("%s has no swap partition." % disk)
+                    pass
                 else:
                     current_app.logger.info("%s has a swap partition." % disk)
         # *** Updates on own packages ***
