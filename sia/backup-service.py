@@ -18,7 +18,8 @@ from backupinfo import get_backups_to_restart, get_latest, get_list, is_finished
 from systemtools import (MACHINE_AUTH_FILE, submit_machine_auth,
                          submit_ip_notification, system_maintenance,
                          get_btrfs_subvolumes, create_btrfs_subvolume,
-                         delete_btrfs_subvolume, get_btrfs_snapshots)
+                         delete_btrfs_subvolume, get_btrfs_snapshots,
+                         is_clearos_system, create_flexshare, delete_flexshare)
 from connecttools import get_from_sia
 
 # Define various constants.
@@ -126,8 +127,9 @@ def api_storage_shares_add(share):
     if share_found:
         return jsonify(message="Share does already exist, cannot be created twice."), 409
     create_btrfs_subvolume(os.path.join(MINEBD_STORAGE_PATH, share))
+    if is_clearos_system():
+        create_flexshare(share, os.path.join(MINEBD_STORAGE_PATH, share))
     return "", 204
-
 
 @app.route("/storage/shares/delete/<share>", methods=['POST'])
 def api_storage_shares_delete(share):
@@ -139,6 +141,8 @@ def api_storage_shares_delete(share):
             share_found = True
     if not share_found:
         return jsonify(message="Share does not exist."), 404
+    if is_clearos_system():
+        delete_flexshare(share)
     delete_btrfs_subvolume(os.path.join(MINEBD_STORAGE_PATH, share))
     return "", 204
 

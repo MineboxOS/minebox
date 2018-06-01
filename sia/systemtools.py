@@ -32,6 +32,7 @@ SWAPOFF = "/usr/sbin/swapoff"
 SED = "/usr/bin/sed"
 FSTAB = "/etc/fstab"
 FINDMNT = "/usr/bin/findmnt"
+FLEXSHARE = "/usr/sbin/flexshare"
 
 def register_machine():
     machine_info = get_machine_info()
@@ -122,6 +123,10 @@ def get_machine_info():
 def is_rockstor_system():
     # Test for a file included in every Rockstor package for sure.
     return os.path.isfile(os.path.join(ROCKSTOR_PATH, "conf", "rockstor.service"))
+
+def is_clearos_system():
+    # Test for a file included in every ClearOS system for sure.
+    return os.path.isfile(os.path.join("/etc", "clearos-release"))
 
 def get_local_ipaddress():
     # By opening up a socket to the outside and look at our side, we get our
@@ -362,3 +367,12 @@ def get_btrfs_space(diskpath):
 def get_device_size(devpath):
     devsize = int(subprocess.check_output(['/usr/sbin/blockdev', '--getsize64', devpath]))
     return devsize
+
+def create_flexshare(sharename, diskpath):
+    subprocess.call([FLEXSHARE, '-n', sharename, '-a', 'create', '-g', 'allusers',
+                     '-d', diskpath, '--description', '%s on Capacity Storage' % sharename])
+    subprocess.call([FLEXSHARE, '-n', sharename, '-a', 'activate'])
+
+def delete_flexshare(sharename):
+    subprocess.call([FLEXSHARE, '-n', sharename, '-a', 'deactivate'])
+    subprocess.call([FLEXSHARE, '-n', sharename, '-a', 'delete'])
