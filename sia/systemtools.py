@@ -350,10 +350,18 @@ def get_btrfs_snapshots(diskpath):
     return snaps
 
 def create_btrfs_subvolume(diskpath):
-    subprocess.call([BTRFS, 'subvolume', 'create', diskpath])
+    try:
+        subprocess.check_output([BTRFS, 'subvolume', 'create', diskpath], stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        return False, e.output;
+    return True, ""
 
 def delete_btrfs_subvolume(diskpath):
-    subprocess.call([BTRFS, 'subvolume', 'delete', diskpath])
+    try:
+        subprocess.check_output([BTRFS, 'subvolume', 'delete', diskpath], stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        return False, e.output;
+    return True, ""
 
 def resize_btrfs_volume(size, diskpath):
     retcode = subprocess.call([BTRFS, 'filesystem', 'resize', size, diskpath])
@@ -391,10 +399,20 @@ def get_device_size(devpath):
     return devsize
 
 def create_flexshare(sharename, diskpath):
-    subprocess.call([FLEXSHARE, '-n', sharename, '-a', 'create', '-g', 'allusers',
-                     '-d', diskpath, '--description', '%s on Minebox Storage' % sharename])
-    subprocess.call([FLEXSHARE, '-n', sharename, '-a', 'activate'])
+    try:
+        subprocess.check_output([FLEXSHARE, '-n', sharename, '-a', 'create', '-g', 'allusers',
+                                 '-d', diskpath, '--description', '%s on Minebox Storage' % sharename],
+                                stderr=subprocess.STDOUT)
+        subprocess.call([FLEXSHARE, '-n', sharename, '-a', 'activate'])
+    except subprocess.CalledProcessError as e:
+        return False, e.output;
+    return True, ""
 
 def delete_flexshare(sharename):
-    subprocess.call([FLEXSHARE, '-n', sharename, '-a', 'deactivate'])
-    subprocess.call([FLEXSHARE, '-n', sharename, '-a', 'delete'])
+    try:
+        subprocess.check_output([FLEXSHARE, '-n', sharename, '-a', 'deactivate'],
+                                stderr=subprocess.STDOUT)
+        subprocess.call([FLEXSHARE, '-n', sharename, '-a', 'delete'])
+    except subprocess.CalledProcessError as e:
+        return False, e.output;
+    return True, ""

@@ -126,9 +126,18 @@ def api_storage_shares_add(share):
             share_found = True
     if share_found:
         return jsonify(message="Share does already exist, cannot be created twice."), 409
-    create_btrfs_subvolume(os.path.join(MINEBD_STORAGE_PATH, share))
+    sharepath = os.path.join(MINEBD_STORAGE_PATH, share)
+    success, errmsg = create_btrfs_subvolume(sharepath)
+    if not success:
+        app.logger.error(errmsg)
+        return jsonify(message=errmsg), 500
     if is_clearos_system():
-        create_flexshare(share, os.path.join(MINEBD_STORAGE_PATH, share))
+        success, errmsg = create_flexshare(share, sharepath)
+        if not success:
+            app.logger.error(errmsg)
+            # Remove the subvolume again to not have a mismatch.
+            delete_btrfs_subvolume(sharepath)
+            return jsonify(message=errmsg), 500
     return "", 204
 
 @app.route("/storage/shares/delete/<share>", methods=['POST'])
@@ -141,9 +150,19 @@ def api_storage_shares_delete(share):
             share_found = True
     if not share_found:
         return jsonify(message="Share does not exist."), 404
+    sharepath = os.path.join(MINEBD_STORAGE_PATH, share)
     if is_clearos_system():
-        delete_flexshare(share)
-    delete_btrfs_subvolume(os.path.join(MINEBD_STORAGE_PATH, share))
+        success, errmsg = delete_flexshare(share)
+        if not success:
+            app.logger.error(errmsg)
+            return jsonify(message=errmsg), 500
+    success, errmsg = delete_btrfs_subvolume(sharepath)
+    if not success:
+        app.logger.error(errmsg)
+        if is_clearos_system():
+            # Remove the flexshare again to not have a mismatch.
+            create_flexshare(share, sharepath)
+        return jsonify(message=errmsg), 500
     return "", 204
 
 
