@@ -16,7 +16,8 @@ import time
 from connecttools import (get_from_sia, post_to_sia, get_from_minebd,
                           get_from_mineboxconfig, post_to_faucetservice)
 from systemtools import (get_btrfs_space, get_device_size,
-                         create_btrfs_subvolume, resize_btrfs_volume)
+                         create_btrfs_subvolume, resize_btrfs_volume,
+                         MINEBD_STORAGE_PATH, MINEBD_DEVICE_PATH)
 
 # Note: no not use float (e.g. 1e24) for numers that need high precision!
 # The ** operator produces int, which is fine, or use decimal.Decimal()
@@ -30,8 +31,6 @@ SIA_CONFIG_JSON="/etc/minebox/sia_config.json"
 SIA_DIR="/mnt/lower1/sia"
 HOST_DIR_BASE_MASK="/mnt/lower*"
 HOST_DIR_NAME="hostedfiles"
-MINEBD_STORAGE_PATH="/mnt/storage"
-MINEBD_DEVICE_PATH="/dev/nbd0"
 UPPER_SPACE_MIN=50*(2**20)
 UPPER_SPACE_TARGET=100*(2**20)
 # Granularity of Sia hosting folders, see

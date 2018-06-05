@@ -17,6 +17,8 @@ from connecttools import (post_to_adminservice)
 
 MACHINE_AUTH_FILE = "/etc/minebox/machine_auth.json"
 BOX_SETTINGS_JSON_PATH="/etc/minebox/minebox_settings.json"
+MINEBD_STORAGE_PATH="/mnt/storage"
+MINEBD_DEVICE_PATH="/dev/nbd0"
 ROCKSTOR_PATH="/opt/rockstor"
 DMIDECODE = "/usr/sbin/dmidecode"
 HDPARM = "/usr/sbin/hdparm"
@@ -258,6 +260,25 @@ def system_maintenance():
                     pass
                 else:
                     current_app.logger.info("%s has a swap partition." % disk)
+        # *** Ensure our storage shares all have a flexshare added ***
+        if is_clearos_system():
+            try:
+                flexlist = subprocess.check_output([FLEXSHARE, "-a", "list", "-j"])
+                fshares = json.loads(flexlist)
+                haveshares = []
+                for name in fshares["data"]:
+                    matches = re.match(r"^{0}\/(.+)$".format(MINEBD_STORAGE_PATH), fshares["data"][name]["ShareDir"])
+                    if matches:
+                        haveshares.append(matches.group(1));
+                subvols = get_btrfs_subvolumes(MINEBD_STORAGE_PATH)
+                for subvol in subvols:
+                    if subvol["parent_uuid"] == "-" and subvol["path"] not in haveshares:
+                        current_app.logger.info("Adding Flexshare for storage share: %s", subvol["path"]);
+                        create_flexshare(subvol["path"], os.path.join(MINEBD_STORAGE_PATH, subvol["path"]))
+            except subprocess.CalledProcessError as e:
+                current_app.logger.info("Listing Flexshares failed: %s", e.output);
+        else:
+            current_app.logger.info("Not a ClearOS system.");
         # *** Updates on own packages ***
         # Check for updates to our own packages and install those if needed.
         # Note: this call may end up restarting our own process!
