@@ -339,11 +339,20 @@ def get_btrfs_snapshots(diskpath):
         # Use .search as .match only matches start of the string.
         matches = re.search(r"otime ([0-9\-]+ [0-9:]+) parent_uuid ([0-9a-f\-]+) uuid ([0-9a-f\-]+) path (.+)$", line)
         if matches:
+            if matches.group(2) in parents:
+                parent_path = parents[matches.group(2)]
+            else:
+                # take a guess at a parent path
+                pmatches = re.match(r"snapshots/([^/]+)/[0-9]+$", matches.group(4))
+                if pmatches:
+                    parent_path = pmatches.group(1)
+                else:
+                    parent_path = ""
             snaps.append({
                 "path": matches.group(4),
                 "uuid": matches.group(3),
                 "parent_uuid": matches.group(2),
-                "parent_path": parents[matches.group(2)],
+                "parent_path": parent_path,
                 "creation_time": datetime.strptime(matches.group(1), "%Y-%m-%d %H:%M:%S"),
             })
 
