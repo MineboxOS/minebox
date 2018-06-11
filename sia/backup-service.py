@@ -108,7 +108,10 @@ def api_start():
 @app.route("/storage/shares", methods=['GET'])
 def api_storage_shares():
     # To be called/forwarded by MUG
-    subvols = get_btrfs_subvolumes(MINEBD_STORAGE_PATH)
+    try:
+        subvols = get_btrfs_subvolumes(MINEBD_STORAGE_PATH)
+    except:
+        return jsonify(message="Reading shares failed."), 500
     shares = []
     for subvol in subvols:
         if subvol["parent_uuid"] == "-":
@@ -119,7 +122,10 @@ def api_storage_shares():
 @app.route("/storage/shares/add/<share>", methods=['POST'])
 def api_storage_shares_add(share):
     # To be called/forwarded by MUG
-    subvols = get_btrfs_subvolumes(MINEBD_STORAGE_PATH)
+    try:
+        subvols = get_btrfs_subvolumes(MINEBD_STORAGE_PATH)
+    except:
+        return jsonify(message="Reading shares failed."), 500
     share_found = False
     for subvol in subvols:
         if subvol["path"] == share and subvol["parent_uuid"] == "-":
@@ -143,7 +149,10 @@ def api_storage_shares_add(share):
 @app.route("/storage/shares/delete/<share>", methods=['POST'])
 def api_storage_shares_delete(share):
     # To be called/forwarded by MUG
-    subvols = get_btrfs_subvolumes(MINEBD_STORAGE_PATH)
+    try:
+        subvols = get_btrfs_subvolumes(MINEBD_STORAGE_PATH)
+    except:
+        return jsonify(message="Reading shares failed."), 500
     share_found = False
     for subvol in subvols:
         if subvol["path"] == share and subvol["parent_uuid"] == "-":
@@ -169,7 +178,10 @@ def api_storage_shares_delete(share):
 @app.route("/storage/snapshots", methods=['GET'])
 def api_storage_snapshots():
     # To be called/forwarded by MUG
-    subvols = get_btrfs_snapshots(MINEBD_STORAGE_PATH)
+    try:
+        subvols = get_btrfs_snapshots(MINEBD_STORAGE_PATH)
+    except:
+        return jsonify(message="Reading snapshots failed."), 500
     snapshots = []
     for subvol in subvols:
         if subvol["parent_uuid"] != "-" and subvol["path"].startswith("snapshots/"):
@@ -188,7 +200,10 @@ def api_storage_snapshots_delete(snapshot):
       snapshot_path = "snapshots/%s" % urllib.parse.unquote(snapshot)
     except: #python 2
       snapshot_path = "snapshots/%s" % urllib.unquote(snapshot)
-    subvols = get_btrfs_subvolumes(MINEBD_STORAGE_PATH)
+    try:
+        subvols = get_btrfs_snapshots(MINEBD_STORAGE_PATH)
+    except:
+        return jsonify(message="Reading snapshots failed."), 500
     snapshot_found = False
     for subvol in subvols:
         if subvol["path"] == snapshot_path and subvol["parent_uuid"] != "-":
